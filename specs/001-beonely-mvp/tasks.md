@@ -15,6 +15,8 @@
 
 ## Phase 2: Verification (maps to user stories)
 
+**Note:** **T010–T031** require a configured Supabase project (and **T031** needs Razorpay test keys plus `vercel dev` for `/api`). They are **manual QA** items—complete them in a browser against your environment when credentials are available. Automated checks are tracked separately (**T060**).
+
 **Visitor / public**
 
 - [ ] T010 [US1] Manually verify `/` and `/jobs` show only published listings when Supabase is configured.
@@ -41,14 +43,14 @@
 
 **Automation**
 
-- [ ] T060 Run `pnpm test` and `pnpm run build` on clean branch before merge.
+- [x] T060 Run `pnpm lint`, `pnpm test`, and `pnpm run build` before merge (completed in MVP completion pass).
 
 ## Phase 3: Backlog (optional next specs)
 
-- [ ] T070 Align [`docs/user-stories.md`](../../docs/user-stories.md) admin redirect wording with clarifications (403 → redirect).
+- [x] T070 Align [`docs/user-stories.md`](../../docs/user-stories.md) admin redirect wording with clarifications (403 → redirect).
 - [ ] T071 Add Playwright (or extend Vitest) smoke for auth redirects if product requires CI gates.
 - [ ] T072 OpenAPI export for `api/create-order` / `api/verify-payment` if external consumers appear.
 
 ---
 
-**Checkpoint**: Phase 2 complete when manual verification passes and T060 is green.
+**Checkpoint**: **T060** (lint / test / build) is green. Remaining Phase 2 rows (**T010–T050**, **T031**) complete when you run manual QA with live Supabase (+ Razorpay for payments). See [README non-developer checklist](../../README.md) and [`quickstart.md`](./quickstart.md).
