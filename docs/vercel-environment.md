@@ -54,6 +54,21 @@ On Vercel, [`api/create-order.ts`](../api/create-order.ts) and [`api/verify-paym
 2. Sign in as a **recruiter**, go to **My jobs**, use **Pay & submit** → **Pay with Razorpay** (or the featured upgrade flow).
 3. Open DevTools → **Network**, trigger payment start, and find **`POST …/api/create-order`**. Expect **HTTP 200** and JSON including `orderId`, `amount`, `currency`, and `keyId`.
 4. If the request fails: **401** → auth/session or anon key mismatch; **400** with `turnstile_failed` → see Turnstile note above; **502** / timeout / **5xx** → **Vercel → Project → Logs** (or Runtime Logs) for `/api/create-order` and fix missing env or handler errors.
+5. **Public job board:** After `verify-payment` succeeds, the job is **paid** but still **pending approval**. In **Admin → Moderation**, approve the listing so it appears on `/` and `/jobs/:slug` for candidates (`approval_status` must be `approved`).
+
+## Troubleshooting: "Invalid JSON from server" and `FUNCTION_INVOCATION_FAILED`
+
+Symptoms: the browser or [`apiPost`](../src/lib/api-client.ts) shows **Invalid JSON from server (500)** and the response body snippet mentions **`FUNCTION_INVOCATION_FAILED`** or looks like HTML.
+
+Cause: Vercel ran the `/api/*` function but it **crashed or timed out before sending JSON** (Vercel’s generic HTML error page is not valid JSON).
+
+Fix:
+
+1. **Vercel → Project → Logs** — filter by `/api/create-order` or `/api/verify-payment` and read the stack trace (missing module, timeout, etc.).
+2. Confirm **Production** environment variables from the checklist above, especially **`SUPABASE_SERVICE_ROLE_KEY`**, Supabase **URL + anon** for JWT validation, and **`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`**.
+3. **Redeploy** after changing env vars.
+
+When misconfiguration is limited to **missing service role or Supabase URL**, the API now responds with **503** and JSON `{ "error": "server_misconfigured", ... }` instead of throwing (see [`tryGetServiceSupabase`](../api/_lib/supabase.ts) in [`create-order`](../api/create-order.ts) and [`verify-payment`](../api/verify-payment.ts)). Other startup failures may still surface as HTML until fixed in logs.
 
 ## Razorpay Dashboard (test or live)
 

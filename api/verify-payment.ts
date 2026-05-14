@@ -4,8 +4,9 @@ import Razorpay from 'razorpay'
 import { z } from 'zod'
 import { PLAN_AMOUNT_INR_PAISE } from '@/lib/payments/plans'
 import { planDurationDays, planIsFeatured, planToJobListingFields, type PaymentPlan } from './_lib/plan-helpers'
+import { readJsonObjectBody } from './_lib/request-json-body'
 import { rateLimitOrThrow } from './_lib/rate-limit'
-import { getServiceSupabase, getUserFromBearer } from './_lib/supabase'
+import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
 import { beonelyTransactionalHtml } from './_lib/email-layout'
 import { sendTransactionalEmail } from './_lib/resend'
 
@@ -46,9 +47,12 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       return res.status(401).json({ error: authErr ?? 'unauthorized' })
     }
 
-    const parsed = bodySchema.safeParse(
-      typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-    )
+    const bodyRead = readJsonObjectBody(req)
+    if (!bodyRead.ok) {
+      return res.status(400).json({ error: 'invalid_json' })
+    }
+
+    const parsed = bodySchema.safeParse(bodyRead.value)
     if (!parsed.success) {
       return res.status(400).json({ error: 'invalid_body' })
     }
@@ -85,7 +89,18 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
 
     const listing = planToJobListingFields(plan)
 
-    const sb = getServiceSupabase()
+    const supInit = tryGetServiceSupabase()
+    if (!supInit.ok) {
+      return res.status(503).json({
+        error: 'server_misconfigured',
+        missing:
+          supInit.reason === 'missing_url'
+            ? 'SUPABASE_URL or VITE_SUPABASE_URL'
+            : 'SUPABASE_SERVICE_ROLE_KEY',
+        hint: 'Set these in Vercel → Settings → Environment Variables (Production), then redeploy. See docs/vercel-environment.md.',
+      })
+    }
+    const sb = supInit.client
     const { data: payment, error: payFindErr } = await sb
       .from('payments')
       .select('id, job_id, recruiter_id, status')

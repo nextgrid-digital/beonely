@@ -4,6 +4,18 @@ export function apiBaseUrl(): string {
   return ''
 }
 
+function vercelFunctionCrashHint(path: string, rawText: string): string {
+  const t = rawText.slice(0, 400)
+  if (
+    t.includes('FUNCTION_INVOCATION_FAILED') ||
+    t.includes('A server error has occurred') ||
+    /<\s*!?\s*DOCTYPE\s+html/i.test(t)
+  ) {
+    return ` Vercel returned an HTML error page instead of JSON — the ${path} serverless function likely crashed on startup or before sending a response. Open Vercel → your project → Logs (filter ${path}). Typical fix: set SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY), RAZORPAY_KEY_ID, and RAZORPAY_KEY_SECRET for Production, then redeploy. See docs/vercel-environment.md.`
+  }
+  return ''
+}
+
 function parseApiResponseBody(text: string): unknown {
   const trimmed = text.trim()
   if (!trimmed) return undefined
@@ -51,7 +63,8 @@ export async function apiPost<T>(
   try {
     parsed = parseApiResponseBody(rawText)
   } catch {
-    const hint = proxyHintMessage(res.status)
+    const hint =
+      vercelFunctionCrashHint(path, rawText) + proxyHintMessage(res.status)
     throw new Error(
       `Invalid JSON from server (${res.status}).${hint} Body: ${rawText.slice(0, 160)}`
     )

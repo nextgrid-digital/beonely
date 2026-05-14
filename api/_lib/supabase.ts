@@ -1,15 +1,22 @@
-import { createClient, type User } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import type { Database } from '../../src/lib/supabase/database.types'
 
-export function getServiceSupabase () {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) {
-    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+export type ServiceSupabaseInitResult =
+  | { ok: true; client: SupabaseClient<Database> }
+  | { ok: false; reason: 'missing_url' | 'missing_service_role_key' }
+
+/** Prefer this in API routes so missing env returns JSON instead of an uncaught throw. */
+export function tryGetServiceSupabase (): ServiceSupabaseInitResult {
+  const url = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)?.trim()
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  if (!url) return { ok: false, reason: 'missing_url' }
+  if (!key) return { ok: false, reason: 'missing_service_role_key' }
+  return {
+    ok: true,
+    client: createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
   }
-  return createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
 }
 
 export async function getUserFromBearer (jwt: string | undefined) {

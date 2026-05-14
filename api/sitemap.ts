@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getServiceSupabase } from './_lib/supabase'
+import { tryGetServiceSupabase } from './_lib/supabase'
 
 function escapeXml (s: string) {
   return s
@@ -14,7 +14,16 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
     return res.status(405).end()
   }
   try {
-    const sb = getServiceSupabase()
+    const supInit = tryGetServiceSupabase()
+    if (!supInit.ok) {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      return res
+        .status(503)
+        .send(
+          'Sitemap unavailable: set SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL (or VITE_SUPABASE_URL) on Vercel. See docs/vercel-environment.md.'
+        )
+    }
+    const sb = supInit.client
     const { data: jobsRaw } = await sb
       .from('jobs')
       .select('job_slug, updated_at, listing_expires_at')
