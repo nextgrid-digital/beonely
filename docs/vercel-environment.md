@@ -84,6 +84,19 @@ Serverless handlers under [`api/`](../api/) are typechecked on Vercel with [`api
 
 If keys were exposed, rotate them in Supabase first — see [supabase-key-rotation.md](supabase-key-rotation.md).
 
+## Troubleshooting: PostgREST "schema cache" / missing column on `applications`
+
+Symptoms: Beonely **Apply** fails with an error like **Could not find the `candidate_user_id` column of `applications` in the schema cache** (or another column name).
+
+Cause: the **remote Supabase project** backing `VITE_SUPABASE_URL` is out of date versus this repo’s migrations (table exists but without newer columns, or DDL not applied to that project).
+
+Fix:
+
+1. In Supabase → **SQL Editor**, list columns:  
+   `select column_name from information_schema.columns where table_schema = 'public' and table_name = 'applications' order by ordinal_position;`
+2. If `candidate_user_id` (or `resume_structured_snapshot`) is missing, apply migrations to **that** project — e.g. CLI `supabase db push` linked to the project, or run the SQL from [`supabase/migrations/20260516120000_applications_recruiter_pipeline.sql`](../supabase/migrations/20260516120000_applications_recruiter_pipeline.sql) and optionally [`20260516140000_applications_resume_structured_snapshot.sql`](../supabase/migrations/20260516140000_applications_resume_structured_snapshot.sql) in the SQL Editor.
+3. Hard-refresh the app and retry apply (PostgREST usually picks up new columns immediately).
+
 ## Troubleshooting: “Supabase is not configured” or empty jobs on the live site
 
 Symptoms: toast **Supabase is not configured** on sign-in/sign-up, or the public jobs list is empty while localhost works.
