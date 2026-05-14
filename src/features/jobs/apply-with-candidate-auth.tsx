@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ExternalLink, UserRound } from 'lucide-react'
+import { ExternalLink, Loader2, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   signInCardDescription,
@@ -103,7 +103,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
     },
   })
 
-  const applyBeonely = useMutation({
+  const { mutate: applyBeonelyMutate, isPending: applyBeonelyPending } =
+    useMutation({
     mutationFn: async () => {
       const sb = getSupabaseBrowserClient()
       const { data: authUserRes } = await sb.auth.getUser()
@@ -238,7 +239,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       return
     }
     if (beonely) {
-      applyBeonely.mutate()
+      applyBeonelyMutate()
       return
     }
     openExternalApply()
@@ -249,13 +250,17 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
     openExternalApply,
     job.job_slug,
     beonely,
-    applyBeonely,
+    applyBeonelyMutate,
   ])
 
   const applied = Boolean(beonelyAppliedQuery.data)
-  const disabled =
-    applyBeonely.isPending ||
-    (beonely && (beonelyAppliedQuery.isLoading || applied))
+  const disabled = applyBeonelyPending || (beonely && applied)
+  const checkingApplied =
+    Boolean(beonely) &&
+    profile?.role === 'candidate' &&
+    !applied &&
+    !beonelyAppliedQuery.isFetched &&
+    (beonelyAppliedQuery.isPending || beonelyAppliedQuery.isFetching)
 
   return (
     <>
@@ -264,6 +269,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         variant='outline'
         size='lg'
         disabled={disabled}
+        aria-busy={checkingApplied || undefined}
         className='inline-flex items-center gap-2 bg-white shadow-xs hover:bg-slate-50 dark:bg-background dark:hover:bg-muted'
         onClick={() => void handleApplyClick()}
         aria-label={applyButtonAriaLabel(job)}
@@ -275,7 +281,14 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           </>
         ) : beonely ? (
           <>
-            <UserRound className='size-5 shrink-0' aria-hidden />
+            {checkingApplied ? (
+              <Loader2
+                className='size-5 shrink-0 animate-spin'
+                aria-hidden
+              />
+            ) : (
+              <UserRound className='size-5 shrink-0' aria-hidden />
+            )}
             {applied ? 'Applied' : applyButtonLabel(job)}
           </>
         ) : (

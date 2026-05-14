@@ -1,5 +1,4 @@
-import type { User } from '@supabase/supabase-js'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient, User } from '@supabase/supabase-js'
 import type { Database, JobRow } from '@/lib/supabase/database.types'
 import { resumeStructuredEnvelopeSchema } from '@/lib/candidate/resume-structured-schema'
 
@@ -63,6 +62,13 @@ export async function submitBeonelyApplication(
 
   const { company } = firstWorkSnapshot(jobSeekerRow.resume_structured)
 
+  const snapshotParse = resumeStructuredEnvelopeSchema.safeParse(
+    jobSeekerRow.resume_structured
+  )
+  const resume_structured_snapshot = snapshotParse.success
+    ? snapshotParse.data
+    : null
+
   const { error } = await sb.from('applications').insert({
     candidate_user_id: authUser.id,
     job_id: job.id,
@@ -75,6 +81,7 @@ export async function submitBeonelyApplication(
     experience_years: null,
     resume_url: safeHttpUrl(jobSeekerRow.portfolio_url),
     resume_storage_path: jobSeekerRow.resume_storage_path?.trim() || null,
+    resume_structured_snapshot,
     status: 'new',
   })
 

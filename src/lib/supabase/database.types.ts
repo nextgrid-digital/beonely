@@ -29,6 +29,7 @@ export type Database = {
           note: string | null
           recruiter_id: string
           resume_storage_path: string | null
+          resume_structured_snapshot: Json | null
           resume_url: string | null
           status: Database['public']['Enums']['application_status']
           updated_at: string
@@ -49,6 +50,7 @@ export type Database = {
           note?: string | null
           recruiter_id: string
           resume_storage_path?: string | null
+          resume_structured_snapshot?: Json | null
           resume_url?: string | null
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
@@ -69,6 +71,7 @@ export type Database = {
           note?: string | null
           recruiter_id?: string
           resume_storage_path?: string | null
+          resume_structured_snapshot?: Json | null
           resume_url?: string | null
           status?: Database['public']['Enums']['application_status']
           updated_at?: string

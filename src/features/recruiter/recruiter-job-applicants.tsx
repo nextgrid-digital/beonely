@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Loader2 } from 'lucide-react'
@@ -10,6 +10,13 @@ import {
 import type { Enums, JobRow, RecruiterRow, Tables } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import {
   Select,
   SelectContent,
@@ -25,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ApplicationProfileSnapshotReadonly } from '@/features/recruiter/application-profile-snapshot-readonly'
 
 type ApplicationRow = Tables<'applications'>
 type ApplicationStatus = Enums<'application_status'>
@@ -40,6 +48,8 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const [profileSheetApp, setProfileSheetApp] =
+    useState<ApplicationRow | null>(null)
 
   const recruiterQuery = useQuery({
     queryKey: ['recruiter', user?.id],
@@ -171,6 +181,7 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
             <TableHead>Company</TableHead>
             <TableHead>Applied</TableHead>
             <TableHead>Links</TableHead>
+            <TableHead>Profile</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -223,6 +234,16 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
                 </div>
               </TableCell>
               <TableCell>
+                <Button
+                  type='button'
+                  variant='link'
+                  className='h-auto px-0 text-sm'
+                  onClick={() => setProfileSheetApp(app)}
+                >
+                  View profile
+                </Button>
+              </TableCell>
+              <TableCell>
                 <Select
                   value={app.status}
                   disabled={updateStatus.isPending}
@@ -253,6 +274,33 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
       {!appsQuery.isLoading && (appsQuery.data ?? []).length === 0 && (
         <p className='text-sm text-muted-foreground'>No applicants yet.</p>
       )}
+
+      <Sheet
+        open={Boolean(profileSheetApp)}
+        onOpenChange={(open) => {
+          if (!open) setProfileSheetApp(null)
+        }}
+      >
+        <SheetContent
+          side='right'
+          className='flex w-full flex-col gap-0 overflow-hidden sm:max-w-xl'
+        >
+          <SheetHeader className='shrink-0 border-b border-border pb-4'>
+            <SheetTitle>Candidate profile</SheetTitle>
+            <SheetDescription>
+              Snapshot from when they applied. Contact details are in the
+              table.
+            </SheetDescription>
+          </SheetHeader>
+          <div className='min-h-0 flex-1 overflow-y-auto py-4'>
+            {profileSheetApp ? (
+              <ApplicationProfileSnapshotReadonly
+                snapshot={profileSheetApp.resume_structured_snapshot}
+              />
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
