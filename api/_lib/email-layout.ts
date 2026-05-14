@@ -24,7 +24,7 @@ export function beonelyTransactionalHtml (opts: {
   bodyParagraphs: string[]
 }): string {
   const origin = siteOrigin()
-  const logoUrl = `${origin}/images/beonely-logo.png`
+  const logoUrl = `${origin}/images/beonely-logo.svg`
   const safeHeadline = escapeHtml(opts.headline)
   const body = opts.bodyParagraphs
     .map((text) => {

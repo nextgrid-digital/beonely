@@ -134,4 +134,4 @@ Signup confirmation and password-reset emails sent by **Supabase** (not the Rese
 
 ## Transactional email (Resend, serverless)
 
-Payment receipts use [`sendTransactionalEmail`](../api/_lib/resend.ts) with **`RESEND_API_KEY`** and **`RESEND_FROM_EMAIL`** (verified domain). HTML is built with [`beonelyTransactionalHtml`](../api/_lib/email-layout.ts) for a consistent Beonely shell (logo uses `VITE_PUBLIC_SITE_URL` + `/images/beonely-logo.png` when set).
+Payment receipts use [`sendTransactionalEmail`](../api/_lib/resend.ts) with **`RESEND_API_KEY`** and **`RESEND_FROM_EMAIL`** (verified domain). HTML is built with [`beonelyTransactionalHtml`](../api/_lib/email-layout.ts) for a consistent Beonely shell (logo uses `VITE_PUBLIC_SITE_URL` + `/images/beonely-logo.svg` when set).

@@ -55,7 +55,7 @@ export function PublicSiteHeader() {
             to='/'
             className='flex items-center gap-2 rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none'
           >
-            <Logo className='h-7 max-w-[10rem]' />
+            <Logo className='h-7 w-auto max-w-[10rem]' />
           </Link>
           <nav className='flex items-center gap-4 text-sm'>
             <PublicSiteAccountNav />

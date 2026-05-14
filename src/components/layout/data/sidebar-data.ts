@@ -69,7 +69,7 @@ export const sidebarData: SidebarData = {
     {
       name: 'Beonely',
       plan: 'ServiceNow hiring',
-      logoSrc: '/images/beonely-logo.png',
+      logoSrc: '/images/beonely-logo.svg',
     },
   ],
   navGroups: [
