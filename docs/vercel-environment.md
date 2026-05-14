@@ -30,6 +30,8 @@ After changing variables, **redeploy** so functions pick up new values.
 
 `VITE_*` values are inlined at **Vite build** time. If you add or change them, trigger a new deployment so `pnpm build` runs again; restarting alone is not enough.
 
+Serverless handlers under [`api/`](../api/) are typechecked on Vercel with [`api/tsconfig.json`](../api/tsconfig.json) (`moduleResolution: Bundler`, Node `process` / `crypto` types, path alias `@/*` → `src/`). If Vercel logs TypeScript errors only under `api/`, fix those files or this config and redeploy.
+
 If keys were exposed, rotate them in Supabase first — see [supabase-key-rotation.md](supabase-key-rotation.md).
 
 ## Troubleshooting: “Supabase is not configured” or empty jobs on the live site

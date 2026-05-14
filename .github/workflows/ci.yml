@@ -37,6 +37,9 @@ jobs:
       - name: Run Prettier check
         run: pnpm format:check
 
+      - name: Typecheck Vercel serverless API
+        run: pnpm typecheck:api
+
       - name: Install browsers
         run: pnpm test:browser:install
 

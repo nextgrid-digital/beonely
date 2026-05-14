@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/supabase/database.types'
+import { createClient, type User } from '@supabase/supabase-js'
+import type { Database } from '../../src/lib/supabase/database.types'
 
 export function getServiceSupabase () {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
@@ -19,7 +19,8 @@ export async function getUserFromBearer (jwt: string | undefined) {
   if (!url || !anon) {
     return { user: null as null, error: 'server_config' as const }
   }
-  const sb = createClient<Database>(url, anon, {
+  // No Database generic: keeps `auth.getUser(jwt)` visible to strict server typecheckers (e.g. Vercel).
+  const sb = createClient(url, anon, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
   const {
@@ -27,5 +28,5 @@ export async function getUserFromBearer (jwt: string | undefined) {
     error,
   } = await sb.auth.getUser(jwt)
   if (error || !user) return { user: null as null, error: error?.message ?? 'invalid' }
-  return { user, error: null as null }
+  return { user: user as User, error: null as null }
 }
