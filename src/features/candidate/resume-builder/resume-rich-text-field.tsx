@@ -46,7 +46,6 @@ export function ResumeRichTextRead ({ value, className }: { value: string; class
     return (
       <div
         className={cn(RICH_CONTENT_CLASS, className)}
-        // eslint-disable-next-line react/no-danger -- sanitized via DOMPurify allowlist
         dangerouslySetInnerHTML={{ __html: safe }}
       />
     )

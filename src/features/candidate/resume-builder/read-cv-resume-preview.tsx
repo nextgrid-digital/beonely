@@ -1,6 +1,10 @@
 import { Plus, Trash2 } from 'lucide-react'
-import type { Dispatch, ReactNode, SetStateAction } from 'react'
-import { useState } from 'react'
+import {
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
