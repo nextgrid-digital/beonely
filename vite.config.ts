@@ -7,19 +7,35 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import { playwright } from '@vitest/browser-playwright'
 
 // https://vite.dev/config/
-// Vercel injects env at build time. Without these, the SPA ships with empty
-// import.meta.env → getSupabaseConfigured() is false, jobs list is empty, auth toasts errors.
-if (process.env.VERCEL === '1') {
-  const url = process.env.VITE_SUPABASE_URL?.trim()
-  const anon = process.env.VITE_SUPABASE_ANON_KEY?.trim()
+// Vercel + Supabase integration often exposes SUPABASE_URL and SUPABASE_ANON_KEY.
+// The SPA reads import.meta.env.VITE_* only; map integration names when VITE_* are absent.
+function vercelSupabaseClientDefine(): Record<string, string> | undefined {
+  if (process.env.VERCEL !== '1') return undefined
+  const url = (
+    process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
+  )?.trim()
+  const anon = (
+    process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY
+  )?.trim()
   if (!url || !anon) {
     throw new Error(
-      'Vercel build missing VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY. Add both in Project → Settings → Environment Variables (enable Production and/or Preview), then redeploy. See docs/vercel-environment.md'
+      'Vercel build missing Supabase client env. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or use the Supabase+Vercel integration (SUPABASE_URL + SUPABASE_ANON_KEY). Never expose the service role key as VITE_*. See docs/vercel-environment.md'
     )
   }
+  const define: Record<string, string> = {}
+  if (!process.env.VITE_SUPABASE_URL?.trim()) {
+    define['import.meta.env.VITE_SUPABASE_URL'] = JSON.stringify(url)
+  }
+  if (!process.env.VITE_SUPABASE_ANON_KEY?.trim()) {
+    define['import.meta.env.VITE_SUPABASE_ANON_KEY'] = JSON.stringify(anon)
+  }
+  return Object.keys(define).length > 0 ? define : undefined
 }
 
+const supabaseDefine = vercelSupabaseClientDefine()
+
 export default defineConfig({
+  ...(supabaseDefine ? { define: supabaseDefine } : {}),
   plugins: [
     tanstackRouter({
       target: 'react',
