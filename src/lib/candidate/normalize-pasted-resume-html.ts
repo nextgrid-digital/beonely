@@ -1,6 +1,6 @@
 import { sanitizeResumeHtml } from '@/lib/candidate/sanitize-resume-html'
 
-function escapeHtml (text: string): string {
+function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -12,9 +12,12 @@ function escapeHtml (text: string): string {
  * Clipboard often has only `text/plain` (e.g. canvas / markdown views).
  * Turn blank-line paragraphs into `<p>` and single newlines into `<br />` for TipTap parse.
  */
-export function plainTextResumePasteToHtml (text: string): string {
+export function plainTextResumePasteToHtml(text: string): string {
   const t = text.replace(/\r\n/g, '\n')
-  const paras = t.split(/\n\n+/).map((p) => p.trim()).filter(Boolean)
+  const paras = t
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
   if (paras.length === 0) return '<p></p>'
   return paras
     .map((p) => {
@@ -24,7 +27,7 @@ export function plainTextResumePasteToHtml (text: string): string {
     .join('')
 }
 
-function styleHasBold (style: string): boolean {
+function styleHasBold(style: string): boolean {
   const m = /font-weight\s*:\s*([^;]+)/i.exec(style)
   if (!m) return false
   const v = m[1].trim().toLowerCase()
@@ -33,15 +36,15 @@ function styleHasBold (style: string): boolean {
   return !Number.isNaN(n) && n >= 600
 }
 
-function styleHasItalic (style: string): boolean {
+function styleHasItalic(style: string): boolean {
   return /font-style\s*:\s*(italic|oblique)/i.test(style)
 }
 
-function styleHasUnderline (style: string): boolean {
+function styleHasUnderline(style: string): boolean {
   return /text-decoration(?:-line)?\s*:\s*[^;]*underline/i.test(style)
 }
 
-function classSuggestsBold (className: string): boolean {
+function classSuggestsBold(className: string): boolean {
   const c = className.toLowerCase()
   return (
     /\b(font-)?(bold|semibold|extrabold|black)\b/.test(c) ||
@@ -50,16 +53,16 @@ function classSuggestsBold (className: string): boolean {
   )
 }
 
-function classSuggestsItalic (className: string): boolean {
+function classSuggestsItalic(className: string): boolean {
   const c = className.toLowerCase()
   return /\bitalic\b/.test(c) || /\bfont-style-italic\b/.test(c)
 }
 
-function classSuggestsUnderline (className: string): boolean {
+function classSuggestsUnderline(className: string): boolean {
   return /\bunderline\b/.test(className.toLowerCase())
 }
 
-function replaceTag (el: Element, newTag: string, doc: Document): void {
+function replaceTag(el: Element, newTag: string, doc: Document): void {
   const next = doc.createElement(newTag)
   while (el.firstChild) next.appendChild(el.firstChild)
   el.parentNode?.replaceChild(next, el)
@@ -68,7 +71,7 @@ function replaceTag (el: Element, newTag: string, doc: Document): void {
 /**
  * Replace `span` with semantic tags or unwrap; must run until no `span` remains.
  */
-function processSpan (span: HTMLSpanElement, doc: Document): void {
+function processSpan(span: HTMLSpanElement, doc: Document): void {
   const style = span.getAttribute('style') || ''
   const cls = span.getAttribute('class') || ''
   const bold = styleHasBold(style) || classSuggestsBold(cls)
@@ -100,11 +103,13 @@ function processSpan (span: HTMLSpanElement, doc: Document): void {
   parent.replaceChild(wrapped, span)
 }
 
-function stripUnsafe (body: HTMLElement): void {
-  body.querySelectorAll('script,style,iframe,noscript,object,embed').forEach((el) => el.remove())
+function stripUnsafe(body: HTMLElement): void {
+  body
+    .querySelectorAll('script,style,iframe,noscript,object,embed')
+    .forEach((el) => el.remove())
 }
 
-function headingsToParagraphs (body: HTMLElement, doc: Document): void {
+function headingsToParagraphs(body: HTMLElement, doc: Document): void {
   body.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((h) => {
     const p = doc.createElement('p')
     while (h.firstChild) p.appendChild(h.firstChild)
@@ -112,7 +117,7 @@ function headingsToParagraphs (body: HTMLElement, doc: Document): void {
   })
 }
 
-function blockquotesToParagraphs (body: HTMLElement, doc: Document): void {
+function blockquotesToParagraphs(body: HTMLElement, doc: Document): void {
   body.querySelectorAll('blockquote').forEach((q) => {
     const p = doc.createElement('p')
     while (q.firstChild) p.appendChild(q.firstChild)
@@ -120,12 +125,12 @@ function blockquotesToParagraphs (body: HTMLElement, doc: Document): void {
   })
 }
 
-function normalizeBiTags (body: HTMLElement, doc: Document): void {
+function normalizeBiTags(body: HTMLElement, doc: Document): void {
   body.querySelectorAll('b').forEach((b) => replaceTag(b, 'strong', doc))
   body.querySelectorAll('i').forEach((i) => replaceTag(i, 'em', doc))
 }
 
-function flattenDivs (body: HTMLElement, doc: Document): void {
+function flattenDivs(body: HTMLElement, doc: Document): void {
   /** Deepest divs first so we don't skip nested structure. */
   const divs = Array.from(body.querySelectorAll('div')).sort(
     (a, b) => depth(b) - depth(a)
@@ -158,7 +163,7 @@ function flattenDivs (body: HTMLElement, doc: Document): void {
   }
 }
 
-function depth (el: Element): number {
+function depth(el: Element): number {
   let d = 0
   let n: Element | null = el
   while (n) {
@@ -168,7 +173,7 @@ function depth (el: Element): number {
   return d
 }
 
-function unwrapUnknownBlockTags (body: HTMLElement): void {
+function unwrapUnknownBlockTags(body: HTMLElement): void {
   const allowed = new Set([
     'P',
     'BR',
@@ -184,7 +189,9 @@ function unwrapUnknownBlockTags (body: HTMLElement): void {
     'BODY',
     'HTML',
   ])
-  const candidates = Array.from(body.querySelectorAll('*')).sort((a, b) => depth(b) - depth(a))
+  const candidates = Array.from(body.querySelectorAll('*')).sort(
+    (a, b) => depth(b) - depth(a)
+  )
   for (const el of candidates) {
     if (!body.contains(el)) continue
     if (allowed.has(el.tagName)) continue
@@ -198,7 +205,7 @@ function unwrapUnknownBlockTags (body: HTMLElement): void {
 /**
  * Map styled clipboard HTML into semantic tags TipTap + `sanitizeResumeHtml` accept.
  */
-export function normalizePastedResumeHtml (html: string): string {
+export function normalizePastedResumeHtml(html: string): string {
   const trimmed = html.trim()
   if (!trimmed) return ''
   if (typeof document === 'undefined') {

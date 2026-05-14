@@ -5,9 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-provider'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -19,7 +23,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 
 const formSchema = z.object({
   email: z.email({
@@ -39,7 +42,7 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   defaultEmail?: string
 }
 
-export function UserAuthForm ({
+export function UserAuthForm({
   className,
   redirectTo,
   onSuccess,
@@ -63,7 +66,7 @@ export function UserAuthForm ({
     form.reset({ email: defaultEmail, password: '' })
   }, [defaultEmail, form])
 
-  async function onSubmit (data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     if (!getSupabaseConfigured()) {
       toast.error('Supabase is not configured.')
       return
@@ -124,7 +127,11 @@ export function UserAuthForm ({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' autoComplete='email' {...field} />
+                <Input
+                  placeholder='name@example.com'
+                  autoComplete='email'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -137,7 +144,11 @@ export function UserAuthForm ({
             <FormItem className='relative'>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <PasswordInput placeholder='********' autoComplete='current-password' {...field} />
+                <PasswordInput
+                  placeholder='********'
+                  autoComplete='current-password'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
               <Link

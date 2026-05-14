@@ -1,5 +1,9 @@
 import { Link, useSearch } from '@tanstack/react-router'
 import {
+  signInCardDescription,
+  signInCardTitle,
+} from '@/lib/auth/sign-in-intent'
+import {
   Card,
   CardContent,
   CardDescription,
@@ -7,14 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  signInCardDescription,
-  signInCardTitle,
-} from '@/lib/auth/sign-in-intent'
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from './components/user-auth-form'
 
-export function SignIn () {
+export function SignIn() {
   const { redirect, intent } = useSearch({ from: '/(auth)/sign-in' })
 
   const title = intent === undefined ? 'Sign in' : signInCardTitle(intent)

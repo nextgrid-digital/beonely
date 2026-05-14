@@ -1,7 +1,7 @@
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { type Locator, userEvent } from 'vitest/browser'
-import { toast } from 'sonner'
 import { SignUpForm } from './sign-up-form'
 
 const FORM_MESSAGES = {
@@ -150,7 +150,9 @@ describe('SignUpForm intent navigation', () => {
     })
     const screenIntent = await render(<SignUpForm intent='candidate' />)
     const email = screenIntent.getByRole('textbox', { name: /^Email$/i })
-    const linkedin = screenIntent.getByRole('textbox', { name: /LinkedIn profile URL/i })
+    const linkedin = screenIntent.getByRole('textbox', {
+      name: /LinkedIn profile URL/i,
+    })
     const phone = screenIntent.getByRole('textbox', { name: /^Phone number$/i })
     const pw = screenIntent.getByLabelText(/^Password$/i)
     const cpw = screenIntent.getByLabelText(/^Confirm Password$/i)
@@ -249,12 +251,18 @@ describe('SignUpForm candidate intent', () => {
       error: null,
     })
     const ui = await render(<SignUpForm intent='candidate' />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'cand@example.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'cand@example.com'
+    )
     await userEvent.fill(
       ui.getByRole('textbox', { name: /LinkedIn profile URL/i }),
       'https://www.linkedin.com/in/candidate'
     )
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Phone number$/i }), '+1 555 123 4567')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Phone number$/i }),
+      '+1 555 123 4567'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.fill(ui.getByLabelText(/^Confirm Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Create Account$/i }))
@@ -271,7 +279,9 @@ describe('SignUpForm candidate intent', () => {
         }),
       })
     )
-    await vi.waitFor(() => expect(supabaseMocks.from).toHaveBeenCalledWith('job_seeker_profiles'))
+    await vi.waitFor(() =>
+      expect(supabaseMocks.from).toHaveBeenCalledWith('job_seeker_profiles')
+    )
     await vi.waitFor(() => expect(supabaseMocks.insert).toHaveBeenCalled())
   })
 
@@ -281,17 +291,27 @@ describe('SignUpForm candidate intent', () => {
       error: { message: 'User already registered' },
     })
     const ui = await render(<SignUpForm intent='candidate' />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'x@y.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'x@y.com'
+    )
     await userEvent.fill(
       ui.getByRole('textbox', { name: /LinkedIn profile URL/i }),
       'https://www.linkedin.com/in/x'
     )
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Phone number$/i }), '+1 555 123 4567')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Phone number$/i }),
+      '+1 555 123 4567'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.fill(ui.getByLabelText(/^Confirm Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Create Account$/i }))
 
-    await vi.waitFor(() => expect(vi.mocked(toast.error)).toHaveBeenCalledWith('User already registered'))
+    await vi.waitFor(() =>
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        'User already registered'
+      )
+    )
     expect(navigate).not.toHaveBeenCalled()
   })
 })

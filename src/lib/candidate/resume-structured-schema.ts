@@ -61,7 +61,7 @@ export const PROFILE_AVATAR_PLACEHOLDER_URL =
   'https://placehold.co/80x80/e2e8f0/64748b/png?text=Photo'
 
 /** Default section order: skills, work, education, courses, certificates; Contact is rendered after sections in preview. */
-export function defaultResumeStructured (): ResumeStructuredV1 {
+export function defaultResumeStructured(): ResumeStructuredV1 {
   return {
     schemaVersion: 1,
     general: {
@@ -73,8 +73,16 @@ export function defaultResumeStructured (): ResumeStructuredV1 {
       about:
         'Write a short professional summary — what you do, key strengths, and what you are looking for next.',
       contacts: [
-        { label: 'Email', value: 'you@example.com', href: 'mailto:you@example.com' },
-        { label: 'LinkedIn', value: 'your-profile', href: 'https://www.linkedin.com/' },
+        {
+          label: 'Email',
+          value: 'you@example.com',
+          href: 'mailto:you@example.com',
+        },
+        {
+          label: 'LinkedIn',
+          value: 'your-profile',
+          href: 'https://www.linkedin.com/',
+        },
       ],
     },
     sections: [
@@ -174,7 +182,7 @@ export function defaultResumeStructured (): ResumeStructuredV1 {
   }
 }
 
-export function parseResumeStructured (json: unknown): ResumeStructuredV1 {
+export function parseResumeStructured(json: unknown): ResumeStructuredV1 {
   const r = resumeStructuredEnvelopeSchema.safeParse(json)
   if (r.success) return r.data
   return defaultResumeStructured()

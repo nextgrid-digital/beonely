@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 
-export function displayNameFromUser (user: User): string {
+export function displayNameFromUser(user: User): string {
   const meta = user.user_metadata as
     | { full_name?: string; name?: string }
     | undefined
@@ -13,7 +13,7 @@ export function displayNameFromUser (user: User): string {
   )
 }
 
-export function displayFromUser (user: User): {
+export function displayFromUser(user: User): {
   name: string
   email: string
   avatarUrl: string | undefined

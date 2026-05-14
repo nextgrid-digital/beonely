@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 
 export const publishedJobsFilterSchema = z.object({
@@ -14,14 +17,14 @@ export const publishedJobsFilterSchema = z.object({
 
 export type PublishedJobsFilters = z.infer<typeof publishedJobsFilterSchema>
 
-function experienceFilterValue (raw: string | undefined): string | undefined {
+function experienceFilterValue(raw: string | undefined): string | undefined {
   if (!raw) return undefined
   if (raw === 'junior') return 'entry'
   return raw
 }
 
 /** Listed jobs: paid + approved and not past `listing_expires_at`. */
-export async function fetchPublishedJobs (
+export async function fetchPublishedJobs(
   filters: PublishedJobsFilters
 ): Promise<JobRow[]> {
   if (!getSupabaseConfigured()) {
@@ -65,6 +68,7 @@ export async function fetchPublishedJobs (
   const rows = (data ?? []) as JobRow[]
   const now = Date.now()
   return rows.filter(
-    (j) => !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
+    (j) =>
+      !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
   )
 }

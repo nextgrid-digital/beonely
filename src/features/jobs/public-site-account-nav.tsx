@@ -2,9 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react'
-import { useAuth } from '@/context/auth-provider'
 import { displayFromUser } from '@/lib/auth/display-name'
-import { AuthModal } from '@/features/auth/auth-modal'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
 import {
   signInCardDescription,
@@ -20,7 +18,7 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { ProfileRow } from '@/lib/supabase/database.types'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { useAuth } from '@/context/auth-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +29,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SignOutDialog } from '@/components/sign-out-dialog'
+import { AuthModal } from '@/features/auth/auth-modal'
 
 const POST_JOB_MODAL_TITLE = 'Post a job'
 const POST_JOB_MODAL_DESCRIPTION =
@@ -40,7 +40,7 @@ const DEFAULT_SIGN_IN_TITLE = 'Sign in'
 const DEFAULT_SIGN_IN_DESCRIPTION =
   'Enter your email and password to access your account.'
 
-function candidateAvatarFromResumeRow (
+function candidateAvatarFromResumeRow(
   row: { resume_structured: unknown } | null | undefined
 ): string | undefined {
   if (!row) return undefined
@@ -52,7 +52,7 @@ function candidateAvatarFromResumeRow (
   return url
 }
 
-export function PublicSiteAccountNav () {
+export function PublicSiteAccountNav() {
   const navigate = useNavigate()
   const { user, loading, profile } = useAuth()
   const [signInOpen, setSignInOpen] = useState(false)
@@ -100,15 +100,18 @@ export function PublicSiteAccountNav () {
     setSignInOpen(true)
   }, [])
 
-  const handleAuthComplete = useCallback((profile: ProfileRow | null) => {
-    const fn = pendingAfterSignInRef.current
-    pendingAfterSignInRef.current = null
-    if (fn) {
-      fn()
-      return
-    }
-    void navigate({ to: getPostAuthPath(profile) })
-  }, [navigate])
+  const handleAuthComplete = useCallback(
+    (profile: ProfileRow | null) => {
+      const fn = pendingAfterSignInRef.current
+      pendingAfterSignInRef.current = null
+      if (fn) {
+        fn()
+        return
+      }
+      void navigate({ to: getPostAuthPath(profile) })
+    },
+    [navigate]
+  )
 
   const requireAuthForPostJob = useCallback(() => {
     if (loading) return
@@ -149,15 +152,25 @@ export function PublicSiteAccountNav () {
   if (loading) {
     return (
       <div className='flex items-center gap-3'>
-        <div className='h-8 w-20 animate-pulse rounded-md bg-muted' aria-hidden />
-        <div className='h-8 w-24 animate-pulse rounded-md bg-muted' aria-hidden />
+        <div
+          className='h-8 w-20 animate-pulse rounded-md bg-muted'
+          aria-hidden
+        />
+        <div
+          className='h-8 w-24 animate-pulse rounded-md bg-muted'
+          aria-hidden
+        />
       </div>
     )
   }
 
   if (user) {
-    const { name, email, avatarUrl: metadataAvatarUrl, initials } =
-      displayFromUser(user)
+    const {
+      name,
+      email,
+      avatarUrl: metadataAvatarUrl,
+      initials,
+    } = displayFromUser(user)
     const resumeAvatar = candidateAvatarFromResumeRow(candidateAvatarQuery.data)
     const avatarUrl = resumeAvatar ?? metadataAvatarUrl
 
@@ -175,48 +188,56 @@ export function PublicSiteAccountNav () {
                 type='button'
                 variant='outline'
                 size='sm'
-                className='w-fit gap-2 rounded-full !pl-0 pr-3'
+                className='w-fit gap-2 rounded-full pr-3 !pl-0'
                 aria-label='User menu'
               >
                 <Avatar className='h-7 w-7'>
                   {avatarUrl ? (
                     <AvatarImage src={avatarUrl} alt={name} />
                   ) : null}
-                  <AvatarFallback className='text-xs'>{initials}</AvatarFallback>
+                  <AvatarFallback className='text-xs'>
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
-                <ChevronDown className='size-4 shrink-0 opacity-60' aria-hidden />
+                <ChevronDown
+                  className='size-4 shrink-0 opacity-60'
+                  aria-hidden
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-56'>
-            <DropdownMenuLabel className='font-normal'>
-              <span className='truncate text-xs text-muted-foreground'>
-                {email}
-              </span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to={getPostAuthPath(profile)} className='flex items-center gap-2'>
-                <LayoutDashboard className='size-4 shrink-0' />
-                Profile
-              </Link>
-            </DropdownMenuItem>
-            {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+              <DropdownMenuLabel className='font-normal'>
+                <span className='truncate text-xs text-muted-foreground'>
+                  {email}
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to='/recruiter' className='flex items-center gap-2'>
-                  <Briefcase className='size-4 shrink-0' />
-                  Recruiter
+                <Link
+                  to={getPostAuthPath(profile)}
+                  className='flex items-center gap-2'
+                >
+                  <LayoutDashboard className='size-4 shrink-0' />
+                  Profile
                 </Link>
               </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant='destructive'
-              className='flex items-center gap-2'
-              onClick={() => setSignOutDialogOpen(true)}
-            >
-              <LogOut className='size-4 shrink-0' />
-              Sign out
-            </DropdownMenuItem>
+              {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+                <DropdownMenuItem asChild>
+                  <Link to='/recruiter' className='flex items-center gap-2'>
+                    <Briefcase className='size-4 shrink-0' />
+                    Recruiter
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant='destructive'
+                className='flex items-center gap-2'
+                onClick={() => setSignOutDialogOpen(true)}
+              >
+                <LogOut className='size-4 shrink-0' />
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

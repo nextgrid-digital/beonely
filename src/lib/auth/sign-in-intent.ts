@@ -11,7 +11,7 @@ export const authPersonaSearchSchema = z.object({
 
 export type AuthPersonaSearch = z.infer<typeof authPersonaSearchSchema>
 
-export function signInCardTitle (intent: SignInIntent | undefined): string {
+export function signInCardTitle(intent: SignInIntent | undefined): string {
   switch (intent) {
     case 'recruiter':
       return 'Recruiter sign in'
@@ -24,7 +24,9 @@ export function signInCardTitle (intent: SignInIntent | undefined): string {
   }
 }
 
-export function signInCardDescription (intent: SignInIntent | undefined): string {
+export function signInCardDescription(
+  intent: SignInIntent | undefined
+): string {
   switch (intent) {
     case 'recruiter':
       return 'Sign in to manage your company profile, create drafts, and pay to publish listings on Beonely.'
@@ -37,7 +39,7 @@ export function signInCardDescription (intent: SignInIntent | undefined): string
   }
 }
 
-export function signUpCardTitle (intent: SignInIntent | undefined): string {
+export function signUpCardTitle(intent: SignInIntent | undefined): string {
   switch (intent) {
     case 'recruiter':
       return 'Create a hiring account'
@@ -50,7 +52,9 @@ export function signUpCardTitle (intent: SignInIntent | undefined): string {
   }
 }
 
-export function signUpCardDescription (intent: SignInIntent | undefined): string {
+export function signUpCardDescription(
+  intent: SignInIntent | undefined
+): string {
   switch (intent) {
     case 'recruiter':
       return 'After you sign up, you will set up your company on the recruiter dashboard and can post paid listings.'

@@ -44,7 +44,9 @@ describe('ForgotPasswordForm', () => {
     await vi.waitFor(() => expect(resetPasswordForEmail).toHaveBeenCalledOnce())
     expect(resetPasswordForEmail).toHaveBeenCalledWith(
       'a@b.com',
-      expect.objectContaining({ redirectTo: expect.stringContaining('/sign-in') })
+      expect.objectContaining({
+        redirectTo: expect.stringContaining('/sign-in'),
+      })
     )
 
     await expect.element(emailInput).toHaveValue('')

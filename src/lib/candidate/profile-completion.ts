@@ -11,7 +11,7 @@ export const candidatePhoneSchema = z
     message: 'Enter a valid phone number (at least 10 digits).',
   })
 
-function countDigits (s: string): number {
+function countDigits(s: string): number {
   return (s.match(/\d/g) ?? []).length
 }
 
@@ -19,7 +19,8 @@ export const candidateLinkedInUrlSchema = z
   .string()
   .min(1, 'Please enter your LinkedIn profile URL.')
   .refine((s) => isLinkedInProfileUrl(s), {
-    message: 'Enter a valid https:// LinkedIn profile URL (e.g. linkedin.com/in/…).',
+    message:
+      'Enter a valid https:// LinkedIn profile URL (e.g. linkedin.com/in/…).',
   })
 
 export type JobSeekerProfileCompletionFields = {
@@ -27,7 +28,7 @@ export type JobSeekerProfileCompletionFields = {
   phone: string | null
 } | null
 
-export function isJobSeekerProfileComplete (
+export function isJobSeekerProfileComplete(
   row: JobSeekerProfileCompletionFields
 ): boolean {
   if (!row) return false

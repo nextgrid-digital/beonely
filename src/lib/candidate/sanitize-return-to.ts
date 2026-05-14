@@ -1,7 +1,9 @@
 /**
  * Safe in-app paths allowed after profile completion (e.g. return from apply flow).
  */
-export function sanitizeProfileReturnTo (raw: string | undefined): string | null {
+export function sanitizeProfileReturnTo(
+  raw: string | undefined
+): string | null {
   if (!raw || typeof raw !== 'string') return null
   const t = raw.trim()
   if (!t.startsWith('/') || t.startsWith('//')) return null

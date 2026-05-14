@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-function PublicJobCardSkeleton () {
+function PublicJobCardSkeleton() {
   return (
     <Card className='rounded-none border-0 border-b border-border bg-card shadow-none'>
       <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0 pb-2'>
@@ -24,13 +24,9 @@ function PublicJobCardSkeleton () {
   )
 }
 
-export function PublicJobListSkeleton ({ count = 4 }: { count?: number }) {
+export function PublicJobListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div
-      className='grid gap-4'
-      role='status'
-      aria-label='Loading job listings'
-    >
+    <div className='grid gap-4' role='status' aria-label='Loading job listings'>
       {Array.from({ length: count }, (_, i) => (
         <PublicJobCardSkeleton key={i} />
       ))}

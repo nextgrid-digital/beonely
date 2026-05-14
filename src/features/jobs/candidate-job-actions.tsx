@@ -1,8 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { useAuth } from '@/context/auth-provider'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -15,7 +18,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
-export function RecordApplicationButton ({
+export function RecordApplicationButton({
   jobId,
   jobTitle,
   size = 'lg',
@@ -56,7 +59,9 @@ export function RecordApplicationButton ({
       if (error) throw error
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['job-application', user?.id, jobId] })
+      void qc.invalidateQueries({
+        queryKey: ['job-application', user?.id, jobId],
+      })
       void qc.invalidateQueries({ queryKey: ['job-applications'] })
       setOpen(false)
       setNotes('')
@@ -84,7 +89,12 @@ export function RecordApplicationButton ({
 
   return (
     <>
-      <Button type='button' variant='secondary' size={size} onClick={() => setOpen(true)}>
+      <Button
+        type='button'
+        variant='secondary'
+        size={size}
+        onClick={() => setOpen(true)}
+      >
         Mark as applied
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -92,8 +102,8 @@ export function RecordApplicationButton ({
           <DialogHeader>
             <DialogTitle>Mark as applied — {jobTitle}</DialogTitle>
             <DialogDescription>
-              Saves a note on your account so you can track this application alongside
-              others.
+              Saves a note on your account so you can track this application
+              alongside others.
             </DialogDescription>
           </DialogHeader>
           <div className='space-y-2'>
@@ -107,10 +117,18 @@ export function RecordApplicationButton ({
             />
           </div>
           <DialogFooter>
-            <Button type='button' variant='ghost' onClick={() => setOpen(false)}>
+            <Button
+              type='button'
+              variant='ghost'
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type='button' disabled={record.isPending} onClick={() => record.mutate()}>
+            <Button
+              type='button'
+              disabled={record.isPending}
+              onClick={() => record.mutate()}
+            >
               Save
             </Button>
           </DialogFooter>

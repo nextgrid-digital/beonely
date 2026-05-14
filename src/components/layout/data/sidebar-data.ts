@@ -11,7 +11,7 @@ import {
 import type { UserRole } from '@/lib/supabase/database.types'
 import { type SidebarData, type NavItem } from '../types'
 
-function filterNavForRole (items: NavItem[], role: UserRole): NavItem[] {
+function filterNavForRole(items: NavItem[], role: UserRole): NavItem[] {
   return items
     .filter((item) => {
       if (item.forRoles?.length && !item.forRoles.includes(role)) {
@@ -38,7 +38,7 @@ function filterNavForRole (items: NavItem[], role: UserRole): NavItem[] {
     })
 }
 
-export function getSidebarNavGroupsForRole (
+export function getSidebarNavGroupsForRole(
   role: UserRole,
   candidateNavTitle?: string
 ): SidebarData['navGroups'] {
@@ -140,7 +140,11 @@ export const sidebarData: SidebarData = {
           icon: Settings,
           items: [
             { title: 'Profile', url: '/settings', icon: UserCircle },
-            { title: 'Appearance', url: '/settings/appearance', icon: Settings },
+            {
+              title: 'Appearance',
+              url: '/settings/appearance',
+              icon: Settings,
+            },
           ],
         },
       ],

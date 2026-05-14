@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_authenticated/admin/')({
   component: AdminHomePage,
 })
 
-function AdminHomePage () {
+function AdminHomePage() {
   return (
     <div className='space-y-6 px-4 py-6'>
       <div>

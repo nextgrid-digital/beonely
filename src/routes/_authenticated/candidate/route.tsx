@@ -1,16 +1,24 @@
 import { useEffect } from 'react'
-import { createFileRoute, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/context/auth-provider'
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import { isJobSeekerProfileComplete } from '@/lib/candidate/profile-completion'
 import { syncJobSeekerFromUserMetadata } from '@/lib/candidate/sync-job-seeker-from-metadata'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import { useAuth } from '@/context/auth-provider'
 
 export const Route = createFileRoute('/_authenticated/candidate')({
   component: CandidateSectionLayout,
 })
 
-function CandidateSectionLayout () {
+function CandidateSectionLayout() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
@@ -19,9 +27,7 @@ function CandidateSectionLayout () {
   const completionQuery = useQuery({
     queryKey: ['job-seeker-profile-completion', user?.id],
     enabled: Boolean(
-      user &&
-        getSupabaseConfigured() &&
-        profile?.role === 'candidate'
+      user && getSupabaseConfigured() && profile?.role === 'candidate'
     ),
     queryFn: async () => {
       const sb = getSupabaseBrowserClient()

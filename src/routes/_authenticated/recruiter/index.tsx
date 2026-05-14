@@ -3,11 +3,12 @@ import { requireRecruiterAccountBeforeLoad } from '@/lib/auth/route-guards'
 import { RecruiterPortal } from '@/features/recruiter/recruiter-portal'
 
 export const Route = createFileRoute('/_authenticated/recruiter/')({
-  beforeLoad: () => requireRecruiterAccountBeforeLoad({ loginRedirectPath: '/recruiter' }),
+  beforeLoad: () =>
+    requireRecruiterAccountBeforeLoad({ loginRedirectPath: '/recruiter' }),
   component: RecruiterPage,
 })
 
-function RecruiterPage () {
+function RecruiterPage() {
   return (
     <div className='space-y-6 px-4 py-6'>
       <div>

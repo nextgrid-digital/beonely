@@ -6,7 +6,7 @@ import type { ProfileRow } from '@/lib/supabase/database.types'
 import { DirectionProvider } from '@/context/direction-provider'
 import { AuthModal } from '@/features/auth/auth-modal'
 
-async function renderAuth (ui: ReactElement) {
+async function renderAuth(ui: ReactElement) {
   return render(<DirectionProvider>{ui}</DirectionProvider>)
 }
 
@@ -33,8 +33,14 @@ vi.mock('@/features/auth/sign-in/components/user-auth-form', () => ({
     defaultEmail?: string
   }) => (
     <div>
-      {defaultEmail ? <span data-testid='default-email'>{defaultEmail}</span> : null}
-      <button type='button' data-testid='user-auth-success' onClick={() => void onSuccess?.()}>
+      {defaultEmail ? (
+        <span data-testid='default-email'>{defaultEmail}</span>
+      ) : null}
+      <button
+        type='button'
+        data-testid='user-auth-success'
+        onClick={() => void onSuccess?.()}
+      >
         Finish sign-in
       </button>
     </div>
@@ -46,21 +52,28 @@ vi.mock('@/features/auth/sign-up/components/sign-up-form', () => ({
     onSuccess,
     intent,
   }: {
-    onSuccess?: (info: { email: string; hasSession: boolean }) => void | Promise<void>
+    onSuccess?: (info: {
+      email: string
+      hasSession: boolean
+    }) => void | Promise<void>
     intent?: string
   }) => (
     <div data-testid='signup-form' data-intent={intent ?? ''}>
       <button
         type='button'
         data-testid='signup-no-session'
-        onClick={() => void onSuccess?.({ email: 'next@example.com', hasSession: false })}
+        onClick={() =>
+          void onSuccess?.({ email: 'next@example.com', hasSession: false })
+        }
       >
         Sign up no session
       </button>
       <button
         type='button'
         data-testid='signup-with-session'
-        onClick={() => void onSuccess?.({ email: 'sess@example.com', hasSession: true })}
+        onClick={() =>
+          void onSuccess?.({ email: 'sess@example.com', hasSession: true })
+        }
       >
         Sign up with session
       </button>
@@ -93,15 +106,26 @@ describe('AuthModal', () => {
 
   it('passes signUpIntent to sign-up tab', async () => {
     const screen = await renderAuth(
-      <AuthModal open onOpenChange={vi.fn()} signUpIntent='candidate' defaultTab='signUp' />
+      <AuthModal
+        open
+        onOpenChange={vi.fn()}
+        signUpIntent='candidate'
+        defaultTab='signUp'
+      />
     )
-    await expect.element(screen.getByTestId('signup-form')).toHaveAttribute('data-intent', 'candidate')
+    await expect
+      .element(screen.getByTestId('signup-form'))
+      .toHaveAttribute('data-intent', 'candidate')
   })
 
   it('prefills email after sign-up without session', async () => {
-    const screen = await renderAuth(<AuthModal open onOpenChange={vi.fn()} defaultTab='signUp' />)
+    const screen = await renderAuth(
+      <AuthModal open onOpenChange={vi.fn()} defaultTab='signUp' />
+    )
     await userEvent.click(screen.getByTestId('signup-no-session'))
-    await expect.element(screen.getByTestId('default-email')).toHaveTextContent('next@example.com')
+    await expect
+      .element(screen.getByTestId('default-email'))
+      .toHaveTextContent('next@example.com')
   })
 
   it('completes immediately when sign-up returns a session', async () => {
@@ -116,7 +140,12 @@ describe('AuthModal', () => {
     const onOpenChange = vi.fn()
     const onAuthComplete = vi.fn()
     const screen = await renderAuth(
-      <AuthModal open onOpenChange={onOpenChange} onAuthComplete={onAuthComplete} defaultTab='signUp' />
+      <AuthModal
+        open
+        onOpenChange={onOpenChange}
+        onAuthComplete={onAuthComplete}
+        defaultTab='signUp'
+      />
     )
     await userEvent.click(screen.getByTestId('signup-with-session'))
     await vi.waitFor(() => expect(refreshProfile).toHaveBeenCalled())

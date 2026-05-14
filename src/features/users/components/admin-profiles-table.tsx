@@ -11,6 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import type { ProfileRow } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -22,7 +23,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import type { ProfileRow } from '@/lib/supabase/database.types'
 import { adminProfilesColumns as columns } from './admin-profiles-columns'
 
 const ROLE_FILTER_OPTIONS = [
@@ -36,7 +36,7 @@ type AdminProfilesTableProps = {
   navigate: NavigateFn
 }
 
-export function AdminProfilesTable ({
+export function AdminProfilesTable({
   data,
   search,
   navigate,

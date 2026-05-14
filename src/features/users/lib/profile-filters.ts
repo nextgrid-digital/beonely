@@ -6,7 +6,7 @@ export type ProfileUrlFilters = {
 }
 
 /** Client-side filter for admin profiles table (URL-driven filters). */
-export function filterProfilesForUrlState (
+export function filterProfilesForUrlState(
   rows: ProfileRow[],
   filters: ProfileUrlFilters
 ): ProfileRow[] {
@@ -23,6 +23,6 @@ export function filterProfilesForUrlState (
 }
 
 /** Predicate for route guard tests — admin-only surfaces. */
-export function isAdminRole (role: string | null | undefined): boolean {
+export function isAdminRole(role: string | null | undefined): boolean {
   return role === 'admin'
 }

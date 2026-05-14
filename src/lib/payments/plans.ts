@@ -19,7 +19,7 @@ export const PLAN_LABEL: Record<PaymentPlan, string> = {
   featured_month: 'Featured · 1 month',
 }
 
-export function planDurationDays (plan: PaymentPlan): number {
+export function planDurationDays(plan: PaymentPlan): number {
   switch (plan) {
     case 'standard_week':
     case 'featured_week':
@@ -34,12 +34,12 @@ export function planDurationDays (plan: PaymentPlan): number {
   }
 }
 
-export function planIsFeatured (plan: PaymentPlan): boolean {
+export function planIsFeatured(plan: PaymentPlan): boolean {
   return plan === 'featured_week' || plan === 'featured_month'
 }
 
 /** Persisted on `jobs` after checkout — matches live listing enums. */
-export function planToJobListingFields (plan: PaymentPlan): {
+export function planToJobListingFields(plan: PaymentPlan): {
   listing_tier: 'standard' | 'featured'
   listing_duration: 'weekly' | 'monthly'
   featured: boolean
@@ -51,8 +51,6 @@ export function planToJobListingFields (plan: PaymentPlan): {
   }
 }
 
-export function listingDurationToDays (
-  d: 'weekly' | 'monthly'
-): number {
+export function listingDurationToDays(d: 'weekly' | 'monthly'): number {
   return d === 'weekly' ? 7 : 30
 }

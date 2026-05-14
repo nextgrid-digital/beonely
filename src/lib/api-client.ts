@@ -1,10 +1,10 @@
 /** Base URL for same-origin `/api/*` (Vercel). Local dev: run `vercel dev` on port 3000 with Vite proxy. */
-export function apiBaseUrl (): string {
+export function apiBaseUrl(): string {
   if (typeof window === 'undefined') return ''
   return ''
 }
 
-export async function apiPost<T> (
+export async function apiPost<T>(
   path: string,
   body: unknown,
   accessToken: string | undefined

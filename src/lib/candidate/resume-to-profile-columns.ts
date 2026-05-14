@@ -11,7 +11,7 @@ export type ProfileColumnsFromResume = {
   phone: string
 }
 
-function phoneFromTelHref (href: string): string {
+function phoneFromTelHref(href: string): string {
   const h = href.trim()
   if (!/^tel:/i.test(h)) return ''
   const rest = h.slice(4)
@@ -26,7 +26,7 @@ function phoneFromTelHref (href: string): string {
  * Maps structured profile JSON to `job_seeker_profiles` columns.
  * When LinkedIn/phone are not found on contact rows, falls back to `preserve` (e.g. sign-up values).
  */
-export function deriveProfileColumnsFromResume (
+export function deriveProfileColumnsFromResume(
   draft: ResumeStructuredV1,
   preserve: { linkedin_url: string | null; phone: string | null } | null
 ): ProfileColumnsFromResume {

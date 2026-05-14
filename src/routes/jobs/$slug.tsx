@@ -1,14 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Helmet } from 'react-helmet-async'
 import { ChevronRight } from 'lucide-react'
-import { useAuth } from '@/context/auth-provider'
-import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import { Helmet } from 'react-helmet-async'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
@@ -16,20 +20,19 @@ import {
   PUBLIC_SITE_MAIN_COLUMN,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export const Route = createFileRoute('/jobs/$slug')({
   component: JobDetailPage,
 })
 
-function siteUrl () {
+function siteUrl() {
   return (
     import.meta.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
     (typeof window !== 'undefined' ? window.location.origin : '')
   )
 }
 
-function JobDetailBreadcrumb ({ currentLabel }: { currentLabel: string }) {
+function JobDetailBreadcrumb({ currentLabel }: { currentLabel: string }) {
   return (
     <ol className={PUBLIC_SITE_BREADCRUMB_LIST}>
       <li className='inline-flex items-center gap-2'>
@@ -51,7 +54,7 @@ function JobDetailBreadcrumb ({ currentLabel }: { currentLabel: string }) {
   )
 }
 
-function JobDetailPage () {
+function JobDetailPage() {
   const { slug } = Route.useParams()
   const { user } = useAuth()
 
@@ -73,7 +76,7 @@ function JobDetailPage () {
             breadcrumb={<JobDetailBreadcrumb currentLabel='Loading…' />}
           />
           <div
-            className='mx-auto max-w-3xl space-y-4 pb-16 pt-6'
+            className='mx-auto max-w-3xl space-y-4 pt-6 pb-16'
             aria-busy='true'
             aria-label='Loading job'
           >
@@ -97,7 +100,7 @@ function JobDetailPage () {
           <PublicSiteStickySubheader
             breadcrumb={<JobDetailBreadcrumb currentLabel='Job not found' />}
           />
-          <div className='mx-auto max-w-3xl pb-16 pt-6'>
+          <div className='mx-auto max-w-3xl pt-6 pb-16'>
             <h1 className='text-xl font-semibold'>Job not found</h1>
             <Button asChild className='mt-4' variant='outline'>
               <Link to='/'>Back to jobs</Link>
@@ -121,7 +124,10 @@ function JobDetailPage () {
         />
         <link rel='canonical' href={canonical} />
         <meta property='og:title' content={`${job.job_title} · Beonely`} />
-        <meta property='og:description' content={`${job.company_name} — ${job.location}`} />
+        <meta
+          property='og:description'
+          content={`${job.company_name} — ${job.location}`}
+        />
         <meta property='og:url' content={canonical} />
         <meta property='og:type' content='website' />
       </Helmet>
@@ -144,23 +150,31 @@ function JobDetailPage () {
               ) : null
             }
           />
-          <div className='mx-auto max-w-3xl space-y-8 pb-16 pt-6'>
+          <div className='mx-auto max-w-3xl space-y-8 pt-6 pb-16'>
             <div className='flex flex-wrap items-start justify-between gap-4'>
               <div className='min-w-0 flex-1'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <h1 className='text-3xl font-semibold tracking-tight'>{job.job_title}</h1>
+                  <h1 className='text-3xl font-semibold tracking-tight'>
+                    {job.job_title}
+                  </h1>
                   {job.featured && <Badge>Featured</Badge>}
                 </div>
-                <p className='mt-2 text-lg text-muted-foreground'>{job.company_name}</p>
+                <p className='mt-2 text-lg text-muted-foreground'>
+                  {job.company_name}
+                </p>
                 <div className='mt-3 flex flex-wrap gap-2'>
-                  {job.location && <Badge variant='outline'>{job.location}</Badge>}
+                  {job.location && (
+                    <Badge variant='outline'>{job.location}</Badge>
+                  )}
                   {job.employment_type && (
                     <Badge variant='outline'>{job.employment_type}</Badge>
                   )}
-                  {job.work_mode && <Badge variant='outline'>{job.work_mode}</Badge>}
+                  {job.work_mode && (
+                    <Badge variant='outline'>{job.work_mode}</Badge>
+                  )}
                 </div>
               </div>
-              <div className='flex shrink-0 flex-col gap-2 sm:flex-row sm:sticky sm:top-[7.125rem] sm:z-10'>
+              <div className='flex shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:flex-row'>
                 <ApplyWithCandidateAuth job={job} />
               </div>
             </div>
@@ -169,7 +183,7 @@ function JobDetailPage () {
               <CardHeader>
                 <CardTitle>About this role</CardTitle>
               </CardHeader>
-              <CardContent className='max-w-none whitespace-pre-wrap text-sm leading-relaxed'>
+              <CardContent className='max-w-none text-sm leading-relaxed whitespace-pre-wrap'>
                 {job.job_description}
               </CardContent>
             </Card>
@@ -180,17 +194,20 @@ function JobDetailPage () {
   )
 }
 
-function isListedPublicJob (job: JobRow): boolean {
+function isListedPublicJob(job: JobRow): boolean {
   if (job.approval_status !== 'approved' || job.payment_status !== 'paid') {
     return false
   }
-  if (job.listing_expires_at && new Date(job.listing_expires_at) <= new Date()) {
+  if (
+    job.listing_expires_at &&
+    new Date(job.listing_expires_at) <= new Date()
+  ) {
     return false
   }
   return true
 }
 
-async function fetchJobBySlug (slug: string): Promise<JobRow | null> {
+async function fetchJobBySlug(slug: string): Promise<JobRow | null> {
   if (!getSupabaseConfigured()) return null
   const sb = getSupabaseBrowserClient()
   const { data, error } = await sb
@@ -205,7 +222,7 @@ async function fetchJobBySlug (slug: string): Promise<JobRow | null> {
   return job
 }
 
-function buildJobPostingJsonLd (job: JobRow, url: string) {
+function buildJobPostingJsonLd(job: JobRow, url: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',

@@ -8,10 +8,7 @@ const adminAccountRoles = ['recruiter', 'admin'] as const
 const usersSearchSchema = z.object({
   page: z.number().optional().catch(1),
   pageSize: z.number().optional().catch(10),
-  role: z
-    .array(z.enum(adminAccountRoles))
-    .optional()
-    .catch([]),
+  role: z.array(z.enum(adminAccountRoles)).optional().catch([]),
   email: z.string().optional().catch(''),
 })
 

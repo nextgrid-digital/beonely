@@ -1,17 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Loader2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-provider'
 import { buildJobSlug } from '@/lib/jobs/slug'
 import { PLAN_LABEL, type PaymentPlan } from '@/lib/payments/plans'
 import { startRazorpayJobCheckout } from '@/lib/payments/razorpay-job-checkout'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,7 +66,7 @@ const jobSchema = z.object({
   job_type: z.string().optional(),
 })
 
-export function RecruiterPortal () {
+export function RecruiterPortal() {
   const { user, session } = useAuth()
   const qc = useQueryClient()
 
@@ -147,7 +150,9 @@ export function RecruiterPortal () {
         </p>
         <Form {...companyForm}>
           <form
-            onSubmit={companyForm.handleSubmit((v) => createRecruiter.mutate(v.company_name))}
+            onSubmit={companyForm.handleSubmit((v) =>
+              createRecruiter.mutate(v.company_name)
+            )}
             className='space-y-4'
           >
             <FormField
@@ -193,7 +198,9 @@ export function RecruiterPortal () {
           <JobEditorDialog
             recruiter={recruiter}
             job={null}
-            onSaved={() => void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })}
+            onSaved={() =>
+              void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+            }
           />
         </div>
       </div>
@@ -211,67 +218,85 @@ export function RecruiterPortal () {
         <TableBody>
           {(jobsQuery.data ?? []).map((job) => {
             const canEdit =
-              job.approval_status === 'pending' && job.payment_status === 'unpaid'
+              job.approval_status === 'pending' &&
+              job.payment_status === 'unpaid'
             const isLive =
               job.approval_status === 'approved' &&
               job.payment_status === 'paid' &&
               (!job.listing_expires_at ||
                 new Date(job.listing_expires_at) > new Date())
             return (
-            <TableRow key={job.id}>
-              <TableCell className='font-medium'>{job.job_title}</TableCell>
-              <TableCell>
-                <Badge variant='outline'>{job.approval_status}</Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant='outline'>{job.payment_status}</Badge>
-              </TableCell>
-              <TableCell>{job.featured ? 'Yes' : 'No'}</TableCell>
-              <TableCell className='text-end'>
-                <div className='flex flex-wrap justify-end gap-2'>
-                  {isLive ? (
-                    <Button variant='outline' size='sm' asChild>
-                      <Link
-                        to='/jobs/$slug'
-                        params={{ slug: job.job_slug }}
-                        target='_blank'
+              <TableRow key={job.id}>
+                <TableCell className='font-medium'>{job.job_title}</TableCell>
+                <TableCell>
+                  <Badge variant='outline'>{job.approval_status}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant='outline'>{job.payment_status}</Badge>
+                </TableCell>
+                <TableCell>{job.featured ? 'Yes' : 'No'}</TableCell>
+                <TableCell className='text-end'>
+                  <div className='flex flex-wrap justify-end gap-2'>
+                    {isLive ? (
+                      <Button variant='outline' size='sm' asChild>
+                        <Link
+                          to='/jobs/$slug'
+                          params={{ slug: job.job_slug }}
+                          target='_blank'
+                        >
+                          View
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        disabled
+                        title='Live after approval'
                       >
                         View
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button variant='outline' size='sm' disabled title='Live after approval'>
-                      View
-                    </Button>
-                  )}
-                  {isLive && (
-                    <FeaturedBoostButton job={job} accessToken={session?.access_token} />
-                  )}
-                  {canEdit && (
-                    <JobEditorDialog
-                      recruiter={recruiter}
-                      job={job}
-                      onSaved={() => void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })}
-                    />
-                  )}
-                  {canEdit && (
-                    <PayJobButton job={job} accessToken={session?.access_token} />
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
+                      </Button>
+                    )}
+                    {isLive && (
+                      <FeaturedBoostButton
+                        job={job}
+                        accessToken={session?.access_token}
+                      />
+                    )}
+                    {canEdit && (
+                      <JobEditorDialog
+                        recruiter={recruiter}
+                        job={job}
+                        onSaved={() =>
+                          void qc.invalidateQueries({
+                            queryKey: ['recruiter-jobs'],
+                          })
+                        }
+                      />
+                    )}
+                    {canEdit && (
+                      <PayJobButton
+                        job={job}
+                        accessToken={session?.access_token}
+                      />
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
             )
           })}
         </TableBody>
       </Table>
       {jobsQuery.data?.length === 0 && (
-        <p className='text-sm text-muted-foreground'>No jobs yet — create one.</p>
+        <p className='text-sm text-muted-foreground'>
+          No jobs yet — create one.
+        </p>
       )}
     </div>
   )
 }
 
-function JobEditorDialog (props: {
+function JobEditorDialog(props: {
   recruiter: RecruiterRow
   job: JobRow | null
   onSaved: () => void
@@ -313,7 +338,8 @@ function JobEditorDialog (props: {
       const sb = getSupabaseBrowserClient()
       const idSuffix = crypto.randomUUID()
       const job_slug = buildJobSlug(values.title, values.location, idSuffix)
-      const expLevel = (values.experience_level || 'mid') as JobRow['experience_level']
+      const expLevel = (values.experience_level ||
+        'mid') as JobRow['experience_level']
       const workMode = (values.work_mode || 'remote') as JobRow['work_mode']
       const jobType = (values.job_type || 'developer') as JobRow['job_type']
       const empType = values.employment_type as JobRow['employment_type']
@@ -386,195 +412,211 @@ function JobEditorDialog (props: {
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-lg'>
-        <DialogHeader>
-          <DialogTitle>{props.job ? 'Edit job' : 'New job'}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((v) => save.mutate(v))}
-            className='grid gap-3'
-          >
-            <FormField
-              control={form.control}
-              name='title'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='company'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='location'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='apply_url'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Apply URL</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea rows={6} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className='grid grid-cols-2 gap-2'>
+          <DialogHeader>
+            <DialogTitle>{props.job ? 'Edit job' : 'New job'}</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((v) => save.mutate(v))}
+              className='grid gap-3'
+            >
               <FormField
                 control={form.control}
-                name='employment_type'
+                name='title'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='full_time'>Full-time</SelectItem>
-                        <SelectItem value='part_time'>Part-time</SelectItem>
-                        <SelectItem value='contract'>Contract</SelectItem>
-                        <SelectItem value='freelance'>Freelance</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name='job_type'
+                name='company'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='developer'>Developer</SelectItem>
-                        <SelectItem value='architect'>Architect</SelectItem>
-                        <SelectItem value='consultant'>Consultant</SelectItem>
-                        <SelectItem value='admin'>Admin</SelectItem>
-                        <SelectItem value='analyst'>Analyst</SelectItem>
-                        <SelectItem value='manager'>Manager</SelectItem>
-                        <SelectItem value='other'>Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className='grid grid-cols-2 gap-2'>
-              <FormField
-                control={form.control}
-                name='experience_level'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experience</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='entry'>Entry</SelectItem>
-                        <SelectItem value='mid'>Mid</SelectItem>
-                        <SelectItem value='senior'>Senior</SelectItem>
-                        <SelectItem value='lead'>Lead</SelectItem>
-                        <SelectItem value='principal'>Principal</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Company</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name='work_mode'
+                name='location'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Work mode</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='remote'>Remote</SelectItem>
-                        <SelectItem value='hybrid'>Hybrid</SelectItem>
-                        <SelectItem value='onsite'>On-site</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-            <DialogFooter className='gap-2 pt-2'>
-              <Button type='button' variant='ghost' onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type='submit' disabled={save.isPending}>
-                Save draft
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <FormField
+                control={form.control}
+                name='apply_url'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Apply URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea rows={6} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className='grid grid-cols-2 gap-2'>
+                <FormField
+                  control={form.control}
+                  name='employment_type'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='full_time'>Full-time</SelectItem>
+                          <SelectItem value='part_time'>Part-time</SelectItem>
+                          <SelectItem value='contract'>Contract</SelectItem>
+                          <SelectItem value='freelance'>Freelance</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='job_type'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='developer'>Developer</SelectItem>
+                          <SelectItem value='architect'>Architect</SelectItem>
+                          <SelectItem value='consultant'>Consultant</SelectItem>
+                          <SelectItem value='admin'>Admin</SelectItem>
+                          <SelectItem value='analyst'>Analyst</SelectItem>
+                          <SelectItem value='manager'>Manager</SelectItem>
+                          <SelectItem value='other'>Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className='grid grid-cols-2 gap-2'>
+                <FormField
+                  control={form.control}
+                  name='experience_level'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Experience</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='entry'>Entry</SelectItem>
+                          <SelectItem value='mid'>Mid</SelectItem>
+                          <SelectItem value='senior'>Senior</SelectItem>
+                          <SelectItem value='lead'>Lead</SelectItem>
+                          <SelectItem value='principal'>Principal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='work_mode'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Work mode</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='remote'>Remote</SelectItem>
+                          <SelectItem value='hybrid'>Hybrid</SelectItem>
+                          <SelectItem value='onsite'>On-site</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <DialogFooter className='gap-2 pt-2'>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type='submit' disabled={save.isPending}>
+                  Save draft
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
 
-function PayJobButton (props: { job: JobRow; accessToken: string | undefined }) {
+function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
   const [planOpen, setPlanOpen] = useState(false)
   const [plan, setPlan] = useState<PaymentPlan>('standard_week')
 
@@ -631,7 +673,7 @@ function PayJobButton (props: { job: JobRow; accessToken: string | undefined }) 
   )
 }
 
-function FeaturedBoostButton (props: {
+function FeaturedBoostButton(props: {
   job: JobRow
   accessToken: string | undefined
 }) {
@@ -649,7 +691,11 @@ function FeaturedBoostButton (props: {
       plan,
       accessToken: props.accessToken,
       onPaid: () => {
-        toast.success(props.job.featured ? 'Featured window extended' : 'Listing upgraded to Featured')
+        toast.success(
+          props.job.featured
+            ? 'Featured window extended'
+            : 'Listing upgraded to Featured'
+        )
         setPlanOpen(false)
         window.location.reload()
       },
@@ -668,8 +714,8 @@ function FeaturedBoostButton (props: {
             <DialogTitle>Featured boost</DialogTitle>
           </DialogHeader>
           <p className='text-sm text-muted-foreground'>
-            Applies to this live listing: extends visibility and sets the Featured badge after
-            payment.
+            Applies to this live listing: extends visibility and sets the
+            Featured badge after payment.
           </p>
           <div className='grid gap-2'>
             {featuredPlans.map((p) => (

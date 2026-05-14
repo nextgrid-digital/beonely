@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
-import type { JobRow } from '@/lib/supabase/database.types'
 
 export const Route = createFileRoute('/_authenticated/candidate/applications')({
   component: CandidateApplicationsPage,
@@ -16,7 +19,7 @@ type AppRow = {
   jobs: JobRow | null
 }
 
-function CandidateApplicationsPage () {
+function CandidateApplicationsPage() {
   const { user } = useAuth()
 
   const appsQuery = useQuery({
@@ -36,7 +39,9 @@ function CandidateApplicationsPage () {
 
   if (!getSupabaseConfigured()) {
     return (
-      <p className='px-4 py-6 text-sm text-muted-foreground'>Connect Supabase to load applications.</p>
+      <p className='px-4 py-6 text-sm text-muted-foreground'>
+        Connect Supabase to load applications.
+      </p>
     )
   }
 
@@ -45,13 +50,17 @@ function CandidateApplicationsPage () {
       <div>
         <h1 className='text-2xl font-semibold tracking-tight'>Applications</h1>
         <p className='text-sm text-muted-foreground'>
-          Roles you marked as applied (external apply links are still used on the job page).
+          Roles you marked as applied (external apply links are still used on
+          the job page).
         </p>
       </div>
-      {appsQuery.isLoading && <p className='text-sm text-muted-foreground'>Loading…</p>}
+      {appsQuery.isLoading && (
+        <p className='text-sm text-muted-foreground'>Loading…</p>
+      )}
       {appsQuery.isError && (
         <p className='text-sm text-destructive'>
-          Could not load applications. Apply the latest Supabase migration if this table is missing.
+          Could not load applications. Apply the latest Supabase migration if
+          this table is missing.
         </p>
       )}
       <ul className='space-y-3'>
@@ -63,12 +72,16 @@ function CandidateApplicationsPage () {
               <div className='flex flex-wrap items-start justify-between gap-2'>
                 <div>
                   <p className='font-medium'>{job.job_title}</p>
-                  <p className='text-sm text-muted-foreground'>{job.company_name}</p>
+                  <p className='text-sm text-muted-foreground'>
+                    {job.company_name}
+                  </p>
                   <p className='mt-1 text-xs text-muted-foreground'>
                     Applied {new Date(row.applied_at).toLocaleDateString()}
                   </p>
                   {row.notes && (
-                    <p className='mt-2 text-sm text-muted-foreground'>{row.notes}</p>
+                    <p className='mt-2 text-sm text-muted-foreground'>
+                      {row.notes}
+                    </p>
                   )}
                 </div>
                 <Link
@@ -85,7 +98,8 @@ function CandidateApplicationsPage () {
       </ul>
       {!appsQuery.isLoading && (appsQuery.data ?? []).length === 0 && (
         <p className='text-sm text-muted-foreground'>
-          No applications recorded yet. On a job page, use &quot;Mark as applied&quot;.
+          No applications recorded yet. On a job page, use &quot;Mark as
+          applied&quot;.
         </p>
       )}
     </div>

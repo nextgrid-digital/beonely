@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { SignInIntent } from '@/lib/auth/sign-in-intent'
+import type { ProfileRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import {
   Dialog,
   DialogContent,
@@ -7,14 +10,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/context/auth-provider'
 import { UserAuthForm } from '@/features/auth/sign-in/components/user-auth-form'
 import {
   SignUpForm,
   type SignUpSuccessInfo,
 } from '@/features/auth/sign-up/components/sign-up-form'
-import type { SignInIntent } from '@/lib/auth/sign-in-intent'
-import type { ProfileRow } from '@/lib/supabase/database.types'
 
 export type AuthModalProps = {
   open: boolean
@@ -33,7 +33,7 @@ const DEFAULT_TITLE = 'Sign in'
 const DEFAULT_DESCRIPTION =
   'Sign in or create an account to continue. Your email confirmation link will return you to sign in.'
 
-function AuthModalBody ({
+function AuthModalBody({
   defaultTab,
   onAuthComplete,
   onOpenChange,
@@ -103,7 +103,7 @@ function AuthModalBody ({
   )
 }
 
-export function AuthModal ({
+export function AuthModal({
   open,
   onOpenChange,
   title = DEFAULT_TITLE,

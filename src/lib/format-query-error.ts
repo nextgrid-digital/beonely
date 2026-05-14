@@ -2,7 +2,7 @@
  * Human-readable message for values React Query stores as `query.error`
  * (Error, PostgREST-style objects, strings, or unknown).
  */
-export function formatQueryError (error: unknown, fallback: string): string {
+export function formatQueryError(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string' && error.trim()) return error
   if (typeof error === 'object' && error !== null) {

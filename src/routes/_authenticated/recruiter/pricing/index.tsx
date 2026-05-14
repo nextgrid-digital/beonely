@@ -4,11 +4,13 @@ import { RecruiterPricingPage } from '@/features/recruiter/recruiter-pricing-pag
 
 export const Route = createFileRoute('/_authenticated/recruiter/pricing/')({
   beforeLoad: () =>
-    requireRecruiterAccountBeforeLoad({ loginRedirectPath: '/recruiter/pricing' }),
+    requireRecruiterAccountBeforeLoad({
+      loginRedirectPath: '/recruiter/pricing',
+    }),
   component: RecruiterPricingShell,
 })
 
-function RecruiterPricingShell () {
+function RecruiterPricingShell() {
   return (
     <div className='space-y-6 px-4 py-6'>
       <RecruiterPricingPage />

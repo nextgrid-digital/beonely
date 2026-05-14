@@ -9,9 +9,12 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { HelmetProvider } from 'react-helmet-async'
 import { toast } from 'sonner'
-import { AuthProvider } from '@/context/auth-provider'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 import { handleServerError } from '@/lib/handle-server-error'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import { AuthProvider } from '@/context/auth-provider'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'

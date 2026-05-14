@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { parseResumeStructured, resumeStructuredEnvelopeSchema } from '@/lib/candidate/resume-structured-schema'
+import {
+  parseResumeStructured,
+  resumeStructuredEnvelopeSchema,
+} from '@/lib/candidate/resume-structured-schema'
 
 describe('resumeContentItem company / location', () => {
   it('defaults company and location when missing from stored JSON', () => {
@@ -12,7 +15,9 @@ describe('resumeContentItem company / location', () => {
         location: '',
         website: '',
         about: '<p>x</p>',
-        contacts: [{ label: 'Email', value: 'a@b.com', href: 'mailto:a@b.com' }],
+        contacts: [
+          { label: 'Email', value: 'a@b.com', href: 'mailto:a@b.com' },
+        ],
       },
       sections: [
         {
@@ -48,7 +53,12 @@ describe('resumeContentItem company / location', () => {
         about: '',
         contacts: [],
       },
-      sections: [{ title: 'T', items: [{ title: 'x', subTitle: '', date: '', description: '' }] }],
+      sections: [
+        {
+          title: 'T',
+          items: [{ title: 'x', subTitle: '', date: '', description: '' }],
+        },
+      ],
     })
     expect(parsed.sections[0].items[0].company).toBe('')
     expect(parsed.sections[0].items[0].location).toBe('')

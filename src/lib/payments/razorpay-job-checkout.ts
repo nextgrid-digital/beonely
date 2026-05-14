@@ -1,7 +1,7 @@
 import { apiPost } from '@/lib/api-client'
 import { PLAN_LABEL, type PaymentPlan } from '@/lib/payments/plans'
 
-export function loadRazorpayScript (): Promise<void> {
+export function loadRazorpayScript(): Promise<void> {
   if ((window as unknown as { Razorpay?: unknown }).Razorpay) {
     return Promise.resolve()
   }
@@ -18,7 +18,7 @@ type RazorpayPaymentFailedPayload = {
   error?: { description?: string; reason?: string; code?: string }
 }
 
-export async function startRazorpayJobCheckout (opts: {
+export async function startRazorpayJobCheckout(opts: {
   jobId: string
   plan: PaymentPlan
   accessToken: string
@@ -68,17 +68,14 @@ export async function startRazorpayJobCheckout (opts: {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rz = new (window as any).Razorpay(options)
-    rz.on(
-      'payment.failed',
-      (response: RazorpayPaymentFailedPayload) => {
-        const msg =
-          response?.error?.description ||
-          response?.error?.reason ||
-          response?.error?.code ||
-          'Payment failed'
-        opts.onError(msg)
-      }
-    )
+    rz.on('payment.failed', (response: RazorpayPaymentFailedPayload) => {
+      const msg =
+        response?.error?.description ||
+        response?.error?.reason ||
+        response?.error?.code ||
+        'Payment failed'
+      opts.onError(msg)
+    })
     rz.open()
   } catch (e) {
     opts.onError((e as Error).message || 'Payment start failed')

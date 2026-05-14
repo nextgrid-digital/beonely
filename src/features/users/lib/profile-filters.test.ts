@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProfileRow } from '@/lib/supabase/database.types'
-import {
-  filterProfilesForUrlState,
-  isAdminRole,
-} from './profile-filters'
+import { filterProfilesForUrlState, isAdminRole } from './profile-filters'
 
 const base = (overrides: Partial<ProfileRow>): ProfileRow => ({
   id: 'u1',

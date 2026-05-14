@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router'
+import type { JobRow } from '@/lib/supabase/database.types'
+import { cn } from '@/lib/utils'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
-import type { JobRow } from '@/lib/supabase/database.types'
 
-function companyInitials (name: string): string {
+function companyInitials(name: string): string {
   const t = name.trim()
   if (!t) return '?'
   const parts = t.split(/\s+/).filter(Boolean)
@@ -17,11 +17,11 @@ function companyInitials (name: string): string {
 }
 
 /** Single-line-ish plain text for card excerpt (DB is treated as plain text). */
-function excerptPlain (text: string): string {
+function excerptPlain(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
-export function PublicJobCard ({ job }: { job: JobRow }) {
+export function PublicJobCard({ job }: { job: JobRow }) {
   const logoUrl = job.company_logo?.trim()
   const hasLogo = Boolean(logoUrl)
   const descriptionExcerpt = excerptPlain(job.job_description ?? '')
@@ -44,13 +44,13 @@ export function PublicJobCard ({ job }: { job: JobRow }) {
                 loading='lazy'
               />
             )}
-            <AvatarFallback className='rounded-md bg-muted text-xs font-semibold uppercase text-muted-foreground'>
+            <AvatarFallback className='rounded-md bg-muted text-xs font-semibold text-muted-foreground uppercase'>
               {companyInitials(job.company_name)}
             </AvatarFallback>
           </Avatar>
           <div className='min-w-0 flex-1'>
             <div className='flex flex-wrap items-center gap-2'>
-              <h2 className='text-lg font-medium leading-tight'>
+              <h2 className='text-lg leading-tight font-medium'>
                 <Link
                   to='/jobs/$slug'
                   params={{ slug: job.job_slug }}
@@ -83,7 +83,9 @@ export function PublicJobCard ({ job }: { job: JobRow }) {
       </CardHeader>
       <CardContent className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
         {job.job_type && <Badge variant='outline'>{job.job_type}</Badge>}
-        {job.employment_type && <Badge variant='outline'>{job.employment_type}</Badge>}
+        {job.employment_type && (
+          <Badge variant='outline'>{job.employment_type}</Badge>
+        )}
         {job.work_mode && <Badge variant='outline'>{job.work_mode}</Badge>}
       </CardContent>
     </Card>

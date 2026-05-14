@@ -1,16 +1,19 @@
+import { useLayoutEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useRouterState } from '@tanstack/react-router'
-import { useLayoutEffect } from 'react'
-import { useAuth } from '@/context/auth-provider'
-import { CandidateResumeBuilder } from '@/features/candidate/resume-builder/candidate-resume-builder'
-import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 import { withTimeout } from '@/lib/async/with-timeout'
-import { formatQueryError } from '@/lib/format-query-error'
 import type { AccountResumePrefill } from '@/lib/candidate/resume-prefill'
 import { syncJobSeekerFromUserMetadata } from '@/lib/candidate/sync-job-seeker-from-metadata'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import { formatQueryError } from '@/lib/format-query-error'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { CandidateResumeBuilder } from '@/features/candidate/resume-builder/candidate-resume-builder'
+import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 
 export const Route = createFileRoute('/_authenticated/candidate/profile')({
   component: CandidateProfilePage,
@@ -18,7 +21,7 @@ export const Route = createFileRoute('/_authenticated/candidate/profile')({
 
 const PROFILE_FETCH_TIMEOUT_MS = 20_000
 
-function CandidateProfilePage () {
+function CandidateProfilePage() {
   const { user, loading: authLoading } = useAuth()
   const locationHash = useRouterState({ select: (s) => s.location.hash })
 
@@ -56,7 +59,9 @@ function CandidateProfilePage () {
 
   if (!getSupabaseConfigured()) {
     return (
-      <p className='px-4 py-6 text-sm text-muted-foreground'>Connect Supabase to edit your profile.</p>
+      <p className='px-4 py-6 text-sm text-muted-foreground'>
+        Connect Supabase to edit your profile.
+      </p>
     )
   }
 
@@ -75,7 +80,11 @@ function CandidateProfilePage () {
           <AlertTitle>Could not load profile</AlertTitle>
           <AlertDescription>{errMsg}</AlertDescription>
         </Alert>
-        <Button type='button' variant='outline' onClick={() => void profileQuery.refetch()}>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => void profileQuery.refetch()}
+        >
           Try again
         </Button>
       </div>
@@ -86,9 +95,15 @@ function CandidateProfilePage () {
     return <p className='px-4 py-6 text-sm text-muted-foreground'>Loading…</p>
   }
 
-  const userMeta = user.user_metadata as { linkedin_url?: unknown; phone?: unknown } | undefined
-  const metaLinkedin = typeof userMeta?.linkedin_url === 'string' ? userMeta.linkedin_url.trim() : null
-  const metaPhone = typeof userMeta?.phone === 'string' ? userMeta.phone.trim() : null
+  const userMeta = user.user_metadata as
+    | { linkedin_url?: unknown; phone?: unknown }
+    | undefined
+  const metaLinkedin =
+    typeof userMeta?.linkedin_url === 'string'
+      ? userMeta.linkedin_url.trim()
+      : null
+  const metaPhone =
+    typeof userMeta?.phone === 'string' ? userMeta.phone.trim() : null
 
   const accountResumePrefill: AccountResumePrefill = profileQuery.data
     ? {

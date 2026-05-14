@@ -1,17 +1,17 @@
 import { getRouteApi } from '@tanstack/react-router'
 import { AlertCircle, Loader2 } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AdminProfilesTable } from './components/admin-profiles-table'
 import { useAdminProfiles } from './hooks/use-admin-profiles'
 
 const route = getRouteApi('/_authenticated/users/')
 
-export function Users () {
+export function Users() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
   const query = useAdminProfiles()
@@ -28,7 +28,8 @@ export function Users () {
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>Users</h2>
           <p className='text-muted-foreground'>
-            Recruiter accounts from Supabase (<code className='text-xs'>recruiters</code>
+            Recruiter accounts from Supabase (
+            <code className='text-xs'>recruiters</code>
             ). Read-only in this version.
           </p>
         </div>

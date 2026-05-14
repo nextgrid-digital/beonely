@@ -1,5 +1,9 @@
 import { Link, useSearch } from '@tanstack/react-router'
 import {
+  signUpCardDescription,
+  signUpCardTitle,
+} from '@/lib/auth/sign-in-intent'
+import {
   Card,
   CardContent,
   CardDescription,
@@ -7,16 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  signUpCardDescription,
-  signUpCardTitle,
-} from '@/lib/auth/sign-in-intent'
 import { AuthLayout } from '../auth-layout'
 import { SignUpForm } from './components/sign-up-form'
 
-export function SignUp () {
+export function SignUp() {
   const { intent } = useSearch({ from: '/(auth)/sign-up' })
-  const title = intent === undefined ? 'Create an account' : signUpCardTitle(intent)
+  const title =
+    intent === undefined ? 'Create an account' : signUpCardTitle(intent)
 
   return (
     <AuthLayout>
@@ -37,8 +38,7 @@ export function SignUp () {
               </>
             ) : (
               <>
-                {signUpCardDescription(intent)}{' '}
-                Already have an account?{' '}
+                {signUpCardDescription(intent)} Already have an account?{' '}
                 <Link
                   to='/sign-in'
                   search={{ intent }}

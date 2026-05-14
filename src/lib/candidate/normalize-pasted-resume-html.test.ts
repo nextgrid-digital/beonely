@@ -37,13 +37,17 @@ describe('normalizePastedResumeHtml', () => {
   })
 
   it('maps italic style span to em', () => {
-    const out = normalizePastedResumeHtml('<p><span style="font-style: italic">Hi</span></p>')
+    const out = normalizePastedResumeHtml(
+      '<p><span style="font-style: italic">Hi</span></p>'
+    )
     expect(out).toContain('<em>')
     expect(out).toContain('Hi')
   })
 
   it('preserves nested list structure from wrapped div', () => {
-    const out = normalizePastedResumeHtml('<div><ul><li>One</li><li>Two</li></ul></div>')
+    const out = normalizePastedResumeHtml(
+      '<div><ul><li>One</li><li>Two</li></ul></div>'
+    )
     expect(out).toContain('<ul>')
     expect(out).toContain('<li>')
     expect(out).toContain('One')

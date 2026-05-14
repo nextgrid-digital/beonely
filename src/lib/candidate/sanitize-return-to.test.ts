@@ -25,8 +25,12 @@ describe('sanitizeProfileReturnTo', () => {
   })
 
   it('allows single-segment job detail slug', () => {
-    expect(sanitizeProfileReturnTo('/jobs/acme-engineer')).toBe('/jobs/acme-engineer')
-    expect(sanitizeProfileReturnTo('  /jobs/my-role-123  ')).toBe('/jobs/my-role-123')
+    expect(sanitizeProfileReturnTo('/jobs/acme-engineer')).toBe(
+      '/jobs/acme-engineer'
+    )
+    expect(sanitizeProfileReturnTo('  /jobs/my-role-123  ')).toBe(
+      '/jobs/my-role-123'
+    )
   })
 
   it('rejects job paths with extra segments', () => {

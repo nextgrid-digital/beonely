@@ -5,14 +5,16 @@ import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schem
  * Copy `linkedin_url` and `phone` from auth user_metadata into `job_seeker_profiles`
  * when the row is missing or those fields are still empty (e.g. after email-confirm sign-up).
  */
-export async function syncJobSeekerFromUserMetadata (
+export async function syncJobSeekerFromUserMetadata(
   sb: SupabaseClient,
   user: User
 ): Promise<void> {
-  const meta = user.user_metadata as {
-    linkedin_url?: unknown
-    phone?: unknown
-  } | undefined
+  const meta = user.user_metadata as
+    | {
+        linkedin_url?: unknown
+        phone?: unknown
+      }
+    | undefined
   const linkedinMeta =
     typeof meta?.linkedin_url === 'string' ? meta.linkedin_url.trim() : ''
   const phoneMeta = typeof meta?.phone === 'string' ? meta.phone.trim() : ''
@@ -37,7 +39,10 @@ export async function syncJobSeekerFromUserMetadata (
   }
 
   if (existing?.id) {
-    const nextLinkedin = patchFromMeta(linkedinMeta, existing.linkedin_url ?? undefined)
+    const nextLinkedin = patchFromMeta(
+      linkedinMeta,
+      existing.linkedin_url ?? undefined
+    )
     const nextPhone = patchFromMeta(phoneMeta, existing.phone ?? undefined)
     if (nextLinkedin === undefined && nextPhone === undefined) return
     const patch: { linkedin_url?: string; phone?: string } = {}

@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/context/auth-provider'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { ProfileRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 
-function recruiterToProfileRow (r: RecruiterRow): ProfileRow {
+function recruiterToProfileRow(r: RecruiterRow): ProfileRow {
   return {
     id: r.user_id,
     email: r.email,
@@ -16,7 +16,7 @@ function recruiterToProfileRow (r: RecruiterRow): ProfileRow {
   }
 }
 
-export function useAdminProfiles () {
+export function useAdminProfiles() {
   const { profile } = useAuth()
   const configured = getSupabaseConfigured()
   const isAdmin = profile?.role === 'admin'

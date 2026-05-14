@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { looksLikeResumeHtml, sanitizeResumeHtml } from '@/lib/candidate/sanitize-resume-html'
+import {
+  looksLikeResumeHtml,
+  sanitizeResumeHtml,
+} from '@/lib/candidate/sanitize-resume-html'
 
 describe('sanitizeResumeHtml', () => {
   it('allows benign formatting tags', () => {
@@ -10,7 +13,8 @@ describe('sanitizeResumeHtml', () => {
   })
 
   it('strips script and event handlers', () => {
-    const input = '<p>Hi</p><script>alert(1)</script><p onclick="alert(2)">x</p>'
+    const input =
+      '<p>Hi</p><script>alert(1)</script><p onclick="alert(2)">x</p>'
     const out = sanitizeResumeHtml(input)
     expect(out).not.toContain('script')
     expect(out).not.toContain('onclick')

@@ -1,7 +1,7 @@
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { type Locator, userEvent } from 'vitest/browser'
-import { toast } from 'sonner'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 import { UserAuthForm } from './user-auth-form'
 
@@ -27,7 +27,8 @@ vi.mock('@/lib/supabase/client', () => ({
 }))
 
 vi.mock('@/context/auth-provider', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/context/auth-provider')>()
+  const actual =
+    await importOriginal<typeof import('@/context/auth-provider')>()
   return {
     ...actual,
     useAuth: () => ({
@@ -71,7 +72,7 @@ vi.mock('sonner', () => ({
   },
 }))
 
-function profileRow (role: ProfileRow['role']): ProfileRow {
+function profileRow(role: ProfileRow['role']): ProfileRow {
   return {
     id: 'p1',
     email: 'u@example.com',
@@ -135,14 +136,19 @@ describe('UserAuthForm', () => {
 
       await userEvent.click(signInButton)
 
-      await vi.waitFor(() => expect(mocks.signInWithPassword).toHaveBeenCalledOnce())
+      await vi.waitFor(() =>
+        expect(mocks.signInWithPassword).toHaveBeenCalledOnce()
+      )
       expect(mocks.signInWithPassword).toHaveBeenCalledWith({
         email: 'a@b.com',
         password: '1234567',
       })
 
       await vi.waitFor(() =>
-        expect(navigate).toHaveBeenCalledWith({ to: '/candidate/profile', replace: true })
+        expect(navigate).toHaveBeenCalledWith({
+          to: '/candidate/profile',
+          replace: true,
+        })
       )
     })
 
@@ -152,7 +158,10 @@ describe('UserAuthForm', () => {
       await userEvent.fill(passwordInput, '1234567')
       await userEvent.click(signInButton)
       await vi.waitFor(() =>
-        expect(navigate).toHaveBeenCalledWith({ to: '/recruiter', replace: true })
+        expect(navigate).toHaveBeenCalledWith({
+          to: '/recruiter',
+          replace: true,
+        })
       )
     })
 
@@ -181,7 +190,9 @@ describe('UserAuthForm', () => {
 
     await userEvent.click(getByRole('button', { name: /Sign in/i }))
 
-    await vi.waitFor(() => expect(mocks.signInWithPassword).toHaveBeenCalledOnce())
+    await vi.waitFor(() =>
+      expect(mocks.signInWithPassword).toHaveBeenCalledOnce()
+    )
 
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
@@ -195,7 +206,10 @@ describe('UserAuthForm', () => {
     vi.clearAllMocks()
     const onSuccess = vi.fn().mockResolvedValue(undefined)
     const ui = await render(<UserAuthForm onSuccess={onSuccess} />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'a@b.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'a@b.com'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Sign in$/i }))
     await vi.waitFor(() => expect(onSuccess).toHaveBeenCalledOnce())
@@ -204,7 +218,9 @@ describe('UserAuthForm', () => {
 
   it('prefills email from defaultEmail', async () => {
     vi.clearAllMocks()
-    const ui = await render(<UserAuthForm defaultEmail='prefilled@example.com' />)
+    const ui = await render(
+      <UserAuthForm defaultEmail='prefilled@example.com' />
+    )
     const email = ui.getByRole('textbox', { name: /^Email$/i })
     await expect.element(email).toHaveValue('prefilled@example.com')
   })
@@ -215,7 +231,10 @@ describe('UserAuthForm', () => {
       error: { message: 'Invalid login credentials' },
     })
     const ui = await render(<UserAuthForm />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'a@b.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'a@b.com'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Sign in$/i }))
     await vi.waitFor(() =>
@@ -232,7 +251,10 @@ describe('UserAuthForm', () => {
       error: { message: 'Email not confirmed' },
     })
     const ui = await render(<UserAuthForm />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'a@b.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'a@b.com'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Sign in$/i }))
     await vi.waitFor(() =>
@@ -248,21 +270,31 @@ describe('UserAuthForm', () => {
       error: { message: 'Too many requests' },
     })
     const ui = await render(<UserAuthForm />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'a@b.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'a@b.com'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Sign in$/i }))
-    await vi.waitFor(() => expect(vi.mocked(toast.error)).toHaveBeenCalledWith('Too many requests'))
+    await vi.waitFor(() =>
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith('Too many requests')
+    )
   })
 
   it('shows toast when Supabase is not configured', async () => {
     vi.clearAllMocks()
     mocks.getSupabaseConfigured.mockReturnValue(false)
     const ui = await render(<UserAuthForm />)
-    await userEvent.fill(ui.getByRole('textbox', { name: /^Email$/i }), 'a@b.com')
+    await userEvent.fill(
+      ui.getByRole('textbox', { name: /^Email$/i }),
+      'a@b.com'
+    )
     await userEvent.fill(ui.getByLabelText(/^Password$/i), '1234567')
     await userEvent.click(ui.getByRole('button', { name: /^Sign in$/i }))
     await vi.waitFor(() =>
-      expect(vi.mocked(toast.error)).toHaveBeenCalledWith('Supabase is not configured.')
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        'Supabase is not configured.'
+      )
     )
     expect(mocks.signInWithPassword).not.toHaveBeenCalled()
   })

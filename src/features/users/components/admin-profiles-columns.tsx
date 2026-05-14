@@ -1,8 +1,8 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import type { ProfileRow } from '@/lib/supabase/database.types'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import type { ProfileRow } from '@/lib/supabase/database.types'
 
 const ROLE_LABEL: Record<ProfileRow['role'], string> = {
   candidate: 'Candidate',
@@ -20,7 +20,9 @@ export const adminProfilesColumns: ColumnDef<ProfileRow>[] = [
       <LongText className='max-w-64 ps-2'>{row.getValue('email')}</LongText>
     ),
     filterFn: (row, _id, value) => {
-      const v = String(value ?? '').trim().toLowerCase()
+      const v = String(value ?? '')
+        .trim()
+        .toLowerCase()
       if (!v) return true
       return row.original.email.toLowerCase().includes(v)
     },
@@ -32,7 +34,9 @@ export const adminProfilesColumns: ColumnDef<ProfileRow>[] = [
       <DataTableColumnHeader column={column} title='User ID' />
     ),
     cell: ({ row }) => (
-      <code className='text-muted-foreground text-xs'>{row.getValue('id')}</code>
+      <code className='text-xs text-muted-foreground'>
+        {row.getValue('id')}
+      </code>
     ),
     enableSorting: false,
   },
@@ -66,7 +70,7 @@ export const adminProfilesColumns: ColumnDef<ProfileRow>[] = [
       const raw = row.getValue('created_at') as string
       const d = new Date(raw)
       return (
-        <span className='text-muted-foreground text-sm tabular-nums'>
+        <span className='text-sm text-muted-foreground tabular-nums'>
           {Number.isNaN(d.getTime()) ? raw : d.toLocaleString()}
         </span>
       )

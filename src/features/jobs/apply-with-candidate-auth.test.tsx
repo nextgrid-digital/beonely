@@ -1,7 +1,7 @@
+import type { Session, User } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
-import type { Session, User } from '@supabase/supabase-js'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 
@@ -22,7 +22,9 @@ const useAuthMock = vi.hoisted(() =>
 
 const mocks = vi.hoisted(() => ({
   getSupabaseConfigured: vi.fn(() => true),
-  getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'auth-u1' } }, error: null }),
+  getUser: vi
+    .fn()
+    .mockResolvedValue({ data: { user: { id: 'auth-u1' } }, error: null }),
 }))
 
 vi.mock('@/context/auth-provider', () => ({
@@ -78,17 +80,23 @@ vi.mock('@/features/auth/auth-modal', () => ({
 
 const sampleJob = {
   apply_url: 'https://example.com/apply',
-  source_kind: 'manual_admin' as const,
+  source_kind: 'recruiter_posted' as const,
   job_slug: 'test-role',
   job_title: 'Test role',
 }
 
-function candidateUser (): User {
+function candidateUser(): User {
   return { id: 'u1', email: 'c@d.com' } as User
 }
 
-function candidateProfile (): ProfileRow {
-  return { id: 'p1', email: 'c@d.com', role: 'candidate', created_at: '', updated_at: '' }
+function candidateProfile(): ProfileRow {
+  return {
+    id: 'p1',
+    email: 'c@d.com',
+    role: 'candidate',
+    created_at: '',
+    updated_at: '',
+  }
 }
 
 describe('ApplyWithCandidateAuth', () => {
@@ -116,8 +124,12 @@ describe('ApplyWithCandidateAuth', () => {
 
   it('opens auth stub when visitor clicks Apply', async () => {
     const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
-    await userEvent.click(screen.getByRole('button', { name: /Apply externally/i }))
-    await expect.element(screen.getByTestId('auth-modal-complete')).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply externally/i })
+    )
+    await expect
+      .element(screen.getByTestId('auth-modal-complete'))
+      .toBeInTheDocument()
     expect(navigate).not.toHaveBeenCalled()
   })
 
@@ -137,7 +149,9 @@ describe('ApplyWithCandidateAuth', () => {
     })
 
     const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
-    await userEvent.click(screen.getByRole('button', { name: /Apply externally/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply externally/i })
+    )
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
         to: '/candidate/profile',
@@ -158,7 +172,9 @@ describe('ApplyWithCandidateAuth', () => {
     })
 
     const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
-    await userEvent.click(screen.getByRole('button', { name: /Apply externally/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply externally/i })
+    )
     await vi.waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         'https://example.com/apply',
@@ -173,7 +189,13 @@ describe('ApplyWithCandidateAuth', () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
-      profile: { id: 'p1', email: 'r@d.com', role: 'recruiter', created_at: '', updated_at: '' },
+      profile: {
+        id: 'p1',
+        email: 'r@d.com',
+        role: 'recruiter',
+        created_at: '',
+        updated_at: '',
+      },
       loading: false,
       configured: true,
       refreshProfile: vi.fn(),
@@ -181,7 +203,9 @@ describe('ApplyWithCandidateAuth', () => {
     })
 
     const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
-    await userEvent.click(screen.getByRole('button', { name: /Apply externally/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply externally/i })
+    )
     await vi.waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
         'https://example.com/apply',

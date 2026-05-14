@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
+import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
 
 describe('deriveProfileColumnsFromResume', () => {
   it('maps name and valid portfolio website', () => {
     const draft = defaultResumeStructured()
     draft.general.name = 'Jane Doe'
     draft.general.website = 'https://jane.dev'
-    draft.general.contacts = [{ label: 'Email', value: 'j@x.com', href: 'mailto:j@x.com' }]
+    draft.general.contacts = [
+      { label: 'Email', value: 'j@x.com', href: 'mailto:j@x.com' },
+    ]
     const r = deriveProfileColumnsFromResume(draft, null)
     expect(r.full_name).toBe('Jane Doe')
     expect(r.portfolio_url).toBe('https://jane.dev')
@@ -23,7 +25,11 @@ describe('deriveProfileColumnsFromResume', () => {
   it('extracts LinkedIn and phone from contacts', () => {
     const draft = defaultResumeStructured()
     draft.general.contacts = [
-      { label: 'LinkedIn', value: 'me', href: 'https://www.linkedin.com/in/me/' },
+      {
+        label: 'LinkedIn',
+        value: 'me',
+        href: 'https://www.linkedin.com/in/me/',
+      },
       { label: 'Phone', value: '+1 555 123 4567', href: 'tel:+15551234567' },
     ]
     const r = deriveProfileColumnsFromResume(draft, null)

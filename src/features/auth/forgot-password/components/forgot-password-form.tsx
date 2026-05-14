@@ -4,7 +4,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +26,7 @@ const formSchema = z.object({
   }),
 })
 
-export function ForgotPasswordForm ({
+export function ForgotPasswordForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
@@ -34,7 +37,7 @@ export function ForgotPasswordForm ({
     defaultValues: { email: '' },
   })
 
-  async function onSubmit (data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     if (!getSupabaseConfigured()) {
       toast.error('Supabase is not configured.')
       return
@@ -43,7 +46,9 @@ export function ForgotPasswordForm ({
     try {
       const sb = getSupabaseBrowserClient()
       const redirect =
-        typeof window !== 'undefined' ? `${window.location.origin}/sign-in` : undefined
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/sign-in`
+          : undefined
       const { error } = await sb.auth.resetPasswordForEmail(data.email, {
         redirectTo: redirect,
       })
@@ -52,7 +57,9 @@ export function ForgotPasswordForm ({
         return
       }
       form.reset()
-      toast.success(`If an account exists, we sent a reset link to ${data.email}.`)
+      toast.success(
+        `If an account exists, we sent a reset link to ${data.email}.`
+      )
     } finally {
       setIsLoading(false)
     }

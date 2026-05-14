@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 
-function profile (role: ProfileRow['role']): ProfileRow {
+function profile(role: ProfileRow['role']): ProfileRow {
   return {
     id: 'p1',
     email: 'u@example.com',

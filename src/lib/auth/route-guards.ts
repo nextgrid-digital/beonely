@@ -7,7 +7,7 @@ import {
 export type SessionPersona = 'candidate' | 'recruiter' | 'admin'
 
 /** Resolves signed-in user to app persona using `recruiters` row (matches AuthProvider). */
-export async function fetchSessionPersona (): Promise<SessionPersona | null> {
+export async function fetchSessionPersona(): Promise<SessionPersona | null> {
   if (!getSupabaseConfigured()) return null
   const sb = getSupabaseBrowserClient()
   const {
@@ -24,12 +24,14 @@ export async function fetchSessionPersona (): Promise<SessionPersona | null> {
   return 'recruiter'
 }
 
-function nonAdminHome (persona: SessionPersona): '/candidate/profile' | '/recruiter' {
+function nonAdminHome(
+  persona: SessionPersona
+): '/candidate/profile' | '/recruiter' {
   return persona === 'recruiter' ? '/recruiter' : '/candidate/profile'
 }
 
 /** Use in `beforeLoad` for routes that require `recruiters.role = admin`. */
-export async function requireAdminBeforeLoad (opts: {
+export async function requireAdminBeforeLoad(opts: {
   /** Path passed to `/sign-in` as `redirect` when unauthenticated. */
   loginRedirectPath: string
 }) {
@@ -58,7 +60,7 @@ export async function requireAdminBeforeLoad (opts: {
 }
 
 /** Recruiter portal: must have a recruiters row (recruiter or admin). */
-export async function requireRecruiterAccountBeforeLoad (opts: {
+export async function requireRecruiterAccountBeforeLoad(opts: {
   loginRedirectPath: string
 }) {
   if (!getSupabaseConfigured()) {

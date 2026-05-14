@@ -1,10 +1,11 @@
 import React from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, ChevronRight, Laptop, Moon, Sun } from 'lucide-react'
+import { displayNameFromUser } from '@/lib/auth/display-name'
+import type { UserRole } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { useSearch } from '@/context/search-provider'
 import { useTheme } from '@/context/theme-provider'
-import { useAuth } from '@/context/auth-provider'
-import { displayNameFromUser } from '@/lib/auth/display-name'
 import {
   CommandDialog,
   CommandEmpty,
@@ -15,7 +16,6 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { getSidebarNavGroupsForRole } from './layout/data/sidebar-data'
-import type { UserRole } from '@/lib/supabase/database.types'
 import { ScrollArea } from './ui/scroll-area'
 
 export function CommandMenu() {

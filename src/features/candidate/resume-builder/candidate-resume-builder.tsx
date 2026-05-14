@@ -2,27 +2,36 @@
  * Candidate profile completion editor (read.cv-style preview).
  * Sign-up supplies LinkedIn + phone on `job_seeker_profiles`; this UI collects the rest.
  */
+import { useRef, useState, type ChangeEventHandler } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, Loader2 } from 'lucide-react'
-import { useRef, useState, type ChangeEventHandler } from 'react'
 import { toast } from 'sonner'
+import {
+  type AccountResumePrefill,
+  prefillResumeFromProfile,
+  shouldPrefillResumeFromAccount,
+} from '@/lib/candidate/resume-prefill'
+import {
+  parseResumeStructured,
+  type ResumeStructuredV1,
+} from '@/lib/candidate/resume-structured-schema'
+import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
+import { sanitizeResumeStructuredRichFields } from '@/lib/candidate/sanitize-resume-html'
+import {
+  uploadCandidateAvatar,
+  validateCandidateAvatarFile,
+} from '@/lib/candidate/upload-candidate-avatar'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
-import { parseResumeStructured, type ResumeStructuredV1 } from '@/lib/candidate/resume-structured-schema'
-import {
-  type AccountResumePrefill,
-  prefillResumeFromProfile,
-  shouldPrefillResumeFromAccount,
-} from '@/lib/candidate/resume-prefill'
-import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
-import { sanitizeResumeStructuredRichFields } from '@/lib/candidate/sanitize-resume-html'
-import { uploadCandidateAvatar, validateCandidateAvatarFile } from '@/lib/candidate/upload-candidate-avatar'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 import { ReadCvResumePreview } from './read-cv-resume-preview'
 
 export type CandidateResumeBuilderProps = {
@@ -38,7 +47,7 @@ export type CandidateResumeBuilderProps = {
   accountProfile: AccountResumePrefill
 }
 
-export function CandidateResumeBuilder ({
+export function CandidateResumeBuilder({
   userId,
   userEmail,
   profileRow,
@@ -62,7 +71,10 @@ export function CandidateResumeBuilder ({
       const sb = getSupabaseBrowserClient()
       const preserve =
         profileRow != null
-          ? { linkedin_url: profileRow.linkedin_url ?? null, phone: profileRow.phone ?? null }
+          ? {
+              linkedin_url: profileRow.linkedin_url ?? null,
+              phone: profileRow.phone ?? null,
+            }
           : null
       const sanitized = sanitizeResumeStructuredRichFields(draft)
       const derived = deriveProfileColumnsFromResume(sanitized, preserve)
@@ -99,7 +111,9 @@ export function CandidateResumeBuilder ({
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['job-seeker-profile', userId] })
-      void qc.invalidateQueries({ queryKey: ['job-seeker-profile-completion', userId] })
+      void qc.invalidateQueries({
+        queryKey: ['job-seeker-profile-completion', userId],
+      })
       setEditing(false)
       toast.success('Profile saved')
     },
@@ -112,7 +126,9 @@ export function CandidateResumeBuilder ({
     },
   })
 
-  const onAvatarFileChange: ChangeEventHandler<HTMLInputElement> = async (e) => {
+  const onAvatarFileChange: ChangeEventHandler<HTMLInputElement> = async (
+    e
+  ) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
@@ -148,7 +164,9 @@ export function CandidateResumeBuilder ({
       aria-label='Upload profile picture. JPEG, PNG, or WebP. Maximum 5 megabytes.'
       onClick={() => avatarInputRef.current?.click()}
     >
-      {avatarBusy ? <Loader2 className='mx-auto size-4 animate-spin' aria-hidden /> : null}
+      {avatarBusy ? (
+        <Loader2 className='mx-auto size-4 animate-spin' aria-hidden />
+      ) : null}
       {avatarBusy ? 'Uploading…' : 'Upload'}
     </Button>
   )
@@ -169,7 +187,10 @@ export function CandidateResumeBuilder ({
               <Link to='/' className={PUBLIC_SITE_BREADCRUMB_LINK}>
                 Home
               </Link>
-              <ChevronRight className='size-4 shrink-0 opacity-60' aria-hidden />
+              <ChevronRight
+                className='size-4 shrink-0 opacity-60'
+                aria-hidden
+              />
             </li>
             <li className='font-medium text-stone-800' aria-current='page'>
               Profile
@@ -178,18 +199,28 @@ export function CandidateResumeBuilder ({
         }
         actions={
           editing ? (
-            <Button type='button' size='sm' disabled={saveResume.isPending} onClick={() => saveResume.mutate()}>
+            <Button
+              type='button'
+              size='sm'
+              disabled={saveResume.isPending}
+              onClick={() => saveResume.mutate()}
+            >
               {saveResume.isPending ? 'Saving…' : 'Save profile'}
             </Button>
           ) : (
-            <Button type='button' size='sm' variant='outline' onClick={() => setEditing(true)}>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              onClick={() => setEditing(true)}
+            >
               Edit
             </Button>
           )
         }
       />
 
-      <div id='resume' className='font-sans bg-white text-slate-900'>
+      <div id='resume' className='bg-white font-sans text-slate-900'>
         <ReadCvResumePreview
           data={draft}
           mode={editing ? 'edit' : 'view'}

@@ -7,7 +7,7 @@ const ALLOWED_INPUT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const JPEG_QUALITY = 0.88
 const MAX_EDGE_PX = 768
 
-export function validateCandidateAvatarFile (file: File): string | null {
+export function validateCandidateAvatarFile(file: File): string | null {
   if (!ALLOWED_INPUT_TYPES.has(file.type)) {
     return 'Please use a JPEG, PNG, or WebP image.'
   }
@@ -17,7 +17,7 @@ export function validateCandidateAvatarFile (file: File): string | null {
   return null
 }
 
-async function fileToResizedJpeg (file: File, maxEdge: number): Promise<Blob> {
+async function fileToResizedJpeg(file: File, maxEdge: number): Promise<Blob> {
   const bmp = await createImageBitmap(file)
   try {
     const ratio = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height))
@@ -45,7 +45,7 @@ async function fileToResizedJpeg (file: File, maxEdge: number): Promise<Blob> {
  * Uploads a profile image to public Storage at `{userId}/avatar.jpg` and returns its public URL.
  * Intended for browser use (canvas / createImageBitmap).
  */
-export async function uploadCandidateAvatar (
+export async function uploadCandidateAvatar(
   sb: SupabaseClient,
   userId: string,
   file: File
@@ -71,6 +71,7 @@ export async function uploadCandidateAvatar (
   }
 
   const { data } = sb.storage.from(CANDIDATE_AVATAR_BUCKET).getPublicUrl(path)
-  if (!data.publicUrl) throw new Error('Could not resolve public URL for avatar')
+  if (!data.publicUrl)
+    throw new Error('Could not resolve public URL for avatar')
   return data.publicUrl
 }

@@ -28,7 +28,9 @@ vi.mock('@/lib/supabase/client', () => ({
   getSupabaseBrowserClient: () => ({
     auth: {
       getSession: async () => ({ data: { session: null } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      onAuthStateChange: () => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
     },
   }),
 }))

@@ -1,26 +1,26 @@
-import { Plus, Trash2 } from 'lucide-react'
 import {
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Plus, Trash2 } from 'lucide-react'
 import {
   PROFILE_AVATAR_PLACEHOLDER_URL,
   type ResumeContentItem,
   type ResumeSection,
   type ResumeStructuredV1,
 } from '@/lib/candidate/resume-structured-schema'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ResumeRichTextField } from './resume-rich-text-field'
 
-function isHttpHref (href: string): boolean {
+function isHttpHref(href: string): boolean {
   return /^https?:\/\//i.test(href.trim())
 }
 
 /** External link arrow (from ibelick/nextjs-resume Contact row). */
-function ExternalArrowIcon ({ className }: { className?: string }) {
+function ExternalArrowIcon({ className }: { className?: string }) {
   return (
     <svg
       width='12'
@@ -39,7 +39,13 @@ function ExternalArrowIcon ({ className }: { className?: string }) {
   )
 }
 
-function ProfileHeaderAvatar ({ avatarUrl, name }: { avatarUrl: string; name: string }) {
+function ProfileHeaderAvatar({
+  avatarUrl,
+  name,
+}: {
+  avatarUrl: string
+  name: string
+}) {
   const [broken, setBroken] = useState(false)
   return (
     <img
@@ -68,15 +74,19 @@ const emptyItem = (): ResumeContentItem => ({
   description: '',
 })
 
-function isEducationSection (section: ResumeSection): boolean {
+function isEducationSection(section: ResumeSection): boolean {
   return section.title.trim().toLowerCase() === 'education'
 }
 
 /** College, state, country — or legacy company/location/subTitle when newer fields are empty. */
-function educationMetaLine (item: ResumeContentItem): string | null {
-  const modern = [item.college, item.state, item.country].map((s) => s.trim()).filter(Boolean)
+function educationMetaLine(item: ResumeContentItem): string | null {
+  const modern = [item.college, item.state, item.country]
+    .map((s) => s.trim())
+    .filter(Boolean)
   if (modern.length > 0) return modern.join(', ')
-  const legacy = [item.company, item.location].map((s) => s.trim()).filter(Boolean)
+  const legacy = [item.company, item.location]
+    .map((s) => s.trim())
+    .filter(Boolean)
   if (legacy.length > 0) return legacy.join(', ')
   const st = item.subTitle.trim()
   return st || null
@@ -89,7 +99,12 @@ type SectionBlockProps = {
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
 }
 
-function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: SectionBlockProps) {
+function ReadCvContentSection({
+  section,
+  sectionIndex,
+  mode,
+  onDraftChange,
+}: SectionBlockProps) {
   const edit = mode === 'edit' && onDraftChange
   const isEducation = isEducationSection(section)
 
@@ -146,7 +161,10 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                       const sections = [...d.sections]
                       const items = [...sections[sectionIndex].items]
                       items[itemIndex] = { ...items[itemIndex], date: v }
-                      sections[sectionIndex] = { ...sections[sectionIndex], items }
+                      sections[sectionIndex] = {
+                        ...sections[sectionIndex],
+                        items,
+                      }
                       return { ...d, sections }
                     })
                   }}
@@ -171,7 +189,10 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                         const sections = [...d.sections]
                         const items = [...sections[sectionIndex].items]
                         items[itemIndex] = { ...items[itemIndex], title: v }
-                        sections[sectionIndex] = { ...sections[sectionIndex], items }
+                        sections[sectionIndex] = {
+                          ...sections[sectionIndex],
+                          items,
+                        }
                         return { ...d, sections }
                       })
                     }}
@@ -189,8 +210,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                             onDraftChange((d) => {
                               const sections = [...d.sections]
                               const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = { ...items[itemIndex], college: v }
-                              sections[sectionIndex] = { ...sections[sectionIndex], items }
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                college: v,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
                               return { ...d, sections }
                             })
                           }}
@@ -208,8 +235,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                             onDraftChange((d) => {
                               const sections = [...d.sections]
                               const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = { ...items[itemIndex], state: v }
-                              sections[sectionIndex] = { ...sections[sectionIndex], items }
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                state: v,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
                               return { ...d, sections }
                             })
                           }}
@@ -227,8 +260,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                             onDraftChange((d) => {
                               const sections = [...d.sections]
                               const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = { ...items[itemIndex], country: v }
-                              sections[sectionIndex] = { ...sections[sectionIndex], items }
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                country: v,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
                               return { ...d, sections }
                             })
                           }}
@@ -246,8 +285,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                             onDraftChange((d) => {
                               const sections = [...d.sections]
                               const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = { ...items[itemIndex], company: v }
-                              sections[sectionIndex] = { ...sections[sectionIndex], items }
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                company: v,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
                               return { ...d, sections }
                             })
                           }}
@@ -265,8 +310,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                             onDraftChange((d) => {
                               const sections = [...d.sections]
                               const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = { ...items[itemIndex], location: v }
-                              sections[sectionIndex] = { ...sections[sectionIndex], items }
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                location: v,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
                               return { ...d, sections }
                             })
                           }}
@@ -284,8 +335,14 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                           onDraftChange((d) => {
                             const sections = [...d.sections]
                             const items = [...sections[sectionIndex].items]
-                            items[itemIndex] = { ...items[itemIndex], description: html }
-                            sections[sectionIndex] = { ...sections[sectionIndex], items }
+                            items[itemIndex] = {
+                              ...items[itemIndex],
+                              description: html,
+                            }
+                            sections[sectionIndex] = {
+                              ...sections[sectionIndex],
+                              items,
+                            }
                             return { ...d, sections }
                           })
                         }
@@ -300,8 +357,13 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                     onClick={() =>
                       onDraftChange((d) => {
                         const sections = [...d.sections]
-                        const items = sections[sectionIndex].items.filter((_, j) => j !== itemIndex)
-                        sections[sectionIndex] = { ...sections[sectionIndex], items }
+                        const items = sections[sectionIndex].items.filter(
+                          (_, j) => j !== itemIndex
+                        )
+                        sections[sectionIndex] = {
+                          ...sections[sectionIndex],
+                          items,
+                        }
                         return { ...d, sections }
                       })
                     }
@@ -311,18 +373,24 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                 </>
               ) : (
                 <>
-                  {item.title ? <h4 className='font-medium'>{item.title}</h4> : null}
+                  {item.title ? (
+                    <h4 className='font-medium'>{item.title}</h4>
+                  ) : null}
                   {isEducation ? (
                     educationMetaLine(item) ? (
                       <div className='mt-0.5 flex flex-col gap-0 text-sm text-slate-600'>
                         <p className='m-0'>{educationMetaLine(item)}</p>
                       </div>
                     ) : null
-                  ) : item.company.trim() || item.location.trim() || item.subTitle.trim() ? (
+                  ) : item.company.trim() ||
+                    item.location.trim() ||
+                    item.subTitle.trim() ? (
                     <div className='mt-0.5 flex flex-col gap-0 text-sm text-slate-600'>
                       {item.company.trim() || item.location.trim() ? (
                         <p className='m-0'>
-                          {[item.company.trim(), item.location.trim()].filter(Boolean).join(', ')}
+                          {[item.company.trim(), item.location.trim()]
+                            .filter(Boolean)
+                            .join(', ')}
                         </p>
                       ) : item.subTitle.trim() ? (
                         <p className='m-0'>{item.subTitle}</p>
@@ -331,7 +399,11 @@ function ReadCvContentSection ({ section, sectionIndex, mode, onDraftChange }: S
                   ) : null}
                   {!isEducation && item.description?.trim() ? (
                     <div className='mt-2'>
-                      <ResumeRichTextField value={item.description} editable={false} onChange={() => {}} />
+                      <ResumeRichTextField
+                        value={item.description}
+                        editable={false}
+                        onChange={() => {}}
+                      />
                     </div>
                   ) : null}
                 </>
@@ -378,7 +450,7 @@ export type ReadCvResumePreviewProps = {
 /**
  * Read.cv-inspired profile layout; same structure in view and edit (inline fields + rich text).
  */
-export function ReadCvResumePreview ({
+export function ReadCvResumePreview({
   data,
   headerAvatarAction,
   mode = 'view',
@@ -398,18 +470,20 @@ export function ReadCvResumePreview ({
       className={`relative mx-auto min-h-0 max-w-[800px] px-6 pb-12 font-sans font-light text-slate-900 sm:pb-16 ${edit ? 'ring-2 ring-slate-200/80 ring-offset-4 ring-offset-white' : ''}`}
     >
       {edit ? (
-        <p className='mb-4 text-center text-xs font-medium uppercase tracking-widest text-slate-400'>
+        <p className='mb-4 text-center text-xs font-medium tracking-widest text-slate-400 uppercase'>
           Editing
         </p>
       ) : null}
       <section className='flex items-start gap-4'>
         <div className='flex w-20 shrink-0 flex-col items-center self-start'>
           <div className='group/avatar relative size-20 shrink-0 overflow-hidden rounded-full'>
-            <ProfileHeaderAvatar key={general.avatar} avatarUrl={general.avatar} name={general.name} />
+            <ProfileHeaderAvatar
+              key={general.avatar}
+              avatarUrl={general.avatar}
+              name={general.name}
+            />
             {headerAvatarAction ? (
-              <div
-                className='pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/50 opacity-0 transition-opacity group-hover/avatar:pointer-events-auto group-hover/avatar:opacity-100 group-focus-within/avatar:pointer-events-auto group-focus-within/avatar:opacity-100 motion-reduce:transition-none'
-              >
+              <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/50 opacity-0 transition-opacity group-focus-within/avatar:pointer-events-auto group-focus-within/avatar:opacity-100 group-hover/avatar:pointer-events-auto group-hover/avatar:opacity-100 motion-reduce:transition-none'>
                 <div className='pointer-events-auto'>{headerAvatarAction}</div>
               </div>
             ) : null}
@@ -422,7 +496,10 @@ export function ReadCvResumePreview ({
                 aria-label='Full name'
                 value={general.name}
                 onChange={(e) =>
-                  onDraftChange((d) => ({ ...d, general: { ...d.general, name: e.target.value } }))
+                  onDraftChange((d) => ({
+                    ...d,
+                    general: { ...d.general, name: e.target.value },
+                  }))
                 }
                 className={`${INLINE} mb-0.5 text-xl font-medium`}
               />
@@ -430,7 +507,10 @@ export function ReadCvResumePreview ({
                 aria-label='Professional title'
                 value={general.jobTitle}
                 onChange={(e) =>
-                  onDraftChange((d) => ({ ...d, general: { ...d.general, jobTitle: e.target.value } }))
+                  onDraftChange((d) => ({
+                    ...d,
+                    general: { ...d.general, jobTitle: e.target.value },
+                  }))
                 }
                 className={`${INLINE} text-sm text-slate-600`}
               />
@@ -439,7 +519,10 @@ export function ReadCvResumePreview ({
                 placeholder='City, region'
                 value={general.location}
                 onChange={(e) =>
-                  onDraftChange((d) => ({ ...d, general: { ...d.general, location: e.target.value } }))
+                  onDraftChange((d) => ({
+                    ...d,
+                    general: { ...d.general, location: e.target.value },
+                  }))
                 }
                 className={`${INLINE} mt-0.5 text-sm text-slate-600`}
               />
@@ -487,11 +570,20 @@ export function ReadCvResumePreview ({
           <ResumeRichTextField
             value={general.about}
             editable
-            onChange={(html) => onDraftChange((d) => ({ ...d, general: { ...d.general, about: html } }))}
+            onChange={(html) =>
+              onDraftChange((d) => ({
+                ...d,
+                general: { ...d.general, about: html },
+              }))
+            }
           />
         ) : (
           <div className='text-slate-600'>
-            <ResumeRichTextField value={general.about} editable={false} onChange={() => {}} />
+            <ResumeRichTextField
+              value={general.about}
+              editable={false}
+              onChange={() => {}}
+            />
           </div>
         )}
       </section>
@@ -519,7 +611,11 @@ export function ReadCvResumePreview ({
                     ...d.general,
                     contacts: [
                       ...d.general.contacts,
-                      { label: 'Link', value: userEmail || 'you@example.com', href: `mailto:${userEmail || 'you@example.com'}` },
+                      {
+                        label: 'Link',
+                        value: userEmail || 'you@example.com',
+                        href: `mailto:${userEmail || 'you@example.com'}`,
+                      },
                     ],
                   },
                 }))
@@ -593,7 +689,9 @@ export function ReadCvResumePreview ({
                             ...d,
                             general: {
                               ...d.general,
-                              contacts: d.general.contacts.filter((_, j) => j !== index),
+                              contacts: d.general.contacts.filter(
+                                (_, j) => j !== index
+                              ),
                             },
                           }))
                         }
@@ -607,11 +705,15 @@ export function ReadCvResumePreview ({
             }
             return (
               <div className='flex' key={index}>
-                <div className='mr-8 w-full max-w-[100px] shrink-0 text-slate-400'>{contact.label}</div>
+                <div className='mr-8 w-full max-w-[100px] shrink-0 text-slate-400'>
+                  {contact.label}
+                </div>
                 <div className='flex min-w-0 flex-1 flex-col'>
                   <a
                     href={contact.href}
-                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    {...(external
+                      ? { target: '_blank', rel: 'noopener noreferrer' }
+                      : {})}
                     className='inline-flex items-center gap-1 break-all hover:underline'
                   >
                     {contact.value}

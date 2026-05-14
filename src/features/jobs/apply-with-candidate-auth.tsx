@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ExternalLink } from 'lucide-react'
-import { useAuth } from '@/context/auth-provider'
-import { AuthModal } from '@/features/auth/auth-modal'
 import {
   signInCardDescription,
   signInCardTitle,
@@ -15,11 +13,16 @@ import {
   applyButtonLabel,
   showLinkedInBrand,
 } from '@/lib/jobs/apply-target'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import type { JobRow, ProfileRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
+import { AuthModal } from '@/features/auth/auth-modal'
 
-function LinkedInLogoMark ({ className }: { className?: string }) {
+function LinkedInLogoMark({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -35,9 +38,12 @@ function LinkedInLogoMark ({ className }: { className?: string }) {
   )
 }
 
-type ApplyJob = Pick<JobRow, 'apply_url' | 'source_kind' | 'job_slug' | 'job_title'>
+type ApplyJob = Pick<
+  JobRow,
+  'apply_url' | 'source_kind' | 'job_slug' | 'job_title'
+>
 
-async function fetchJobSeekerCompletionRow (userId: string) {
+async function fetchJobSeekerCompletionRow(userId: string) {
   const sb = getSupabaseBrowserClient()
   const { data, error } = await sb
     .from('job_seeker_profiles')
@@ -48,7 +54,7 @@ async function fetchJobSeekerCompletionRow (userId: string) {
   return data
 }
 
-export function ApplyWithCandidateAuth ({ job }: { job: ApplyJob }) {
+export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [authOpen, setAuthOpen] = useState(false)

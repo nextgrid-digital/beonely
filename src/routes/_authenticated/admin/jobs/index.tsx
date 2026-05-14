@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { requireAdminBeforeLoad } from '@/lib/auth/route-guards'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { listingDurationToDays } from '@/lib/payments/plans'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,11 +28,12 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 export const Route = createFileRoute('/_authenticated/admin/jobs/')({
-  beforeLoad: () => requireAdminBeforeLoad({ loginRedirectPath: '/admin/jobs' }),
+  beforeLoad: () =>
+    requireAdminBeforeLoad({ loginRedirectPath: '/admin/jobs' }),
   component: AdminJobsPage,
 })
 
-function AdminJobsPage () {
+function AdminJobsPage() {
   const qc = useQueryClient()
   const [editingJob, setEditingJob] = useState<JobRow | null>(null)
   const [descriptionDraft, setDescriptionDraft] = useState('')
@@ -116,7 +117,11 @@ function AdminJobsPage () {
   })
 
   const updateJobDescription = useMutation({
-    mutationFn: async (input: { id: string; job_slug: string; description: string }) => {
+    mutationFn: async (input: {
+      id: string
+      job_slug: string
+      description: string
+    }) => {
       const sb = getSupabaseBrowserClient()
       const { error } = await sb
         .from('jobs')
@@ -251,11 +256,15 @@ function AdminJobsPage () {
                   >
                     Edit description
                   </Button>
-                  {job.approval_status === 'pending' && job.payment_status === 'paid' && (
-                    <Button size='sm' onClick={() => approveListing.mutate(job)}>
-                      Approve
-                    </Button>
-                  )}
+                  {job.approval_status === 'pending' &&
+                    job.payment_status === 'paid' && (
+                      <Button
+                        size='sm'
+                        onClick={() => approveListing.mutate(job)}
+                      >
+                        Approve
+                      </Button>
+                    )}
                   {job.approval_status !== 'rejected' && (
                     <Button
                       size='sm'
@@ -265,15 +274,16 @@ function AdminJobsPage () {
                       Reject
                     </Button>
                   )}
-                  {job.approval_status === 'approved' && job.payment_status === 'paid' && (
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      onClick={() => toggleFeatured.mutate(job)}
-                    >
-                      {job.featured ? 'Unfeature' : 'Feature'}
-                    </Button>
-                  )}
+                  {job.approval_status === 'approved' &&
+                    job.payment_status === 'paid' && (
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        onClick={() => toggleFeatured.mutate(job)}
+                      >
+                        {job.featured ? 'Unfeature' : 'Feature'}
+                      </Button>
+                    )}
                 </div>
               </TableCell>
             </TableRow>

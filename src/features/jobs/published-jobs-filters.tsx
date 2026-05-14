@@ -1,5 +1,5 @@
-import { MapPin, Search, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { MapPin, Search, SlidersHorizontal } from 'lucide-react'
 import type { PublishedJobsFilters } from '@/lib/jobs/fetch-published-jobs'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -16,25 +16,23 @@ import {
 export type PublishedJobsSearchState = PublishedJobsFilters & { setup?: string }
 
 export type PublishedJobsNavigate = (opts: {
-  search:
-    | true
-    | ((
-        prev: PublishedJobsSearchState
-      ) => PublishedJobsSearchState)
+  search: true | ((prev: PublishedJobsSearchState) => PublishedJobsSearchState)
 }) => void | Promise<void>
 
-export function hasActivePublishedJobFilters (s: PublishedJobsSearchState): boolean {
+export function hasActivePublishedJobFilters(
+  s: PublishedJobsSearchState
+): boolean {
   return Boolean(
     s.q?.trim() ||
-      s.role ||
-      s.experience ||
-      s.work ||
-      s.type ||
-      s.location?.trim()
+    s.role ||
+    s.experience ||
+    s.work ||
+    s.type ||
+    s.location?.trim()
   )
 }
 
-export function clearPublishedJobSearchPreserveSetup (
+export function clearPublishedJobSearchPreserveSetup(
   prev: PublishedJobsSearchState
 ): PublishedJobsSearchState {
   const next: PublishedJobsSearchState = {}
@@ -48,14 +46,17 @@ export function clearPublishedJobSearchPreserveSetup (
 const STICKY_BELOW_HEADER = 'top-14'
 
 /** URL-backed filters for published jobs (home; `/jobs/` redirects to `/` with same params). */
-export function PublishedJobsFiltersBar (props: {
+export function PublishedJobsFiltersBar(props: {
   search: PublishedJobsSearchState
   navigate: PublishedJobsNavigate
 }) {
   const { search, navigate } = props
   const [localQ, setLocalQ] = useState(search.q ?? '')
 
-  const filtersActive = useMemo(() => hasActivePublishedJobFilters(search), [search])
+  const filtersActive = useMemo(
+    () => hasActivePublishedJobFilters(search),
+    [search]
+  )
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync URL search to input
@@ -72,7 +73,10 @@ export function PublishedJobsFiltersBar (props: {
     return () => window.clearTimeout(t)
   }, [localQ, navigate, search.q])
 
-  const setParam = (key: keyof PublishedJobsFilters, value: string | undefined) => {
+  const setParam = (
+    key: keyof PublishedJobsFilters,
+    value: string | undefined
+  ) => {
     void navigate({
       search: (prev) => ({
         ...prev,
@@ -101,12 +105,12 @@ export function PublishedJobsFiltersBar (props: {
       </h3>
 
       <div className='flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0'>
-        <div className='relative min-w-[12rem] max-w-[min(100%,20rem)] shrink-0 sm:max-w-none sm:min-w-0 sm:flex-1'>
+        <div className='relative max-w-[min(100%,20rem)] min-w-[12rem] shrink-0 sm:max-w-none sm:min-w-0 sm:flex-1'>
           <label htmlFor='published-jobs-q' className='sr-only'>
             Search by title or company
           </label>
           <Search
-            className='pointer-events-none absolute left-2.5 top-1/2 z-[1] size-3.5 -translate-y-1/2 text-muted-foreground'
+            className='pointer-events-none absolute top-1/2 left-2.5 z-[1] size-3.5 -translate-y-1/2 text-muted-foreground'
             aria-hidden
           />
           <Input
@@ -177,13 +181,13 @@ export function PublishedJobsFiltersBar (props: {
         <div className='flex min-w-0 shrink-0 flex-col gap-1'>
           <label
             htmlFor='published-jobs-location'
-            className='text-[10px] font-semibold uppercase leading-none tracking-[0.16em] text-muted-foreground'
+            className='text-[10px] leading-none font-semibold tracking-[0.16em] text-muted-foreground uppercase'
           >
             Location
           </label>
           <div className='relative w-[8.5rem] sm:w-[9.5rem]'>
             <MapPin
-              className='pointer-events-none absolute left-2 top-1/2 z-[1] size-3 -translate-y-1/2 text-muted-foreground/80'
+              className='pointer-events-none absolute top-1/2 left-2 z-[1] size-3 -translate-y-1/2 text-muted-foreground/80'
               aria-hidden
             />
             <Input
@@ -192,7 +196,9 @@ export function PublishedJobsFiltersBar (props: {
               value={search.location ?? ''}
               onChange={(e) => {
                 const v = e.target.value
-                void navigate({ search: (p) => ({ ...p, location: v || undefined }) })
+                void navigate({
+                  search: (p) => ({ ...p, location: v || undefined }),
+                })
               }}
               className='h-9 border-border/80 bg-background/90 pl-7 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background'
             />
@@ -216,7 +222,7 @@ export function PublishedJobsFiltersBar (props: {
   )
 }
 
-function FilterSelect (props: {
+function FilterSelect(props: {
   label: string
   value: string | undefined
   onChange: (v: string | undefined) => void
@@ -226,7 +232,7 @@ function FilterSelect (props: {
   const val = props.value ?? '_any'
   return (
     <div className='flex shrink-0 flex-col gap-1'>
-      <label className='text-[10px] font-semibold uppercase leading-none tracking-[0.16em] text-muted-foreground'>
+      <label className='text-[10px] leading-none font-semibold tracking-[0.16em] text-muted-foreground uppercase'>
         {props.label}
       </label>
       <Select
@@ -242,7 +248,10 @@ function FilterSelect (props: {
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent align='start' className='min-w-[var(--radix-select-trigger-width)]'>
+        <SelectContent
+          align='start'
+          className='min-w-[var(--radix-select-trigger-width)]'
+        >
           {props.options.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}

@@ -6,13 +6,16 @@ import { useNavigate } from '@tanstack/react-router'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Loader2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import {
   candidateLinkedInUrlSchema,
   candidatePhoneSchema,
 } from '@/lib/candidate/profile-completion'
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
-import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
-import type { SignInIntent } from '@/lib/auth/sign-in-intent'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,7 +34,7 @@ type CandidateSignUpFields = {
   phone: string
 }
 
-function buildSignUpFormSchema (intent: SignInIntent | undefined) {
+function buildSignUpFormSchema(intent: SignInIntent | undefined) {
   const base = z
     .object({
       email: z.email({
@@ -74,7 +77,7 @@ interface SignUpFormProps extends React.HTMLAttributes<HTMLFormElement> {
   intent?: SignInIntent
 }
 
-async function persistCandidateJobSeekerRow (opts: {
+async function persistCandidateJobSeekerRow(opts: {
   userId: string
   email: string
   linkedin_url: string
@@ -118,7 +121,7 @@ type SignUpFormFields = {
   phone?: string
 }
 
-export function SignUpForm ({
+export function SignUpForm({
   className,
   onSuccess,
   intent,
@@ -134,9 +137,7 @@ export function SignUpForm ({
       email: '',
       password: '',
       confirmPassword: '',
-      ...(intent === 'candidate'
-        ? { linkedin_url: '', phone: '' }
-        : {}),
+      ...(intent === 'candidate' ? { linkedin_url: '', phone: '' } : {}),
     }),
     [intent]
   )
@@ -150,7 +151,7 @@ export function SignUpForm ({
     form.reset(defaultValues)
   }, [defaultValues, form])
 
-  async function onSubmit (data: SignUpFormFields) {
+  async function onSubmit(data: SignUpFormFields) {
     if (!getSupabaseConfigured()) {
       toast.error('Supabase is not configured.')
       return
@@ -163,7 +164,9 @@ export function SignUpForm ({
     try {
       const sb = getSupabaseBrowserClient()
       const redirect =
-        typeof window !== 'undefined' ? `${window.location.origin}/sign-in` : undefined
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/sign-in`
+          : undefined
 
       let candidateMeta: CandidateSignUpFields | undefined
       if (intent === 'candidate') {
@@ -210,7 +213,9 @@ export function SignUpForm ({
         'Account created. Check your inbox and click the confirmation link before signing in with this email and password.'
       if (onSuccess) {
         toast.success(
-          hasSession ? 'Account created. You are signed in.' : confirmFirstMessage
+          hasSession
+            ? 'Account created. You are signed in.'
+            : confirmFirstMessage
         )
         await onSuccess({ email, hasSession })
         return
@@ -245,7 +250,11 @@ export function SignUpForm ({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' autoComplete='email' {...field} />
+                <Input
+                  placeholder='name@example.com'
+                  autoComplete='email'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -298,7 +307,11 @@ export function SignUpForm ({
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <PasswordInput placeholder='********' autoComplete='new-password' {...field} />
+                <PasswordInput
+                  placeholder='********'
+                  autoComplete='new-password'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -311,7 +324,11 @@ export function SignUpForm ({
             <FormItem>
               <FormLabel>Confirm Password</FormLabel>
               <FormControl>
-                <PasswordInput placeholder='********' autoComplete='new-password' {...field} />
+                <PasswordInput
+                  placeholder='********'
+                  autoComplete='new-password'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

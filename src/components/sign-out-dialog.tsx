@@ -1,14 +1,14 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
+import { isPublicMarketingPath } from '@/lib/auth/public-marketing-path'
 import { useAuth } from '@/context/auth-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { isPublicMarketingPath } from '@/lib/auth/public-marketing-path'
 
 interface SignOutDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function SignOutDialog ({ open, onOpenChange }: SignOutDialogProps) {
+export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { signOut } = useAuth()

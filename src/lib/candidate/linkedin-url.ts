@@ -1,5 +1,5 @@
 /** True when URL is https and points at a LinkedIn profile path we accept. */
-export function isLinkedInProfileUrl (raw: string): boolean {
+export function isLinkedInProfileUrl(raw: string): boolean {
   const t = raw.trim()
   if (!t) return false
   let url: URL

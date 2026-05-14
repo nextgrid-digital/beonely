@@ -1,7 +1,7 @@
 import type { ProfileRow } from '@/lib/supabase/database.types'
 
 /** Default in-app landing after sign-in when no explicit redirect is set. */
-export function getPostAuthPath (
+export function getPostAuthPath(
   profile: ProfileRow | null
 ): '/recruiter' | '/candidate/profile' | '/admin' {
   if (!profile) return '/candidate/profile'

@@ -1,5 +1,5 @@
 /** URL-safe slug from title + location + short id suffix for uniqueness */
-export function buildJobSlugBase (title: string, location: string): string {
+export function buildJobSlugBase(title: string, location: string): string {
   const raw = `${title}-${location}`
     .toLowerCase()
     .trim()
@@ -9,7 +9,11 @@ export function buildJobSlugBase (title: string, location: string): string {
   return raw || 'job'
 }
 
-export function buildJobSlug (title: string, location: string, idSuffix: string) {
+export function buildJobSlug(
+  title: string,
+  location: string,
+  idSuffix: string
+) {
   const base = buildJobSlugBase(title, location)
   const suffix = idSuffix.replace(/-/g, '').slice(0, 8)
   return `${base}-${suffix}`

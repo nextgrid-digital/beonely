@@ -11,7 +11,9 @@ describe('isLinkedInProfileUrl', () => {
   })
 
   it('accepts /pub/ URLs', () => {
-    expect(isLinkedInProfileUrl('https://www.linkedin.com/pub/foo/bar')).toBe(true)
+    expect(isLinkedInProfileUrl('https://www.linkedin.com/pub/foo/bar')).toBe(
+      true
+    )
   })
 
   it('rejects http', () => {
@@ -23,7 +25,9 @@ describe('isLinkedInProfileUrl', () => {
   })
 
   it('rejects LinkedIn non-profile paths', () => {
-    expect(isLinkedInProfileUrl('https://www.linkedin.com/company/foo')).toBe(false)
+    expect(isLinkedInProfileUrl('https://www.linkedin.com/company/foo')).toBe(
+      false
+    )
   })
 
   it('rejects empty or invalid', () => {

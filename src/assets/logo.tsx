@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 const LOGO_SRC = '/images/beonely-logo.png'
 
-export function Logo ({
+export function Logo({
   className,
   alt = 'Beonely',
   ...props
