@@ -4,7 +4,19 @@
   "outputDirectory": "dist",
   "framework": null,
   "functions": {
-    "api/**/*.ts": {
+    "api/create-order.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/verify-payment.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/sitemap.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/razorpay-webhook.ts": {
       "memory": 1024,
       "maxDuration": 60
     }

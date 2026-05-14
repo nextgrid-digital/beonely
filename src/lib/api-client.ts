@@ -11,7 +11,7 @@ function vercelFunctionCrashHint(path: string, rawText: string): string {
     t.includes('A server error has occurred') ||
     /<\s*!?\s*DOCTYPE\s+html/i.test(t)
   ) {
-    return ` Vercel returned an HTML error page instead of JSON — the ${path} serverless function likely crashed on startup or before sending a response. Open Vercel → your project → Logs (filter ${path}). Typical fix: set SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY), RAZORPAY_KEY_ID, and RAZORPAY_KEY_SECRET for Production, then redeploy. See docs/vercel-environment.md.`
+    return ` Vercel returned an HTML error page instead of JSON — the ${path} serverless function likely crashed on startup or before sending a response. Open Vercel → your project → Logs (filter ${path}) and copy the first stack line. Missing Razorpay keys usually return JSON (e.g. payments_not_configured), not this HTML page. Typical fixes: deploy the latest commit, then set SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY), RAZORPAY_KEY_ID, and RAZORPAY_KEY_SECRET for Production. See docs/vercel-environment.md.`
   }
   return ''
 }
@@ -50,7 +50,8 @@ export async function apiPost<T>(
   } catch (e: unknown) {
     if (e instanceof Error && e.name === 'AbortError') {
       throw new Error(
-        `Request timed out after ${API_POST_TIMEOUT_MS / 1000}s. For local dev, run \`pnpm dev:local\` (Vite + API), or \`pnpm dev:api\` in a second terminal (listens on 127.0.0.1:3000) with \`pnpm dev\`.`
+        `Request timed out after ${API_POST_TIMEOUT_MS / 1000}s. For local dev, run \`pnpm dev:local\` (Vite + API), or \`pnpm dev:api\` in a second terminal (listens on 127.0.0.1:3000) with \`pnpm dev\`.`,
+        { cause: e }
       )
     }
     throw e

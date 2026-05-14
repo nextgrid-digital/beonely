@@ -64,9 +64,10 @@ Cause: Vercel ran the `/api/*` function but it **crashed or timed out before sen
 
 Fix:
 
-1. **Vercel → Project → Logs** — filter by `/api/create-order` or `/api/verify-payment` and read the stack trace (missing module, timeout, etc.).
-2. Confirm **Production** environment variables from the checklist above, especially **`SUPABASE_SERVICE_ROLE_KEY`**, Supabase **URL + anon** for JWT validation, and **`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`**.
-3. **Redeploy** after changing env vars.
+1. **Deployments** — open the failing deployment and confirm the **commit SHA** matches the branch you expect (e.g. includes the latest `api/` fixes). Redeploy after env or code changes.
+2. **Vercel → Project → Logs** — filter by `/api/create-order` or `/api/verify-payment`, expand the entry, and copy the **first error line / stack** (e.g. `Error:`, `Cannot find module`, OOM). Missing Razorpay keys alone usually return **JSON** (`payments_not_configured`), not this HTML page — HTML means the isolate failed before a normal JSON response.
+3. Confirm **Production** environment variables from the checklist above, especially **`SUPABASE_SERVICE_ROLE_KEY`**, Supabase **URL + anon** for JWT validation, and **`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`**.
+4. **Redeploy** after changing env vars.
 
 When misconfiguration is limited to **missing service role or Supabase URL**, the API now responds with **503** and JSON `{ "error": "server_misconfigured", ... }` instead of throwing (see [`tryGetServiceSupabase`](../api/_lib/supabase.ts) in [`create-order`](../api/create-order.ts) and [`verify-payment`](../api/verify-payment.ts)). Other startup failures may still surface as HTML until fixed in logs.
 
