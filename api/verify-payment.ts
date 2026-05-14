@@ -1,9 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
-import Razorpay from 'razorpay'
 import { z } from 'zod'
-import { PLAN_AMOUNT_INR_PAISE } from '@/lib/payments/plans'
-import { planDurationDays, planIsFeatured, planToJobListingFields, type PaymentPlan } from './_lib/plan-helpers'
+import {
+  PLAN_AMOUNT_INR_PAISE,
+  planDurationDays,
+  planIsFeatured,
+  planToJobListingFields,
+  type PaymentPlan,
+} from './_lib/plan-helpers'
+import { razorpayFetchOrder } from './_lib/razorpay-rest'
 import { readJsonObjectBody } from './_lib/request-json-body'
 import { rateLimitOrThrow } from './_lib/rate-limit'
 import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
@@ -74,8 +79,11 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       return res.status(400).json({ error: 'invalid_signature' })
     }
 
-    const rz = new Razorpay({ key_id: keyId, key_secret: secret })
-    const order = await rz.orders.fetch(razorpay_order_id)
+    const order = await razorpayFetchOrder({
+      keyId,
+      keySecret: secret,
+      orderId: razorpay_order_id,
+    })
     const plan = parsePlan(order.notes?.plan)
     if (!plan) {
       return res.status(400).json({ error: 'invalid_plan' })

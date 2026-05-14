@@ -1,10 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import Razorpay from 'razorpay'
 import { z } from 'zod'
-import { PLAN_AMOUNT_INR_PAISE } from '@/lib/payments/plans'
 import { readJsonObjectBody } from './_lib/request-json-body'
 import { rateLimitOrThrow } from './_lib/rate-limit'
-import { planIsFeatured } from './_lib/plan-helpers'
+import { PLAN_AMOUNT_INR_PAISE, planIsFeatured } from './_lib/plan-helpers'
+import { razorpayCreateOrder } from './_lib/razorpay-rest'
 import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
 import { verifyTurnstileToken } from './_lib/turnstile'
 
@@ -116,10 +115,11 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       return res.status(400).json({ error: 'amount_below_minimum' })
     }
 
-    const rz = new Razorpay({ key_id: keyId, key_secret: keySecret })
     let order: { id: string }
     try {
-      order = await rz.orders.create({
+      order = await razorpayCreateOrder({
+        keyId,
+        keySecret,
         amount,
         currency: 'INR',
         receipt: `job_${job.id}`.slice(0, 40),

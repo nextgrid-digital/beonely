@@ -11,6 +11,9 @@ export function readJsonObjectBody(
     if (typeof b === 'string') {
       return { ok: true, value: JSON.parse(b) as unknown }
     }
+    if (Buffer.isBuffer(b)) {
+      return { ok: true, value: JSON.parse(b.toString('utf8')) as unknown }
+    }
     return { ok: true, value: b }
   } catch {
     return { ok: false }

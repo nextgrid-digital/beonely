@@ -4,6 +4,32 @@ export type PaymentPlan =
   | 'featured_week'
   | 'featured_month'
 
+/** GST on listing fees (India). Keep in sync with `src/lib/payments/plans.ts`. */
+export const GST_RATE_INR = 0.18
+
+const PLAN_BASE_AMOUNT_INR_PAISE: Record<PaymentPlan, number> = {
+  standard_week: 50_00 * 100,
+  standard_month: 250_00 * 100,
+  featured_week: 100_00 * 100,
+  featured_month: 500_00 * 100,
+}
+
+/** Total INR paise at checkout (base + 18% GST, rounded). */
+export const PLAN_AMOUNT_INR_PAISE: Record<PaymentPlan, number> = {
+  standard_week: Math.round(
+    PLAN_BASE_AMOUNT_INR_PAISE.standard_week * (1 + GST_RATE_INR)
+  ),
+  standard_month: Math.round(
+    PLAN_BASE_AMOUNT_INR_PAISE.standard_month * (1 + GST_RATE_INR)
+  ),
+  featured_week: Math.round(
+    PLAN_BASE_AMOUNT_INR_PAISE.featured_week * (1 + GST_RATE_INR)
+  ),
+  featured_month: Math.round(
+    PLAN_BASE_AMOUNT_INR_PAISE.featured_month * (1 + GST_RATE_INR)
+  ),
+}
+
 export function planIsFeatured (plan: PaymentPlan): boolean {
   return plan === 'featured_week' || plan === 'featured_month'
 }

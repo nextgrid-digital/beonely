@@ -20,10 +20,16 @@ function getLimiter () {
 export async function rateLimitOrThrow (id: string): Promise<void> {
   const lim = getLimiter()
   if (!lim) return
-  const { success } = await lim.limit(id)
-  if (!success) {
-    const err = new Error('rate_limited')
-    ;(err as Error & { statusCode: number }).statusCode = 429
-    throw err
+  try {
+    const { success } = await lim.limit(id)
+    if (!success) {
+      const err = new Error('rate_limited')
+      ;(err as Error & { statusCode: number }).statusCode = 429
+      throw err
+    }
+  } catch (e) {
+    if ((e as Error & { statusCode?: number }).statusCode === 429) throw e
+    // eslint-disable-next-line no-console
+    console.warn('[rate-limit] Upstash error; allowing request:', e)
   }
 }
