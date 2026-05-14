@@ -49,10 +49,11 @@ export async function apiPost<T>(
     })
   } catch (e: unknown) {
     if (e instanceof Error && e.name === 'AbortError') {
-      throw new Error(
-        `Request timed out after ${API_POST_TIMEOUT_MS / 1000}s. For local dev, run \`pnpm dev:local\` (Vite + API), or \`pnpm dev:api\` in a second terminal (listens on 127.0.0.1:3000) with \`pnpm dev\`.`,
-        { cause: e }
+      const err = new Error(
+        `Request timed out after ${API_POST_TIMEOUT_MS / 1000}s. For local dev, run \`pnpm dev:local\` (Vite + API), or \`pnpm dev:api\` in a second terminal (listens on 127.0.0.1:3000) with \`pnpm dev\`.`
       )
+      Object.defineProperty(err, 'cause', { value: e, configurable: true })
+      throw err
     }
     throw e
   } finally {

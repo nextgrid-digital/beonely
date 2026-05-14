@@ -1,14 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { readJsonObjectBody } from './_lib/request-json-body'
-import { rateLimitOrThrow } from './_lib/rate-limit'
+import { readJsonObjectBody } from './_lib/request-json-body.js'
+import { rateLimitOrThrow } from './_lib/rate-limit.js'
 import {
   PLAN_AMOUNT_INR_PAISE,
   planIsFeatured,
   type PaymentPlan,
-} from './_lib/plan-helpers'
-import { razorpayCreateOrder } from './_lib/razorpay-rest'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
-import { verifyTurnstileToken } from './_lib/turnstile'
+} from './_lib/plan-helpers.js'
+import { razorpayCreateOrder } from './_lib/razorpay-rest.js'
+import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
+import { verifyTurnstileToken } from './_lib/turnstile.js'
 
 /** UUID shape (matches typical `z.string().uuid()` acceptance). */
 const UUID_RE =

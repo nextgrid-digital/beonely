@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { tryGetServiceSupabase } from './_lib/supabase'
+import { tryGetServiceSupabase } from './_lib/supabase.js'
 
 function escapeXml (s: string) {
   return s

@@ -7,13 +7,13 @@ import {
   planIsFeatured,
   planToJobListingFields,
   type PaymentPlan,
-} from './_lib/plan-helpers'
-import { razorpayFetchOrder } from './_lib/razorpay-rest'
-import { readJsonObjectBody } from './_lib/request-json-body'
-import { rateLimitOrThrow } from './_lib/rate-limit'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
-import { beonelyTransactionalHtml } from './_lib/email-layout'
-import { sendTransactionalEmail } from './_lib/resend'
+} from './_lib/plan-helpers.js'
+import { razorpayFetchOrder } from './_lib/razorpay-rest.js'
+import { readJsonObjectBody } from './_lib/request-json-body.js'
+import { rateLimitOrThrow } from './_lib/rate-limit.js'
+import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
+import { beonelyTransactionalHtml } from './_lib/email-layout.js'
+import { sendTransactionalEmail } from './_lib/resend.js'
 
 const bodySchema = z.object({
   razorpay_order_id: z.string(),
