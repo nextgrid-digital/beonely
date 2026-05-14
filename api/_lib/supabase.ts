@@ -1,8 +1,7 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
-import type { Database } from '../../src/lib/supabase/database.types'
 
 export type ServiceSupabaseInitResult =
-  | { ok: true; client: SupabaseClient<Database> }
+  | { ok: true; client: SupabaseClient }
   | { ok: false; reason: 'missing_url' | 'missing_service_role_key' }
 
 /** Prefer this in API routes so missing env returns JSON instead of an uncaught throw. */
@@ -13,7 +12,7 @@ export function tryGetServiceSupabase (): ServiceSupabaseInitResult {
   if (!key) return { ok: false, reason: 'missing_service_role_key' }
   return {
     ok: true,
-    client: createClient<Database>(url, key, {
+    client: createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     }),
   }
@@ -26,7 +25,6 @@ export async function getUserFromBearer (jwt: string | undefined) {
   if (!url || !anon) {
     return { user: null as null, error: 'server_config' as const }
   }
-  // No Database generic: keeps `auth.getUser(jwt)` visible to strict server typecheckers (e.g. Vercel).
   const sb = createClient(url, anon, {
     auth: { persistSession: false, autoRefreshToken: false },
   })

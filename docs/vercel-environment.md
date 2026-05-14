@@ -44,7 +44,7 @@ On Vercel, [`api/create-order.ts`](../api/create-order.ts) and [`api/verify-paym
 
 **Turnstile:** If **`TURNSTILE_SECRET_KEY`** is set ([`api/_lib/turnstile.ts`](../api/_lib/turnstile.ts)), `POST /api/create-order` expects a **`turnstileToken`** in the JSON body. The recruiter **Pay with Razorpay** flow ([`src/lib/payments/razorpay-job-checkout.ts`](../src/lib/payments/razorpay-job-checkout.ts)) does not send that field today. For checkout to work, either **omit** `TURNSTILE_SECRET_KEY` in Vercel, or extend the pay flow to collect a token before calling `create-order`.
 
-**Rate limits:** [`UPSTASH_REDIS_REST_URL`](../api/_lib/rate-limit.ts) + `UPSTASH_REDIS_REST_TOKEN` are optional; if unset, rate limiting is skipped.
+**Rate limits:** API routes use a no-op limiter so the serverless bundle stays small on Vercel. Optional `UPSTASH_REDIS_*` env vars from earlier setups are ignored by the app; use Vercel WAF or Edge Middleware if you need IP throttling.
 
 **Email:** `RESEND_API_KEY` + `RESEND_FROM_EMAIL` when using transactional email from the payment path ([`api/_lib/resend.ts`](../api/_lib/resend.ts)).
 
