@@ -8,11 +8,11 @@ Add these in the Vercel project → **Settings** → **Environment Variables** f
 |------|--------|
 | `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase **anon** JWT from Dashboard → API |
-
-If you use the **Supabase ↔ Vercel integration**, Supabase may sync **`SUPABASE_URL`** and **`SUPABASE_ANON_KEY`** instead of `VITE_*`. That is fine: the Vite build maps those into the browser bundle when `VITE_*` are not set. You still need **`VITE_PUBLIC_SITE_URL`** (or add it in Vercel) for correct canonical links.
 | `VITE_PUBLIC_SITE_URL` | Canonical site origin, e.g. `https://your-domain.com` |
 | `VITE_RAZORPAY_KEY_ID` | Optional. Same value as `RAZORPAY_KEY_ID` (publishable **key id** only). If set, the client uses it for Checkout; if omitted, [`api/create-order`](../api/create-order.ts) still returns `keyId` from the server env so checkout works. **Never** put `RAZORPAY_KEY_SECRET` here or under any `VITE_*` name. |
 | `VITE_TURNSTILE_SITE_KEY` | Optional Cloudflare Turnstile |
+
+If you use the **Supabase ↔ Vercel integration**, Supabase may sync **`SUPABASE_URL`** and **`SUPABASE_ANON_KEY`** instead of `VITE_*`. That is fine: the Vite build maps those into the browser bundle when `VITE_*` are not set. You still need **`VITE_PUBLIC_SITE_URL`** (or add it in Vercel) for correct canonical links and branded transactional email asset URLs.
 
 Never add `SUPABASE_SERVICE_ROLE_KEY` or `sb_secret_*` with a `VITE_` prefix.
 
@@ -52,3 +52,37 @@ Fix:
 After deploy, DevTools → **Network** should show requests to `*.supabase.co` when loading jobs or signing in.
 
 Builds on Vercel (`VERCEL=1`) **fail fast** if those two `VITE_*` variables are missing — see [`vite.config.ts`](../vite.config.ts) — so a green Vercel build implies they were present at build time.
+
+## External testers and Vercel Deployment Protection
+
+If someone says they clicked an email link and were asked to **log in to Vercel**, the deployment they landed on is almost certainly protected by **Deployment Protection** (Vercel Authentication / Standard Protection). Only team members can open that URL; everyone else gets the Vercel login screen.
+
+**What to do:**
+
+1. Vercel → your project → **Settings** → **Deployment Protection**.
+2. For **Production** URLs you share publicly (e.g. `https://beonely.vercel.app`), ensure visitors are **not** required to authenticate with Vercel unless you intend that.
+3. For **Preview** deployments, either disable protection for previews used by testers, use **Protection Bypass** (e.g. bypass token in the URL), or only send testers the **production** URL.
+
+Give testers the **same unprotected URL** you expect real candidates to use.
+
+## Supabase Auth URL configuration (email confirmation)
+
+Sign-up uses `emailRedirectTo` = current origin + `/sign-in` (see [`sign-up-form.tsx`](../src/features/auth/sign-up/components/sign-up-form.tsx)). Supabase must allow that redirect.
+
+In **Supabase Dashboard** → **Authentication** → **URL configuration**:
+
+1. Set **Site URL** to your primary public origin (e.g. `https://beonely.vercel.app`).
+2. Under **Redirect URLs**, add every origin path you use, e.g. `https://beonely.vercel.app/**` and `http://localhost:5173/**` for local dev. Add preview origins only if you test on preview URLs.
+
+If the confirmation redirect is not allowed, Supabase may show an error page instead of completing sign-in.
+
+## Branded Supabase Auth emails (optional, dashboard)
+
+Signup confirmation and password-reset emails sent by **Supabase** (not the Resend code in this repo) are customized in the Supabase project:
+
+- **Authentication** → **Emails** — edit subjects and HTML templates.
+- For a custom **From** domain and full control: configure **custom SMTP** (e.g. Resend) under **Project Settings** → **Auth** and point templates at your brand.
+
+## Transactional email (Resend, serverless)
+
+Payment receipts use [`sendTransactionalEmail`](../api/_lib/resend.ts) with **`RESEND_API_KEY`** and **`RESEND_FROM_EMAIL`** (verified domain). HTML is built with [`beonelyTransactionalHtml`](../api/_lib/email-layout.ts) for a consistent Beonely shell (logo uses `VITE_PUBLIC_SITE_URL` + `/images/beonely-logo.png` when set).

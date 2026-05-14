@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { planDurationDays, planIsFeatured, planToJobListingFields, type PaymentPlan } from './_lib/plan-helpers'
 import { rateLimitOrThrow } from './_lib/rate-limit'
 import { getServiceSupabase, getUserFromBearer } from './_lib/supabase'
+import { beonelyTransactionalHtml } from './_lib/email-layout'
 import { sendTransactionalEmail } from './_lib/resend'
 
 const bodySchema = z.object({
@@ -142,7 +143,13 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       await sendTransactionalEmail({
         to: user.email ?? '',
         subject: 'Beonely — featured boost applied',
-        html: `<p>Thanks — your live listing is now featured until ${iso.slice(0, 10)}.</p>`,
+        html: beonelyTransactionalHtml({
+          headline: 'Featured boost applied',
+          bodyParagraphs: [
+            `Your live listing is now featured until ${iso.slice(0, 10)} (UTC).`,
+            'You can manage your listing from your recruiter dashboard on Beonely.',
+          ],
+        }),
       })
 
       return res.status(200).json({
@@ -167,7 +174,13 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
     await sendTransactionalEmail({
       to: user.email ?? '',
       subject: 'Beonely — payment received',
-      html: `<p>Thanks — your listing is paid and pending approval before it appears on the site.</p>`,
+      html: beonelyTransactionalHtml({
+        headline: 'Payment received',
+        bodyParagraphs: [
+          'Thanks — we received your payment. Your listing is pending approval before it appears on the public job board.',
+          'We will email you again when the listing goes live or if we need changes.',
+        ],
+      }),
     })
 
     return res.status(200).json({
