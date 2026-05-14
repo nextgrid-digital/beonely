@@ -28,4 +28,23 @@ Never add `SUPABASE_SERVICE_ROLE_KEY` or `sb_secret_*` with a `VITE_` prefix.
 
 After changing variables, **redeploy** so functions pick up new values.
 
+`VITE_*` values are inlined at **Vite build** time. If you add or change them, trigger a new deployment so `pnpm build` runs again; restarting alone is not enough.
+
 If keys were exposed, rotate them in Supabase first — see [supabase-key-rotation.md](supabase-key-rotation.md).
+
+## Troubleshooting: “Supabase is not configured” or empty jobs on the live site
+
+Symptoms: toast **Supabase is not configured** on sign-in/sign-up, or the public jobs list is empty while localhost works.
+
+Cause: the production bundle was built without **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** (wrong name, only set for Preview but not Production, or variables added after the last build). [`getSupabaseConfigured()`](../src/lib/supabase/client.ts) is false and [`fetchPublishedJobs`](../src/lib/jobs/fetch-published-jobs.ts) returns no rows.
+
+Fix:
+
+1. Vercel → **Settings** → **Environment Variables** — set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for **Production** (and Preview if you use it). Use the same Supabase project as local `.env` unless you intend a separate database.
+2. Set **`VITE_PUBLIC_SITE_URL`** to your canonical origin (e.g. `https://beonely.vercel.app`).
+3. **Redeploy** Production from the Deployments tab (or push a commit) so a new build runs.
+4. Hard-refresh the browser or use a private window.
+
+After deploy, DevTools → **Network** should show requests to `*.supabase.co` when loading jobs or signing in.
+
+Builds on Vercel (`VERCEL=1`) **fail fast** if those two `VITE_*` variables are missing — see [`vite.config.ts`](../vite.config.ts) — so a green Vercel build implies they were present at build time.

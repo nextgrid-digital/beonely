@@ -9,6 +9,16 @@ ServiceNow-focused job board and recruiter admin. Built on the shadcn-admin Vite
 - **Development:** `pnpm install` then `pnpm dev`. For local `/api` routes, run `vercel dev` (Vite proxies `/api` in `vite.config.ts`).
 - **Quality:** `pnpm lint`, `pnpm test`, `pnpm build` (aligned with CI).
 
+### Vercel production checklist
+
+If the deployed site shows **Supabase is not configured**, an empty jobs list, or auth works locally but not on Vercel:
+
+1. In the Vercel project, add **`VITE_SUPABASE_URL`**, **`VITE_SUPABASE_ANON_KEY`**, and **`VITE_PUBLIC_SITE_URL`** (canonical URL, e.g. `https://beonely.vercel.app`) under **Settings** → **Environment Variables**, with **Production** enabled for each.
+2. **Redeploy** so `pnpm build` runs again (`VITE_*` values are baked in at build time).
+3. Confirm the Supabase project URL matches your local `.env` if you expect the same data.
+
+Details: [docs/vercel-environment.md](docs/vercel-environment.md).
+
 ### What you need to run Beonely (non-developer checklist)
 
 1. **A Supabase project** with this app’s database rules applied (migrations in [`supabase/migrations/`](supabase/migrations/)), including the public Storage bucket **`avatars`** for candidate profile photos ([`20260515120000_candidate_avatars_storage.sql`](supabase/migrations/20260515120000_candidate_avatars_storage.sql)). You do not need to “code” that—your developer or CI applies migrations once per environment. Your `VITE_SUPABASE_URL` must point at that same project.
