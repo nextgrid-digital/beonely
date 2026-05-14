@@ -1,7 +1,8 @@
 {
   "name": "shadcn-admin",
-  "private": false,
+  "private": true,
   "version": "2.2.1",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",
