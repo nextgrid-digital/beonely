@@ -1,13 +1,16 @@
-import type { Ratelimit } from '@upstash/ratelimit'
+/** Narrow surface so we never statically import `@upstash/*` (avoids Vercel bundle/init issues). */
+type UpstashLimiter = {
+  limit: (id: string) => Promise<{ success: boolean }>
+}
 
 type LimiterState =
   | { kind: 'unset' }
   | { kind: 'none' }
-  | { kind: 'ready'; lim: Ratelimit }
+  | { kind: 'ready'; lim: UpstashLimiter }
 
 let limiterState: LimiterState = { kind: 'unset' }
 
-async function getLimiter (): Promise<Ratelimit | null> {
+async function getLimiter (): Promise<UpstashLimiter | null> {
   if (limiterState.kind === 'ready') return limiterState.lim
   if (limiterState.kind === 'none') return null
 
@@ -28,7 +31,7 @@ async function getLimiter (): Promise<Ratelimit | null> {
       redis,
       limiter: Ratelimit.slidingWindow(30, '1 m'),
       prefix: 'beonely:api',
-    })
+    }) as UpstashLimiter
     limiterState = { kind: 'ready', lim }
     return lim
   } catch (e) {

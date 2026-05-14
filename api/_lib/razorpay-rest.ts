@@ -6,7 +6,11 @@
 const ORDERS_BASE = 'https://api.razorpay.com/v1/orders'
 
 function basicAuthHeader (keyId: string, keySecret: string): string {
-  const token = Buffer.from(`${keyId}:${keySecret}`, 'utf8').toString('base64')
+  const raw = `${keyId}:${keySecret}`
+  const token =
+    typeof globalThis.Buffer !== 'undefined'
+      ? globalThis.Buffer.from(raw, 'utf8').toString('base64')
+      : btoa(raw)
   return `Basic ${token}`
 }
 

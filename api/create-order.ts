@@ -1,22 +1,56 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { z } from 'zod'
 import { readJsonObjectBody } from './_lib/request-json-body'
 import { rateLimitOrThrow } from './_lib/rate-limit'
-import { PLAN_AMOUNT_INR_PAISE, planIsFeatured } from './_lib/plan-helpers'
+import {
+  PLAN_AMOUNT_INR_PAISE,
+  planIsFeatured,
+  type PaymentPlan,
+} from './_lib/plan-helpers'
 import { razorpayCreateOrder } from './_lib/razorpay-rest'
 import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase'
 import { verifyTurnstileToken } from './_lib/turnstile'
 
-const bodySchema = z.object({
-  jobId: z.string().uuid(),
-  plan: z.enum([
-    'standard_week',
-    'standard_month',
-    'featured_week',
-    'featured_month',
-  ]),
-  turnstileToken: z.string().optional(),
-})
+/** UUID shape (matches typical `z.string().uuid()` acceptance). */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const PLANS: readonly PaymentPlan[] = [
+  'standard_week',
+  'standard_month',
+  'featured_week',
+  'featured_month',
+]
+
+function parseCreateOrderBody (value: unknown):
+  | {
+      ok: true
+      jobId: string
+      plan: PaymentPlan
+      turnstileToken: string | undefined
+    }
+  | { ok: false } {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return { ok: false }
+  }
+  const o = value as Record<string, unknown>
+  const jobId = o.jobId
+  if (typeof jobId !== 'string' || !UUID_RE.test(jobId)) return { ok: false }
+  const plan = o.plan
+  if (typeof plan !== 'string' || !(PLANS as readonly string[]).includes(plan)) {
+    return { ok: false }
+  }
+  let turnstileToken: string | undefined
+  if (o.turnstileToken !== undefined) {
+    if (typeof o.turnstileToken !== 'string') return { ok: false }
+    turnstileToken = o.turnstileToken
+  }
+  return {
+    ok: true,
+    jobId,
+    plan: plan as PaymentPlan,
+    turnstileToken,
+  }
+}
 
 /** Razorpay minimum order amount (paise). */
 const MIN_AMOUNT_PAISE = 100
@@ -50,13 +84,13 @@ export default async function handler (
       return
     }
 
-    const parsed = bodySchema.safeParse(bodyRead.value)
-    if (!parsed.success) {
+    const parsed = parseCreateOrderBody(bodyRead.value)
+    if (!parsed.ok) {
       res.status(400).json({ error: 'invalid_body' })
       return
     }
 
-    const okTurnstile = await verifyTurnstileToken(parsed.data.turnstileToken)
+    const okTurnstile = await verifyTurnstileToken(parsed.turnstileToken)
     if (!okTurnstile) {
       res.status(400).json({ error: 'turnstile_failed' })
       return
@@ -91,7 +125,7 @@ export default async function handler (
       .select(
         'id, recruiter_id, approval_status, payment_status, listing_expires_at, featured'
       )
-      .eq('id', parsed.data.jobId)
+      .eq('id', parsed.jobId)
       .maybeSingle()
 
     if (jobErr || !job || job.recruiter_id !== recruiter.id) {
@@ -99,7 +133,7 @@ export default async function handler (
       return
     }
 
-    const plan = parsed.data.plan
+    const plan = parsed.plan
     const initialPayable =
       job.approval_status === 'pending' && job.payment_status === 'unpaid'
 
@@ -123,7 +157,7 @@ export default async function handler (
       return
     }
 
-    const amount = PLAN_AMOUNT_INR_PAISE[parsed.data.plan]
+    const amount = PLAN_AMOUNT_INR_PAISE[parsed.plan]
     if (amount < MIN_AMOUNT_PAISE) {
       res.status(400).json({ error: 'amount_below_minimum' })
       return
@@ -140,7 +174,7 @@ export default async function handler (
         notes: {
           job_id: job.id,
           recruiter_id: recruiter.id,
-          plan: parsed.data.plan,
+          plan: parsed.plan,
         },
       })
     } catch (rzErr) {
