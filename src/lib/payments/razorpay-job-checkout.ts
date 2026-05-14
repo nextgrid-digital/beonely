@@ -26,6 +26,11 @@ export async function startRazorpayJobCheckout(opts: {
   onError: (message: string) => void
   /** Called when the user closes the checkout modal without paying. */
   onDismiss?: () => void
+  /**
+   * Run after the order is created and checkout.js is loaded, immediately before
+   * `rz.open()`. Use to close Radix/shadcn dialogs so Razorpay is not hidden behind them.
+   */
+  prepareRazorpayUi?: () => void | Promise<void>
 }): Promise<void> {
   try {
     const order = await apiPost<{
@@ -61,8 +66,7 @@ export async function startRazorpayJobCheckout(opts: {
       },
       modal: {
         ondismiss: () => {
-          if (opts.onDismiss) opts.onDismiss()
-          else opts.onError('Payment cancelled')
+          opts.onDismiss?.()
         },
       },
     }
@@ -76,6 +80,7 @@ export async function startRazorpayJobCheckout(opts: {
         'Payment failed'
       opts.onError(msg)
     })
+    await opts.prepareRazorpayUi?.()
     rz.open()
   } catch (e) {
     opts.onError((e as Error).message || 'Payment start failed')

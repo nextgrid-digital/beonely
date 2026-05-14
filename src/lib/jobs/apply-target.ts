@@ -2,6 +2,11 @@ import type { JobRow } from '@/lib/supabase/database.types'
 
 export type JobApplyTargetFields = Pick<JobRow, 'source_kind' | 'apply_url'>
 
+/** Paid listing on Beonely — apply in-app only (no external primary). */
+export function isBeonelyApplyJob(job: JobApplyTargetFields): boolean {
+  return job.source_kind === 'recruiter_posted'
+}
+
 function applyUrlIsLinkedInHost(applyUrl: string): boolean {
   try {
     const u = new URL(applyUrl)
@@ -20,15 +25,19 @@ export function isLinkedInApplyJob(job: JobApplyTargetFields): boolean {
 }
 
 export function applyButtonLabel(job: JobApplyTargetFields): string {
+  if (isBeonelyApplyJob(job)) return 'Apply with your Beonely profile'
   return isLinkedInApplyJob(job) ? 'Apply on LinkedIn' : 'Apply externally'
 }
 
 export function applyButtonAriaLabel(job: JobApplyTargetFields): string {
+  if (isBeonelyApplyJob(job))
+    return 'Apply with your Beonely profile (submits your profile to the employer)'
   return isLinkedInApplyJob(job)
     ? 'Apply on LinkedIn (opens in a new tab)'
     : 'Apply externally (opens in a new tab)'
 }
 
 export function showLinkedInBrand(job: JobApplyTargetFields): boolean {
+  if (isBeonelyApplyJob(job)) return false
   return isLinkedInApplyJob(job)
 }

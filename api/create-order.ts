@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Razorpay from 'razorpay'
 import { z } from 'zod'
+import { PLAN_AMOUNT_INR_PAISE } from '@/lib/payments/plans'
 import { rateLimitOrThrow } from './_lib/rate-limit'
 import { planIsFeatured } from './_lib/plan-helpers'
 import { getServiceSupabase, getUserFromBearer } from './_lib/supabase'
@@ -16,13 +17,6 @@ const bodySchema = z.object({
   ]),
   turnstileToken: z.string().optional(),
 })
-
-const PLAN_AMOUNT: Record<z.infer<typeof bodySchema>['plan'], number> = {
-  standard_week: 50_00 * 100,
-  standard_month: 250_00 * 100,
-  featured_week: 100_00 * 100,
-  featured_month: 500_00 * 100,
-}
 
 /** Razorpay minimum order amount (paise). */
 const MIN_AMOUNT_PAISE = 100
@@ -102,7 +96,7 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       return res.status(500).json({ error: 'payments_not_configured' })
     }
 
-    const amount = PLAN_AMOUNT[parsed.data.plan]
+    const amount = PLAN_AMOUNT_INR_PAISE[parsed.data.plan]
     if (amount < MIN_AMOUNT_PAISE) {
       return res.status(400).json({ error: 'amount_below_minimum' })
     }

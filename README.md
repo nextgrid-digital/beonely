@@ -6,7 +6,8 @@ ServiceNow-focused job board and recruiter admin. Built on the shadcn-admin Vite
 - **Demo personas (candidate / recruiter / admin URLs and flows):** [docs/demo-personas.md](docs/demo-personas.md)
 - **Environment:** Copy [`.env.example`](.env.example) to `.env`. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Add `SUPABASE_SERVICE_ROLE_KEY` for local `/api` via `vercel dev`. Set `VITE_PUBLIC_SITE_URL` to your deployed origin for correct client-side URLs. Serverless secrets stay off `VITE_*` — see [docs/vercel-environment.md](docs/vercel-environment.md).
 - **Key hygiene:** If keys were exposed, rotate them in Supabase — [docs/supabase-key-rotation.md](docs/supabase-key-rotation.md).
-- **Development:** `pnpm install` then `pnpm dev`. For local `/api` routes, run `vercel dev` (Vite proxies `/api` in `vite.config.ts`).
+- **Development:** `pnpm install` then `pnpm dev`. For local `/api` routes (Razorpay, etc.), either run **`pnpm dev:local`** (starts Vite + `vercel dev` on **127.0.0.1:3000** in one terminal), or run **`pnpm dev:api`** in a **second** terminal alongside `pnpm dev`. Vite proxies `/api` to `127.0.0.1:3000` — without the API process you will see **502** or long **timeouts** on `/api/create-order`.
+- **Before `pnpm dev:local`:** Stop any older dev servers so **port 3000** (API) and **5173** (Vite) are free. If Vite prints “Port 5173 is in use”, open the **Local** URL it shows (e.g. `http://localhost:5174`). If `vercel dev` prints `yarn: command not found`, the linked Vercel project is set to Yarn in the dashboard — set **Package Manager** / **Install Command** to **pnpm** (Project → Settings → General, or Build & Development), or ensure `installCommand` in [`vercel.json`](vercel.json) is saved and run `vercel dev` again.
 - **Quality:** `pnpm lint`, `pnpm test`, `pnpm build` (aligned with CI).
 
 ### Vercel production checklist

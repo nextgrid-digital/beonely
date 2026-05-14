@@ -47,7 +47,7 @@ export function ForgotPasswordForm({
       const sb = getSupabaseBrowserClient()
       const redirect =
         typeof window !== 'undefined'
-          ? `${window.location.origin}/sign-in`
+          ? `${window.location.origin}/reset-password`
           : undefined
       const { error } = await sb.auth.resetPasswordForEmail(data.email, {
         redirectTo: redirect,

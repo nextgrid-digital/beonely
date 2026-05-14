@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react'
 import { Link, useSearch } from '@tanstack/react-router'
 import {
   signInCardDescription,
@@ -16,6 +17,17 @@ import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { redirect, intent } = useSearch({ from: '/(auth)/sign-in' })
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+    const raw = window.location.hash.slice(1)
+    if (!raw) return
+    const type = new URLSearchParams(raw).get('type')
+    if (type !== 'recovery') return
+    window.location.replace(
+      `${window.location.origin}/reset-password${window.location.hash}`
+    )
+  }, [])
 
   const title = intent === undefined ? 'Sign in' : signInCardTitle(intent)
 

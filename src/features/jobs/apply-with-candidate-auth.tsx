@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, UserRound } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   signInCardDescription,
   signInCardTitle,
@@ -11,8 +13,10 @@ import { syncJobSeekerFromUserMetadata } from '@/lib/candidate/sync-job-seeker-f
 import {
   applyButtonAriaLabel,
   applyButtonLabel,
+  isBeonelyApplyJob,
   showLinkedInBrand,
 } from '@/lib/jobs/apply-target'
+import { submitBeonelyApplication } from '@/lib/jobs/submit-beonely-application'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -38,9 +42,14 @@ function LinkedInLogoMark({ className }: { className?: string }) {
   )
 }
 
-type ApplyJob = Pick<
+export type ApplyJob = Pick<
   JobRow,
-  'apply_url' | 'source_kind' | 'job_slug' | 'job_title'
+  | 'id'
+  | 'recruiter_id'
+  | 'apply_url'
+  | 'source_kind'
+  | 'job_slug'
+  | 'job_title'
 >
 
 async function fetchJobSeekerCompletionRow(userId: string) {
@@ -54,12 +63,82 @@ async function fetchJobSeekerCompletionRow(userId: string) {
   return data
 }
 
+async function fetchJobSeekerSnapshotRow(userId: string) {
+  const sb = getSupabaseBrowserClient()
+  const { data, error } = await sb
+    .from('job_seeker_profiles')
+    .select(
+      'email, full_name, phone, linkedin_url, portfolio_url, resume_structured, resume_storage_path'
+    )
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
 export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [authOpen, setAuthOpen] = useState(false)
   const [authKey, setAuthKey] = useState(0)
   const linkedInApply = showLinkedInBrand(job)
+  const beonely = isBeonelyApplyJob(job)
+
+  const beonelyAppliedQuery = useQuery({
+    queryKey: ['beonely-application', user?.id, job.id],
+    enabled: Boolean(
+      user && getSupabaseConfigured() && beonely && profile?.role === 'candidate'
+    ),
+    queryFn: async () => {
+      const sb = getSupabaseBrowserClient()
+      const { data, error } = await sb
+        .from('applications')
+        .select('id')
+        .eq('job_id', job.id)
+        .eq('candidate_user_id', user!.id)
+        .maybeSingle()
+      if (error) throw error
+      return Boolean(data)
+    },
+  })
+
+  const applyBeonely = useMutation({
+    mutationFn: async () => {
+      const sb = getSupabaseBrowserClient()
+      const { data: authUserRes } = await sb.auth.getUser()
+      const authUser = authUserRes.user
+      if (!authUser) throw new Error('Not signed in')
+      await syncJobSeekerFromUserMetadata(sb, authUser)
+      const row = await fetchJobSeekerSnapshotRow(authUser.id)
+      if (!row) throw new Error('Complete your profile first')
+      const { error } = await submitBeonelyApplication({
+        sb,
+        job,
+        authUser,
+        jobSeekerRow: {
+          email: row.email,
+          full_name: row.full_name,
+          phone: row.phone,
+          linkedin_url: row.linkedin_url,
+          portfolio_url: row.portfolio_url,
+          resume_structured: row.resume_structured,
+          resume_storage_path: row.resume_storage_path,
+        },
+      })
+      if (error) throw new Error(error)
+    },
+    onSuccess: () => {
+      toast.success('Application sent to the employer')
+      void qc.invalidateQueries({
+        queryKey: ['beonely-application', user?.id, job.id],
+      })
+      void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+    },
+    onError: (e: Error) => {
+      toast.error(e.message || 'Could not submit application')
+    },
+  })
 
   const openExternalApply = useCallback(() => {
     window.open(job.apply_url, '_blank', 'noopener,noreferrer')
@@ -74,6 +153,12 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       if (!authUser) return
 
       if (authProfile?.role === 'recruiter' || authProfile?.role === 'admin') {
+        if (beonely) {
+          toast.message(
+            'Switch to a candidate account to apply on Beonely for this role.'
+          )
+          return
+        }
         openExternalApply()
         return
       }
@@ -88,9 +173,40 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         })
         return
       }
+      if (beonely) {
+        const full = await fetchJobSeekerSnapshotRow(authUser.id)
+        if (!full) {
+          toast.error('Complete your profile first')
+          return
+        }
+        const { error } = await submitBeonelyApplication({
+          sb,
+          job,
+          authUser,
+          jobSeekerRow: {
+            email: full.email,
+            full_name: full.full_name,
+            phone: full.phone,
+            linkedin_url: full.linkedin_url,
+            portfolio_url: full.portfolio_url,
+            resume_structured: full.resume_structured,
+            resume_storage_path: full.resume_storage_path,
+          },
+        })
+        if (error) {
+          toast.error(error)
+          return
+        }
+        toast.success('Application sent to the employer')
+        void qc.invalidateQueries({
+          queryKey: ['beonely-application', authUser.id, job.id],
+        })
+        void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+        return
+      }
       openExternalApply()
     },
-    [job.job_slug, navigate, openExternalApply]
+    [beonely, job, navigate, openExternalApply, qc]
   )
 
   const handleApplyClick = useCallback(async () => {
@@ -101,6 +217,12 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
     }
     if (!getSupabaseConfigured()) return
     if (profile?.role === 'recruiter' || profile?.role === 'admin') {
+      if (beonely) {
+        toast.message(
+          'Switch to a candidate account to apply on Beonely for this role.'
+        )
+        return
+      }
       openExternalApply()
       return
     }
@@ -115,8 +237,25 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       })
       return
     }
+    if (beonely) {
+      applyBeonely.mutate()
+      return
+    }
     openExternalApply()
-  }, [user, profile?.role, navigate, openExternalApply, job.job_slug])
+  }, [
+    user,
+    profile?.role,
+    navigate,
+    openExternalApply,
+    job.job_slug,
+    beonely,
+    applyBeonely,
+  ])
+
+  const applied = Boolean(beonelyAppliedQuery.data)
+  const disabled =
+    applyBeonely.isPending ||
+    (beonely && (beonelyAppliedQuery.isLoading || applied))
 
   return (
     <>
@@ -124,6 +263,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         type='button'
         variant='outline'
         size='lg'
+        disabled={disabled}
         className='inline-flex items-center gap-2 bg-white shadow-xs hover:bg-slate-50 dark:bg-background dark:hover:bg-muted'
         onClick={() => void handleApplyClick()}
         aria-label={applyButtonAriaLabel(job)}
@@ -132,6 +272,11 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           <>
             <LinkedInLogoMark className='size-5 shrink-0' />
             {applyButtonLabel(job)}
+          </>
+        ) : beonely ? (
+          <>
+            <UserRound className='size-5 shrink-0' aria-hidden />
+            {applied ? 'Applied' : applyButtonLabel(job)}
           </>
         ) : (
           <>

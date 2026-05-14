@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,7 @@ function companyInitials(name: string): string {
   return t.slice(0, 2).toUpperCase()
 }
 
-/** Single-line-ish plain text for card excerpt (DB is treated as plain text). */
+/** Single-line-ish plain text for card excerpt (HTML descriptions are flattened first). */
 function excerptPlain(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
@@ -24,7 +25,9 @@ function excerptPlain(text: string): string {
 export function PublicJobCard({ job }: { job: JobRow }) {
   const logoUrl = job.company_logo?.trim()
   const hasLogo = Boolean(logoUrl)
-  const descriptionExcerpt = excerptPlain(job.job_description ?? '')
+  const descriptionExcerpt = excerptPlain(
+    plainTextFromJobDescription(job.job_description ?? '')
+  )
 
   return (
     <Card
@@ -62,6 +65,11 @@ export function PublicJobCard({ job }: { job: JobRow }) {
               {job.featured && (
                 <Badge variant='default' className='text-[10px] uppercase'>
                   Featured
+                </Badge>
+              )}
+              {job.source_kind === 'recruiter_posted' && (
+                <Badge variant='secondary' className='text-[10px] uppercase'>
+                  On Beonely
                 </Badge>
               )}
             </div>

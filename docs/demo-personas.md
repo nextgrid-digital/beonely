@@ -36,7 +36,7 @@ Each sign-in shortcut **redirects** to `/sign-in?intent=…` (or `/sign-up?inten
 1. Create (or use) an Auth user that has a **`recruiters`** row with `role = 'recruiter'` and your `user_id` set.
 2. Open **`/hire/sign-in`**, sign in.
 3. You should land on **`/recruiter`**.
-4. Create a draft job and use **Pay with Razorpay** (requires `vercel dev` or deployed `/api` and Razorpay env — see [vercel-environment.md](vercel-environment.md)).
+4. Create a draft job and use **Pay with Razorpay** (requires **`pnpm dev:local`** or **`pnpm dev:api`** + **`pnpm dev`**, or deployed `/api`, plus Razorpay env — see [vercel-environment.md](vercel-environment.md)).
 
 ### 3. Admin — moderate
 

@@ -11,6 +11,7 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
+import { isRecruiterRegistrationMetadata } from '@/lib/auth/registration-intent'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 
 type AuthContextValue = {
@@ -55,6 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: rec.role === 'admin' ? 'admin' : 'recruiter',
         created_at: rec.created_at,
         updated_at: rec.created_at,
+      }
+      setProfile(row)
+      return row
+    }
+    if (isRecruiterRegistrationMetadata(authUser)) {
+      const row: ProfileRow = {
+        id: uid,
+        email: authUser.email ?? '',
+        role: 'recruiter',
+        created_at: authUser.created_at ?? '',
+        updated_at: authUser.updated_at ?? authUser.created_at ?? '',
       }
       setProfile(row)
       return row

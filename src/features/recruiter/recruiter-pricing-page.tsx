@@ -31,8 +31,8 @@ export function RecruiterPricingPage() {
         </h1>
         <p className='text-sm text-muted-foreground'>
           Standard listings go live after payment and moderation. Featured adds
-          prominent placement and a badge on the job board. All amounts are
-          billed in INR via Razorpay at checkout.
+          prominent placement and a badge on the job board. Prices shown include
+          18% GST; checkout is in INR via Razorpay Standard.
         </p>
       </div>
 

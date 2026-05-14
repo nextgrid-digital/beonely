@@ -17,6 +17,7 @@ export type Database = {
           candidate_email: string
           candidate_name: string
           candidate_phone: string | null
+          candidate_user_id: string
           created_at: string
           current_company: string | null
           experience_years: number | null
@@ -27,6 +28,7 @@ export type Database = {
           match_score: number | null
           note: string | null
           recruiter_id: string
+          resume_storage_path: string | null
           resume_url: string | null
           status: Database['public']['Enums']['application_status']
           updated_at: string
@@ -35,6 +37,7 @@ export type Database = {
           candidate_email: string
           candidate_name: string
           candidate_phone?: string | null
+          candidate_user_id: string
           created_at?: string
           current_company?: string | null
           experience_years?: number | null
@@ -45,6 +48,7 @@ export type Database = {
           match_score?: number | null
           note?: string | null
           recruiter_id: string
+          resume_storage_path?: string | null
           resume_url?: string | null
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
@@ -53,6 +57,7 @@ export type Database = {
           candidate_email?: string
           candidate_name?: string
           candidate_phone?: string | null
+          candidate_user_id?: string
           created_at?: string
           current_company?: string | null
           experience_years?: number | null
@@ -63,6 +68,7 @@ export type Database = {
           match_score?: number | null
           note?: string | null
           recruiter_id?: string
+          resume_storage_path?: string | null
           resume_url?: string | null
           status?: Database['public']['Enums']['application_status']
           updated_at?: string

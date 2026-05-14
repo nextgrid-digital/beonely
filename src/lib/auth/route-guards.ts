@@ -1,4 +1,5 @@
 import { redirect } from '@tanstack/react-router'
+import { isRecruiterRegistrationMetadata } from '@/lib/auth/registration-intent'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -19,7 +20,10 @@ export async function fetchSessionPersona(): Promise<SessionPersona | null> {
     .select('role')
     .eq('user_id', session.user.id)
     .maybeSingle()
-  if (!rec) return 'candidate'
+  if (!rec) {
+    if (isRecruiterRegistrationMetadata(session.user)) return 'recruiter'
+    return 'candidate'
+  }
   if (rec.role === 'admin') return 'admin'
   return 'recruiter'
 }
@@ -85,4 +89,33 @@ export async function requireRecruiterAccountBeforeLoad(opts: {
   }
   if (persona === 'recruiter' || persona === 'admin') return
   throw redirect({ to: '/candidate/profile' })
+}
+
+/** Candidate portal: recruiters and admins must not load candidate-only routes. */
+export async function requireCandidateAccountBeforeLoad(opts: {
+  loginRedirectPath: string
+}) {
+  if (!getSupabaseConfigured()) {
+    throw redirect({ to: '/' })
+  }
+  const sb = getSupabaseBrowserClient()
+  const {
+    data: { session },
+  } = await sb.auth.getSession()
+  if (!session) {
+    throw redirect({
+      to: '/sign-in',
+      search: { redirect: opts.loginRedirectPath },
+    })
+  }
+  const persona = await fetchSessionPersona()
+  if (!persona) {
+    throw redirect({
+      to: '/sign-in',
+      search: { redirect: opts.loginRedirectPath },
+    })
+  }
+  if (persona === 'candidate') return
+  if (persona === 'admin') throw redirect({ to: '/admin' })
+  throw redirect({ to: '/recruiter' })
 }

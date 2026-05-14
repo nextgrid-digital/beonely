@@ -6,6 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
+import { requireCandidateAccountBeforeLoad } from '@/lib/auth/route-guards'
 import { isJobSeekerProfileComplete } from '@/lib/candidate/profile-completion'
 import { syncJobSeekerFromUserMetadata } from '@/lib/candidate/sync-job-seeker-from-metadata'
 import {
@@ -15,6 +16,8 @@ import {
 import { useAuth } from '@/context/auth-provider'
 
 export const Route = createFileRoute('/_authenticated/candidate')({
+  beforeLoad: () =>
+    requireCandidateAccountBeforeLoad({ loginRedirectPath: '/candidate' }),
   component: CandidateSectionLayout,
 })
 

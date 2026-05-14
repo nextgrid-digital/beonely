@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import Razorpay from 'razorpay'
 import { z } from 'zod'
+import { PLAN_AMOUNT_INR_PAISE } from '@/lib/payments/plans'
 import { planDurationDays, planIsFeatured, planToJobListingFields, type PaymentPlan } from './_lib/plan-helpers'
 import { rateLimitOrThrow } from './_lib/rate-limit'
 import { getServiceSupabase, getUserFromBearer } from './_lib/supabase'
@@ -75,6 +76,13 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
     if (!plan) {
       return res.status(400).json({ error: 'invalid_plan' })
     }
+
+    const expectedAmount = PLAN_AMOUNT_INR_PAISE[plan]
+    const paidAmount = Number(order.amount)
+    if (Number.isNaN(paidAmount) || paidAmount !== expectedAmount) {
+      return res.status(400).json({ error: 'amount_mismatch' })
+    }
+
     const listing = planToJobListingFields(plan)
 
     const sb = getServiceSupabase()

@@ -27,9 +27,11 @@ import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
 import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
+import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-password'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedRecruiterRouteRouteImport } from './routes/_authenticated/recruiter/route'
 import { Route as AuthenticatedCandidateRouteRouteImport } from './routes/_authenticated/candidate/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
@@ -50,6 +52,9 @@ import { Route as AuthenticatedCandidateProfileRouteImport } from './routes/_aut
 import { Route as AuthenticatedCandidateApplicationsRouteImport } from './routes/_authenticated/candidate/applications'
 import { Route as AuthenticatedRecruiterPricingIndexRouteImport } from './routes/_authenticated/recruiter/pricing/index'
 import { Route as AuthenticatedAdminJobsIndexRouteImport } from './routes/_authenticated/admin/jobs/index'
+import { Route as AuthenticatedRecruiterJobsNewRouteImport } from './routes/_authenticated/recruiter/jobs/new'
+import { Route as AuthenticatedRecruiterJobsJobIdEditRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/edit'
+import { Route as AuthenticatedRecruiterJobsJobIdApplicantsRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/applicants'
 
 const JobsRouteRoute = JobsRouteRouteImport.update({
   id: '/jobs',
@@ -140,6 +145,11 @@ const authSignInRoute = authSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const authResetPasswordRoute = authResetPasswordRouteImport.update({
+  id: '/(auth)/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const authOtpRoute = authOtpRouteImport.update({
   id: '/(auth)/otp',
   path: '/otp',
@@ -154,6 +164,12 @@ const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecruiterRouteRoute =
+  AuthenticatedRecruiterRouteRouteImport.update({
+    id: '/recruiter',
+    path: '/recruiter',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCandidateRouteRoute =
@@ -180,9 +196,9 @@ const AuthenticatedSettingsIndexRoute =
   } as any)
 const AuthenticatedRecruiterIndexRoute =
   AuthenticatedRecruiterIndexRouteImport.update({
-    id: '/recruiter/',
-    path: '/recruiter/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
   } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
@@ -261,9 +277,9 @@ const AuthenticatedCandidateApplicationsRoute =
   } as any)
 const AuthenticatedRecruiterPricingIndexRoute =
   AuthenticatedRecruiterPricingIndexRouteImport.update({
-    id: '/recruiter/pricing/',
-    path: '/recruiter/pricing/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/pricing/',
+    path: '/pricing/',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
   } as any)
 const AuthenticatedAdminJobsIndexRoute =
   AuthenticatedAdminJobsIndexRouteImport.update({
@@ -271,14 +287,34 @@ const AuthenticatedAdminJobsIndexRoute =
     path: '/admin/jobs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRecruiterJobsNewRoute =
+  AuthenticatedRecruiterJobsNewRouteImport.update({
+    id: '/jobs/new',
+    path: '/jobs/new',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+  } as any)
+const AuthenticatedRecruiterJobsJobIdEditRoute =
+  AuthenticatedRecruiterJobsJobIdEditRouteImport.update({
+    id: '/jobs/$jobId/edit',
+    path: '/jobs/$jobId/edit',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+  } as any)
+const AuthenticatedRecruiterJobsJobIdApplicantsRoute =
+  AuthenticatedRecruiterJobsJobIdApplicantsRouteImport.update({
+    id: '/jobs/$jobId/applicants',
+    path: '/jobs/$jobId/applicants',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jobs': typeof JobsRouteRouteWithChildren
   '/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
+  '/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
+  '/reset-password': typeof authResetPasswordRoute
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
@@ -311,13 +347,17 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
   '/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
   '/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
+  '/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
+  '/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
+  '/reset-password': typeof authResetPasswordRoute
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
@@ -350,8 +390,11 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsIndexRoute
   '/recruiter/pricing': typeof AuthenticatedRecruiterPricingIndexRoute
+  '/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
+  '/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -359,9 +402,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/jobs': typeof JobsRouteRouteWithChildren
   '/_authenticated/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
+  '/_authenticated/recruiter': typeof AuthenticatedRecruiterRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
+  '/(auth)/reset-password': typeof authResetPasswordRoute
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-in-2': typeof authSignIn2Route
   '/(auth)/sign-up': typeof authSignUpRoute
@@ -394,8 +439,11 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
   '/_authenticated/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
   '/_authenticated/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
+  '/_authenticated/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
+  '/_authenticated/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -403,9 +451,11 @@ export interface FileRouteTypes {
     | '/'
     | '/jobs'
     | '/candidate'
+    | '/recruiter'
     | '/settings'
     | '/forgot-password'
     | '/otp'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-in-2'
     | '/sign-up'
@@ -438,13 +488,17 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tasks/'
     | '/users/'
+    | '/recruiter/jobs/new'
     | '/admin/jobs/'
     | '/recruiter/pricing/'
+    | '/recruiter/jobs/$jobId/applicants'
+    | '/recruiter/jobs/$jobId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/forgot-password'
     | '/otp'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-in-2'
     | '/sign-up'
@@ -477,17 +531,22 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/recruiter/jobs/new'
     | '/admin/jobs'
     | '/recruiter/pricing'
+    | '/recruiter/jobs/$jobId/applicants'
+    | '/recruiter/jobs/$jobId/edit'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/jobs'
     | '/_authenticated/candidate'
+    | '/_authenticated/recruiter'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
+    | '/(auth)/reset-password'
     | '/(auth)/sign-in'
     | '/(auth)/sign-in-2'
     | '/(auth)/sign-up'
@@ -520,8 +579,11 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/recruiter/jobs/new'
     | '/_authenticated/admin/jobs/'
     | '/_authenticated/recruiter/pricing/'
+    | '/_authenticated/recruiter/jobs/$jobId/applicants'
+    | '/_authenticated/recruiter/jobs/$jobId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -530,6 +592,7 @@ export interface RootRouteChildren {
   JobsRouteRoute: typeof JobsRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
+  authResetPasswordRoute: typeof authResetPasswordRoute
   authSignInRoute: typeof authSignInRoute
   authSignIn2Route: typeof authSignIn2Route
   authSignUpRoute: typeof authSignUpRoute
@@ -673,6 +736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(auth)/reset-password': {
+      id: '/(auth)/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof authResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(auth)/otp': {
       id: '/(auth)/otp'
       path: '/otp'
@@ -692,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recruiter': {
+      id: '/_authenticated/recruiter'
+      path: '/recruiter'
+      fullPath: '/recruiter'
+      preLoaderRoute: typeof AuthenticatedRecruiterRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/candidate': {
@@ -724,10 +801,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/recruiter/': {
       id: '/_authenticated/recruiter/'
-      path: '/recruiter'
+      path: '/'
       fullPath: '/recruiter/'
       preLoaderRoute: typeof AuthenticatedRecruiterIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
     }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
@@ -822,10 +899,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/recruiter/pricing/': {
       id: '/_authenticated/recruiter/pricing/'
-      path: '/recruiter/pricing'
+      path: '/pricing'
       fullPath: '/recruiter/pricing/'
       preLoaderRoute: typeof AuthenticatedRecruiterPricingIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
     }
     '/_authenticated/admin/jobs/': {
       id: '/_authenticated/admin/jobs/'
@@ -833,6 +910,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/jobs/'
       preLoaderRoute: typeof AuthenticatedAdminJobsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recruiter/jobs/new': {
+      id: '/_authenticated/recruiter/jobs/new'
+      path: '/jobs/new'
+      fullPath: '/recruiter/jobs/new'
+      preLoaderRoute: typeof AuthenticatedRecruiterJobsNewRouteImport
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
+    }
+    '/_authenticated/recruiter/jobs/$jobId/edit': {
+      id: '/_authenticated/recruiter/jobs/$jobId/edit'
+      path: '/jobs/$jobId/edit'
+      fullPath: '/recruiter/jobs/$jobId/edit'
+      preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdEditRouteImport
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
+    }
+    '/_authenticated/recruiter/jobs/$jobId/applicants': {
+      id: '/_authenticated/recruiter/jobs/$jobId/applicants'
+      path: '/jobs/$jobId/applicants'
+      fullPath: '/recruiter/jobs/$jobId/applicants'
+      preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdApplicantsRouteImport
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
     }
   }
 }
@@ -858,6 +956,31 @@ const AuthenticatedCandidateRouteRouteWithChildren =
     AuthenticatedCandidateRouteRouteChildren,
   )
 
+interface AuthenticatedRecruiterRouteRouteChildren {
+  AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
+  AuthenticatedRecruiterJobsNewRoute: typeof AuthenticatedRecruiterJobsNewRoute
+  AuthenticatedRecruiterPricingIndexRoute: typeof AuthenticatedRecruiterPricingIndexRoute
+  AuthenticatedRecruiterJobsJobIdApplicantsRoute: typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
+  AuthenticatedRecruiterJobsJobIdEditRoute: typeof AuthenticatedRecruiterJobsJobIdEditRoute
+}
+
+const AuthenticatedRecruiterRouteRouteChildren: AuthenticatedRecruiterRouteRouteChildren =
+  {
+    AuthenticatedRecruiterIndexRoute: AuthenticatedRecruiterIndexRoute,
+    AuthenticatedRecruiterJobsNewRoute: AuthenticatedRecruiterJobsNewRoute,
+    AuthenticatedRecruiterPricingIndexRoute:
+      AuthenticatedRecruiterPricingIndexRoute,
+    AuthenticatedRecruiterJobsJobIdApplicantsRoute:
+      AuthenticatedRecruiterJobsJobIdApplicantsRoute,
+    AuthenticatedRecruiterJobsJobIdEditRoute:
+      AuthenticatedRecruiterJobsJobIdEditRoute,
+  }
+
+const AuthenticatedRecruiterRouteRouteWithChildren =
+  AuthenticatedRecruiterRouteRoute._addFileChildren(
+    AuthenticatedRecruiterRouteRouteChildren,
+  )
+
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
@@ -881,6 +1004,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCandidateRouteRoute: typeof AuthenticatedCandidateRouteRouteWithChildren
+  AuthenticatedRecruiterRouteRoute: typeof AuthenticatedRecruiterRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -888,16 +1012,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
-  AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedAdminJobsIndexRoute: typeof AuthenticatedAdminJobsIndexRoute
-  AuthenticatedRecruiterPricingIndexRoute: typeof AuthenticatedRecruiterPricingIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCandidateRouteRoute:
     AuthenticatedCandidateRouteRouteWithChildren,
+  AuthenticatedRecruiterRouteRoute:
+    AuthenticatedRecruiterRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -905,12 +1029,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
-  AuthenticatedRecruiterIndexRoute: AuthenticatedRecruiterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedAdminJobsIndexRoute: AuthenticatedAdminJobsIndexRoute,
-  AuthenticatedRecruiterPricingIndexRoute:
-    AuthenticatedRecruiterPricingIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -936,6 +1057,7 @@ const rootRouteChildren: RootRouteChildren = {
   JobsRouteRoute: JobsRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
+  authResetPasswordRoute: authResetPasswordRoute,
   authSignInRoute: authSignInRoute,
   authSignIn2Route: authSignIn2Route,
   authSignUpRoute: authSignUpRoute,

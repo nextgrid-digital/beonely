@@ -4,6 +4,7 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { sortPublishedJobsForFeed } from '@/lib/jobs/sort-published-jobs'
 
 export const publishedJobsFilterSchema = z.object({
   q: z.string().optional(),
@@ -67,8 +68,9 @@ export async function fetchPublishedJobs(
   if (error) throw error
   const rows = (data ?? []) as JobRow[]
   const now = Date.now()
-  return rows.filter(
+  const active = rows.filter(
     (j) =>
       !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
   )
+  return sortPublishedJobsForFeed(active)
 }

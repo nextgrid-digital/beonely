@@ -7,6 +7,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 import { Loader2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SignInIntent } from '@/lib/auth/sign-in-intent'
+import { signUpAuthDataFields } from '@/lib/auth/user-account-type'
 import {
   candidateLinkedInUrlSchema,
   candidatePhoneSchema,
@@ -183,7 +184,10 @@ export function SignUpForm({
         options: {
           emailRedirectTo: redirect,
           captchaToken: turnstileToken ?? undefined,
-          data: candidateMeta,
+          data: {
+            ...(candidateMeta ?? {}),
+            ...signUpAuthDataFields(intent),
+          },
         },
       })
       if (error) {

@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
+import { JobDescriptionRichTextRead } from '@/features/jobs/job-description-rich-text-field'
 import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
+import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
@@ -141,7 +143,7 @@ function JobDetailPage() {
           <PublicSiteStickySubheader
             breadcrumb={<JobDetailBreadcrumb currentLabel={job.job_title} />}
             actions={
-              user ? (
+              user && job.source_kind !== 'recruiter_posted' ? (
                 <RecordApplicationButton
                   jobId={job.id}
                   jobTitle={job.job_title}
@@ -158,6 +160,11 @@ function JobDetailPage() {
                     {job.job_title}
                   </h1>
                   {job.featured && <Badge>Featured</Badge>}
+              {job.source_kind === 'recruiter_posted' && (
+                <Badge variant='secondary' className='text-[10px] uppercase'>
+                  On Beonely
+                </Badge>
+              )}
                 </div>
                 <p className='mt-2 text-lg text-muted-foreground'>
                   {job.company_name}
@@ -183,8 +190,8 @@ function JobDetailPage() {
               <CardHeader>
                 <CardTitle>About this role</CardTitle>
               </CardHeader>
-              <CardContent className='max-w-none text-sm leading-relaxed whitespace-pre-wrap'>
-                {job.job_description}
+              <CardContent className='max-w-none'>
+                <JobDescriptionRichTextRead value={job.job_description} />
               </CardContent>
             </Card>
           </div>
@@ -227,7 +234,7 @@ function buildJobPostingJsonLd(job: JobRow, url: string) {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.job_title,
-    description: job.job_description,
+    description: plainTextFromJobDescription(job.job_description),
     datePosted: job.created_at,
     validThrough: job.listing_expires_at ?? undefined,
     employmentType: job.employment_type,
@@ -244,7 +251,7 @@ function buildJobPostingJsonLd(job: JobRow, url: string) {
           },
         }
       : undefined,
-    directApply: false,
+    directApply: job.source_kind === 'recruiter_posted',
     identifier: {
       '@type': 'PropertyValue',
       name: 'Beonely',

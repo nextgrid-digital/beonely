@@ -126,6 +126,12 @@ describe('SignUpForm', () => {
       expect.objectContaining({
         email: 'a@b.com',
         password: '1234567',
+        options: expect.objectContaining({
+          data: expect.objectContaining({
+            user_type: 'candidate',
+            registration_intent: 'candidate',
+          }),
+        }),
       })
     )
     await vi.waitFor(() =>
@@ -163,6 +169,17 @@ describe('SignUpForm intent navigation', () => {
     await userEvent.fill(pw, '1234567')
     await userEvent.fill(cpw, '1234567')
     await userEvent.click(btn)
+    await vi.waitFor(() => expect(signUp).toHaveBeenCalledOnce())
+    expect(signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          data: expect.objectContaining({
+            user_type: 'candidate',
+            registration_intent: 'candidate',
+          }),
+        }),
+      })
+    )
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
         to: '/sign-in',
@@ -186,6 +203,17 @@ describe('SignUpForm intent navigation', () => {
     await userEvent.fill(pw, '1234567')
     await userEvent.fill(cpw, '1234567')
     await userEvent.click(btn)
+    await vi.waitFor(() => expect(signUp).toHaveBeenCalledOnce())
+    expect(signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          data: expect.objectContaining({
+            user_type: 'recruiter',
+            registration_intent: 'recruiter',
+          }),
+        }),
+      })
+    )
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
         to: '/sign-in',
@@ -275,6 +303,8 @@ describe('SignUpForm candidate intent', () => {
           data: {
             linkedin_url: 'https://www.linkedin.com/in/candidate',
             phone: '+1 555 123 4567',
+            user_type: 'candidate',
+            registration_intent: 'candidate',
           },
         }),
       })

@@ -1,12 +1,17 @@
+import type { ReactElement } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import type { ProfileRow } from '@/lib/supabase/database.types'
+import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 
 const navigate = vi.fn()
 const maybeSingleProfile = vi.fn()
+const maybeSingleApplication = vi.fn()
+const insertApplication = vi.fn()
 
 const useAuthMock = vi.hoisted(() =>
   vi.fn(() => ({
@@ -50,13 +55,41 @@ vi.mock('@/lib/supabase/client', () => ({
           })),
         }
       }
-      return {}
+      if (table === 'applications') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: maybeSingleApplication,
+              })),
+            })),
+          })),
+          insert: insertApplication,
+        }
+      }
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: null, error: null }),
+          })),
+        })),
+      }
     },
   }),
 }))
 
 vi.mock('@/lib/candidate/sync-job-seeker-from-metadata', () => ({
   syncJobSeekerFromUserMetadata: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    message: vi.fn(),
+  },
 }))
 
 vi.mock('@/features/auth/auth-modal', () => ({
@@ -78,11 +111,22 @@ vi.mock('@/features/auth/auth-modal', () => ({
     ) : null,
 }))
 
-const sampleJob = {
-  apply_url: 'https://example.com/apply',
-  source_kind: 'recruiter_posted' as const,
+const linkedInJob = {
+  id: 'job-li',
+  recruiter_id: 'rec-1',
+  apply_url: 'https://www.linkedin.com/jobs/view/1',
+  source_kind: 'linkedin_import' as const,
   job_slug: 'test-role',
   job_title: 'Test role',
+}
+
+const postedJob = {
+  id: 'job-posted',
+  recruiter_id: 'rec-1',
+  apply_url: 'https://example.com/apply',
+  source_kind: 'recruiter_posted' as const,
+  job_slug: 'posted-role',
+  job_title: 'Posted role',
 }
 
 function candidateUser(): User {
@@ -99,6 +143,16 @@ function candidateProfile(): ProfileRow {
   }
 }
 
+function renderWithQuery(ui: ReactElement) {
+  const qc = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>)
+}
+
 describe('ApplyWithCandidateAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -110,6 +164,8 @@ describe('ApplyWithCandidateAuth', () => {
       },
       error: null,
     })
+    maybeSingleApplication.mockResolvedValue({ data: null, error: null })
+    insertApplication.mockResolvedValue({ error: null })
     useAuthMock.mockReturnValue({
       user: null,
       session: null,
@@ -122,10 +178,12 @@ describe('ApplyWithCandidateAuth', () => {
     vi.spyOn(window, 'open').mockImplementation(() => null)
   })
 
-  it('opens auth stub when visitor clicks Apply', async () => {
-    const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
+  it('opens auth stub when visitor clicks Apply (LinkedIn listing)', async () => {
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={linkedInJob} />
+    )
     await userEvent.click(
-      screen.getByRole('button', { name: /Apply externally/i })
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
     await expect
       .element(screen.getByTestId('auth-modal-complete'))
@@ -133,7 +191,19 @@ describe('ApplyWithCandidateAuth', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('navigates to candidate profile when profile incomplete', async () => {
+  it('opens auth when visitor clicks Beonely apply', async () => {
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={postedJob} />
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply with your Beonely profile/i })
+    )
+    await expect
+      .element(screen.getByTestId('auth-modal-complete'))
+      .toBeInTheDocument()
+  })
+
+  it('navigates to candidate profile when profile incomplete (LinkedIn)', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
@@ -148,9 +218,11 @@ describe('ApplyWithCandidateAuth', () => {
       error: null,
     })
 
-    const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={linkedInJob} />
+    )
     await userEvent.click(
-      screen.getByRole('button', { name: /Apply externally/i })
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
@@ -160,7 +232,7 @@ describe('ApplyWithCandidateAuth', () => {
     )
   })
 
-  it('opens apply URL when candidate profile is complete', async () => {
+  it('opens apply URL when candidate profile is complete (LinkedIn)', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
@@ -171,13 +243,15 @@ describe('ApplyWithCandidateAuth', () => {
       signOut: vi.fn(),
     })
 
-    const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={linkedInJob} />
+    )
     await userEvent.click(
-      screen.getByRole('button', { name: /Apply externally/i })
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
     await vi.waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
-        'https://example.com/apply',
+        'https://www.linkedin.com/jobs/view/1',
         '_blank',
         'noopener,noreferrer'
       )
@@ -185,7 +259,7 @@ describe('ApplyWithCandidateAuth', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('opens apply URL for recruiter without profile gate', async () => {
+  it('opens apply URL for recruiter without profile gate (LinkedIn)', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
@@ -202,17 +276,55 @@ describe('ApplyWithCandidateAuth', () => {
       signOut: vi.fn(),
     })
 
-    const screen = await render(<ApplyWithCandidateAuth job={sampleJob} />)
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={linkedInJob} />
+    )
     await userEvent.click(
-      screen.getByRole('button', { name: /Apply externally/i })
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
     await vi.waitFor(() =>
       expect(window.open).toHaveBeenCalledWith(
-        'https://example.com/apply',
+        'https://www.linkedin.com/jobs/view/1',
         '_blank',
         'noopener,noreferrer'
       )
     )
     expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('submits Beonely application when profile is complete', async () => {
+    useAuthMock.mockReturnValue({
+      user: candidateUser(),
+      session: {} as Session,
+      profile: candidateProfile(),
+      loading: false,
+      configured: true,
+      refreshProfile: vi.fn(),
+      signOut: vi.fn(),
+    })
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'c@d.com' } },
+      error: null,
+    })
+    maybeSingleProfile.mockResolvedValue({
+      data: {
+        linkedin_url: 'https://www.linkedin.com/in/ok',
+        phone: '+1 555 123 4567',
+        email: 'c@d.com',
+        full_name: 'Candidate',
+        portfolio_url: null,
+        resume_structured: defaultResumeStructured(),
+        resume_storage_path: null,
+      },
+      error: null,
+    })
+
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={postedJob} />
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply with your Beonely profile/i })
+    )
+    await vi.waitFor(() => expect(insertApplication).toHaveBeenCalled())
   })
 })

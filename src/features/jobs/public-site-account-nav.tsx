@@ -34,7 +34,7 @@ import { AuthModal } from '@/features/auth/auth-modal'
 
 const POST_JOB_MODAL_TITLE = 'Post a job'
 const POST_JOB_MODAL_DESCRIPTION =
-  'Sign in or create a recruiter account. After that you will go to the recruiter dashboard to post and pay for listings.'
+  'Sign in or create a recruiter account. After that you will open the new listing page to enter details and save a draft.'
 
 const DEFAULT_SIGN_IN_TITLE = 'Sign in'
 const DEFAULT_SIGN_IN_DESCRIPTION =
@@ -116,11 +116,11 @@ export function PublicSiteAccountNav() {
   const requireAuthForPostJob = useCallback(() => {
     if (loading) return
     if (user) {
-      void navigate({ to: '/recruiter' })
+      void navigate({ to: '/recruiter/jobs/new' })
       return
     }
     pendingAfterSignInRef.current = () => {
-      void navigate({ to: '/recruiter' })
+      void navigate({ to: '/recruiter/jobs/new' })
     }
     openAuthModal({
       title: POST_JOB_MODAL_TITLE,

@@ -25,7 +25,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
+import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
+import {
+  plainTextFromJobDescription,
+  sanitizeJobDescriptionHtml,
+} from '@/lib/jobs/sanitize-job-description-html'
 
 export const Route = createFileRoute('/_authenticated/admin/jobs/')({
   beforeLoad: () =>
@@ -147,15 +151,16 @@ function AdminJobsPage() {
 
   const saveDescription = () => {
     if (!editingJob) return
-    const trimmed = descriptionDraft.trim()
-    if (!trimmed) {
+    const safe = sanitizeJobDescriptionHtml(descriptionDraft)
+    const plain = plainTextFromJobDescription(safe)
+    if (!plain) {
       toast.error('Description cannot be empty')
       return
     }
     updateJobDescription.mutate({
       id: editingJob.id,
       job_slug: editingJob.job_slug,
-      description: trimmed,
+      description: safe,
     })
   }
 
@@ -188,13 +193,11 @@ function AdminJobsPage() {
                   Open public job page
                 </Link>
                 <div className='space-y-2 pt-2'>
-                  <Label htmlFor='admin-job-description'>job_description</Label>
-                  <Textarea
-                    id='admin-job-description'
+                  <Label htmlFor='admin-job-description'>Description</Label>
+                  <JobDescriptionRichTextField
                     value={descriptionDraft}
-                    onChange={(e) => setDescriptionDraft(e.target.value)}
-                    className='min-h-[min(24rem,50vh)] font-mono text-sm'
-                    spellCheck
+                    onChange={setDescriptionDraft}
+                    editable
                   />
                 </div>
               </div>

@@ -16,7 +16,7 @@ If you use the **Supabase ↔ Vercel integration**, Supabase may sync **`SUPABAS
 
 Never add `SUPABASE_SERVICE_ROLE_KEY` or `sb_secret_*` with a `VITE_` prefix.
 
-**Local payments:** Run **`vercel dev`** (with this repo’s `api/` routes) alongside or instead of plain `pnpm dev` when testing Razorpay, so browser `fetch('/api/create-order')` reaches the serverless handlers. See the Beonely section in [README](../README.md).
+**Local payments:** Run **`pnpm dev:local`** (Vite + `vercel dev` on `127.0.0.1:3000`), or **`pnpm dev:api`** in a second terminal while **`pnpm dev`** runs, so `fetch('/api/create-order')` is proxied to the `api/` routes. See [README](../README.md). Checkout totals include **18% GST**; see [`src/lib/payments/plans.ts`](../src/lib/payments/plans.ts).
 
 ## Server-only (available to serverless `api/*`, not bundled for client)
 
@@ -25,10 +25,42 @@ Never add `SUPABASE_SERVICE_ROLE_KEY` or `sb_secret_*` with a `VITE_` prefix.
 | `SUPABASE_URL` | Same URL as above (or rely on `VITE_SUPABASE_URL` — see [`api/_lib/supabase.ts`](../api/_lib/supabase.ts)) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role JWT — **Dashboard only**, rotate if leaked |
 | `SUPABASE_ANON_KEY` | Optional; API JWT verification can use `VITE_SUPABASE_ANON_KEY` instead |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay **server** credentials for creating orders and verifying signatures in [`api/create-order`](../api/create-order.ts) and [`api/verify-payment`](../api/verify-payment.ts). `KEY_ID` is the same public key string as `VITE_RAZORPAY_KEY_ID` when you use both. |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay **server** credentials for [`api/create-order`](../api/create-order.ts) and [`api/verify-payment`](../api/verify-payment.ts). `KEY_ID` matches `VITE_RAZORPAY_KEY_ID` when both are set. Order amounts must match [`PLAN_AMOUNT_INR_PAISE`](../src/lib/payments/plans.ts) (base + 18% GST). |
 | Other | Resend, Turnstile secret, Redis, etc. per [`.env.example`](../.env.example) |
 
 After changing variables, **redeploy** so functions pick up new values.
+
+## Production checklist: `/api` and recruiter checkout
+
+On Vercel, [`api/create-order.ts`](../api/create-order.ts) and [`api/verify-payment.ts`](../api/verify-payment.ts) run as **serverless functions** on the same origin as the static app — no local `vercel dev` or Vite proxy is involved. Confirm **Production** (and **Preview**, if you test there) has at least:
+
+| Priority | Variable | Notes |
+|----------|----------|--------|
+| Required | `SUPABASE_SERVICE_ROLE_KEY` | Service role JWT for server-side Supabase ([`api/_lib/supabase.ts`](../api/_lib/supabase.ts)). |
+| Required | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay Standard Checkout ([`api/create-order.ts`](../api/create-order.ts), [`api/verify-payment.ts`](../api/verify-payment.ts)). |
+| Required | Supabase URL + anon for API auth | `SUPABASE_URL` **or** `VITE_SUPABASE_URL`, and `SUPABASE_ANON_KEY` **or** `VITE_SUPABASE_ANON_KEY` — used when validating the user JWT on `/api/*`. |
+| Strongly recommended | `VITE_PUBLIC_SITE_URL` | Production origin for links and email assets ([`api/_lib/email-layout.ts`](../api/_lib/email-layout.ts)). |
+| Optional | `VITE_RAZORPAY_KEY_ID` | Same publishable key id as `RAZORPAY_KEY_ID` if you want it in the client bundle; server can still return `keyId` without it. |
+
+**Turnstile:** If **`TURNSTILE_SECRET_KEY`** is set ([`api/_lib/turnstile.ts`](../api/_lib/turnstile.ts)), `POST /api/create-order` expects a **`turnstileToken`** in the JSON body. The recruiter **Pay with Razorpay** flow ([`src/lib/payments/razorpay-job-checkout.ts`](../src/lib/payments/razorpay-job-checkout.ts)) does not send that field today. For checkout to work, either **omit** `TURNSTILE_SECRET_KEY` in Vercel, or extend the pay flow to collect a token before calling `create-order`.
+
+**Rate limits:** [`UPSTASH_REDIS_REST_URL`](../api/_lib/rate-limit.ts) + `UPSTASH_REDIS_REST_TOKEN` are optional; if unset, rate limiting is skipped.
+
+**Email:** `RESEND_API_KEY` + `RESEND_FROM_EMAIL` when using transactional email from the payment path ([`api/_lib/resend.ts`](../api/_lib/resend.ts)).
+
+## Smoke test after deploy
+
+1. Open your **production** site URL (use Preview only if its env vars match what you need).
+2. Sign in as a **recruiter**, go to **My jobs**, use **Pay & submit** → **Pay with Razorpay** (or the featured upgrade flow).
+3. Open DevTools → **Network**, trigger payment start, and find **`POST …/api/create-order`**. Expect **HTTP 200** and JSON including `orderId`, `amount`, `currency`, and `keyId`.
+4. If the request fails: **401** → auth/session or anon key mismatch; **400** with `turnstile_failed` → see Turnstile note above; **502** / timeout / **5xx** → **Vercel → Project → Logs** (or Runtime Logs) for `/api/create-order` and fix missing env or handler errors.
+
+## Razorpay Dashboard (test or live)
+
+1. **API keys:** [Dashboard](https://dashboard.razorpay.com/) → **Settings → API Keys** — use **Key ID** + **Key secret** in Vercel / local `.env` (never commit secrets).
+2. **Standard Web Checkout:** Works with the existing order + `checkout.js` flow; no separate “Payment Page” product is required for this integration.
+3. **Webhooks:** Optional for this app — confirmation is via client `POST /api/verify-payment` after success. [`api/razorpay-webhook.ts`](../api/razorpay-webhook.ts) is intentionally unused (410).
+4. **Live mode:** After KYC, switch to **live** keys in production env vars.
 
 `VITE_*` values are inlined at **Vite build** time. If you add or change them, trigger a new deployment so `pnpm build` runs again; restarting alone is not enough.
 
@@ -67,12 +99,14 @@ Give testers the **same unprotected URL** you expect real candidates to use.
 
 ## Supabase Auth URL configuration (email confirmation)
 
-Sign-up uses `emailRedirectTo` = current origin + `/sign-in` (see [`sign-up-form.tsx`](../src/features/auth/sign-up/components/sign-up-form.tsx)). Supabase must allow that redirect.
+**Site URL** is the default origin Supabase uses when building magic links and auth emails. If it still points at an old Vercel project URL (for example `https://<old>-projects.vercel.app`), users will see that hostname in the email even when they triggered the flow from another deployment. Set **Site URL** to your real canonical origin (same idea as **`VITE_PUBLIC_SITE_URL`**) and keep **Redirect URLs** in sync.
+
+Sign-up uses `emailRedirectTo` = current origin + `/sign-in` (see [`sign-up-form.tsx`](../src/features/auth/sign-up/components/sign-up-form.tsx)). Password reset uses current origin + `/reset-password` (see [`forgot-password-form.tsx`](../src/features/auth/forgot-password/components/forgot-password-form.tsx)). Supabase must allow those redirects.
 
 In **Supabase Dashboard** → **Authentication** → **URL configuration**:
 
 1. Set **Site URL** to your primary public origin (e.g. `https://beonely.vercel.app`).
-2. Under **Redirect URLs**, add every origin path you use, e.g. `https://beonely.vercel.app/**` and `http://localhost:5173/**` for local dev. Add preview origins only if you test on preview URLs.
+2. Under **Redirect URLs**, add every origin path you use, e.g. `https://beonely.vercel.app/**` and `http://localhost:5173/**` for local dev. Add preview origins only if you test on preview URLs. Keep an old default Vercel URL here only while old email links must still work; remove it once traffic has moved.
 
 If the confirmation redirect is not allowed, Supabase may show an error page instead of completing sign-in.
 
