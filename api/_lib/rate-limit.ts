@@ -1,24 +1,46 @@
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
+import type { Ratelimit } from '@upstash/ratelimit'
 
-let ratelimit: Ratelimit | null = null
+type LimiterState =
+  | { kind: 'unset' }
+  | { kind: 'none' }
+  | { kind: 'ready'; lim: Ratelimit }
 
-function getLimiter () {
-  if (ratelimit) return ratelimit
+let limiterState: LimiterState = { kind: 'unset' }
+
+async function getLimiter (): Promise<Ratelimit | null> {
+  if (limiterState.kind === 'ready') return limiterState.lim
+  if (limiterState.kind === 'none') return null
+
   const url = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  const redis = new Redis({ url, token })
-  ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(30, '1 m'),
-    prefix: 'beonely:api',
-  })
-  return ratelimit
+  if (!url || !token) {
+    limiterState = { kind: 'none' }
+    return null
+  }
+
+  try {
+    const [{ Ratelimit }, { Redis }] = await Promise.all([
+      import('@upstash/ratelimit'),
+      import('@upstash/redis'),
+    ])
+    const redis = new Redis({ url, token })
+    const lim = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '1 m'),
+      prefix: 'beonely:api',
+    })
+    limiterState = { kind: 'ready', lim }
+    return lim
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[rate-limit] failed to load Upstash; disabling limiter:', e)
+    limiterState = { kind: 'none' }
+    return null
+  }
 }
 
 export async function rateLimitOrThrow (id: string): Promise<void> {
-  const lim = getLimiter()
+  const lim = await getLimiter()
   if (!lim) return
   try {
     const { success } = await lim.limit(id)
