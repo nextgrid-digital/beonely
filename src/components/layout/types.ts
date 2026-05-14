@@ -1,4 +1,5 @@
 import { type LinkProps } from '@tanstack/react-router'
+import type { UserRole } from '@/lib/supabase/database.types'
 
 type User = {
   name: string
@@ -8,14 +9,19 @@ type User = {
 
 type Team = {
   name: string
-  logo: React.ElementType
   plan: string
+  /** Lucide-style icon; omit when using `logoSrc`. */
+  logo?: React.ElementType
+  /** Wide mark (e.g. PNG) for the team switcher tile. */
+  logoSrc?: string
 }
 
 type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  /** When set, only these roles see the item in the authenticated shell sidebar. */
+  forRoles?: UserRole[]
 }
 
 type NavLink = BaseNavItem & {

@@ -9,7 +9,9 @@ function JobsShell () {
   return (
     <div className='flex min-h-svh flex-col bg-background'>
       <PublicSiteHeader />
-      <Outlet />
+      <div className='flex flex-1 flex-col pt-14'>
+        <Outlet />
+      </div>
       <PublicSiteFooter />
     </div>
   )

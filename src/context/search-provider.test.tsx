@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
+import { AuthProvider } from '@/context/auth-provider'
 import { SearchProvider } from '@/context/search-provider'
 
 const COMMAND_MENU_PLACEHOLDER = 'Type a command or search...'
@@ -22,10 +23,24 @@ vi.mock('@/context/theme-provider', () => ({
   useTheme: () => ({ setTheme: mocks.setTheme }),
 }))
 
+vi.mock('@/lib/supabase/client', () => ({
+  getSupabaseConfigured: () => false,
+  getSupabaseBrowserClient: () => ({
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+    },
+  }),
+}))
+
 type ShortcutModifier = 'Control' | 'Meta'
 
 async function renderWithSearchProvider() {
-  return await render(<SearchProvider>{null}</SearchProvider>)
+  return await render(
+    <AuthProvider>
+      <SearchProvider>{null}</SearchProvider>
+    </AuthProvider>
+  )
 }
 
 /**
@@ -73,7 +88,7 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(getByText('Light')).toBeInTheDocument()
     await expect.element(getByText('Dark')).toBeInTheDocument()
     await expect.element(getByText('System')).toBeInTheDocument()
-    await expect.element(getByText('Dashboard')).toBeInTheDocument()
+    await expect.element(getByText('Profile & resume')).toBeInTheDocument()
   })
 
   it('does not show the dialog content when search is closed', async () => {
@@ -109,9 +124,9 @@ describe('SearchProvider and CommandMenu', () => {
 
     await openCommandPalette(screen)
 
-    await userEvent.click(screen.getByText('Tasks'))
+    await userEvent.click(screen.getByText('Profile & resume'))
 
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/tasks' })
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/candidate/profile' })
     await expect
       .element(screen.getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()
@@ -123,9 +138,9 @@ describe('SearchProvider and CommandMenu', () => {
 
     await openCommandPalette(screen)
 
-    await userEvent.click(getByRole('option', { name: 'Settings Account' }))
+    await userEvent.click(getByRole('option', { name: 'Settings Appearance' }))
 
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/settings/account' })
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/settings/appearance' })
     await expect
       .element(getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()

@@ -3,16 +3,13 @@ import { render, type RenderResult } from 'vitest-browser-react'
 import { userEvent, type Locator } from 'vitest/browser'
 import { ForgotPasswordForm } from './forgot-password-form'
 
-const navigateMock = vi.fn()
+const resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null })
 
-vi.mock('@tanstack/react-router', async (orig) => {
-  const actual = await orig<typeof import('@tanstack/react-router')>()
-  return { ...actual, useNavigate: () => navigateMock }
-})
-
-vi.mock('@/lib/utils', async (orig) => ({
-  ...(await orig()),
-  sleep: vi.fn(() => Promise.resolve()),
+vi.mock('@/lib/supabase/client', () => ({
+  getSupabaseConfigured: () => true,
+  getSupabaseBrowserClient: () => ({
+    auth: { resetPasswordForEmail },
+  }),
 }))
 
 describe('ForgotPasswordForm', () => {
@@ -40,15 +37,16 @@ describe('ForgotPasswordForm', () => {
       .toBeInTheDocument()
   })
 
-  it('resets the form and navigates to /otp on success', async () => {
+  it('calls Supabase reset and clears the form', async () => {
     await userEvent.fill(emailInput, 'a@b.com')
     await userEvent.click(continueButton)
 
-    await vi.waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/otp' })
+    await vi.waitFor(() => expect(resetPasswordForEmail).toHaveBeenCalledOnce())
+    expect(resetPasswordForEmail).toHaveBeenCalledWith(
+      'a@b.com',
+      expect.objectContaining({ redirectTo: expect.stringContaining('/sign-in') })
     )
 
-    // Form should reset on success
     await expect.element(emailInput).toHaveValue('')
   })
 })

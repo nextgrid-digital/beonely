@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Briefcase, LineChart, Shield } from 'lucide-react'
 import { PublicJobCard } from '@/features/jobs/public-job-card'
@@ -9,12 +9,16 @@ import {
   clearPublishedJobSearchPreserveSetup,
   hasActivePublishedJobFilters,
 } from '@/features/jobs/published-jobs-filters'
-import { PublicSiteFooter, PublicSiteHeader } from '@/features/jobs/public-site-layout'
+import { PublicSiteFooter, PublicSiteHeader, PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 import {
   fetchPublishedJobs,
   publishedJobsFilterSchema,
   type PublishedJobsFilters,
 } from '@/lib/jobs/fetch-published-jobs'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
@@ -26,6 +30,26 @@ const homeSearchSchema = publishedJobsFilterSchema.merge(
 
 export const Route = createFileRoute('/')({
   validateSearch: homeSearchSchema,
+  beforeLoad: async () => {
+    if (!getSupabaseConfigured()) return
+    const supabase = getSupabaseBrowserClient()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const uid = session?.user?.id
+    if (!uid) return
+    const { data: rec } = await supabase
+      .from('recruiters')
+      .select('user_id, role')
+      .eq('user_id', uid)
+      .maybeSingle()
+    if (rec) {
+      if (rec.role === 'admin') {
+        throw redirect({ to: '/admin' })
+      }
+      throw redirect({ to: '/recruiter' })
+    }
+  },
   component: LandingPage,
 })
 
@@ -51,11 +75,12 @@ function LandingPage () {
 
   return (
     <div className='flex min-h-svh flex-col bg-background'>
-      <PublicSiteHeader jobsSearchFallback={jobFilters} />
-      <main
-        id='main-content'
-        className='mx-auto flex w-full max-w-5xl flex-1 flex-col gap-16 px-4 py-16'
-      >
+      <PublicSiteHeader />
+      <div className='flex flex-1 flex-col pt-14'>
+        <main
+          id='main-content'
+          className={`${PUBLIC_SITE_MAIN_COLUMN} flex flex-1 flex-col gap-16 py-12`}
+        >
         {setup === 'supabase' && (
           <Alert variant='destructive'>
             <AlertTitle>Supabase required</AlertTitle>
@@ -79,7 +104,7 @@ function LandingPage () {
           </p>
           <div className='flex flex-wrap gap-3'>
             <Button asChild size='lg'>
-              <Link to='/jobs' search={jobFilters}>
+              <Link to='/' search={search} hash='open-roles'>
                 Browse jobs
                 <ArrowRight className='ms-1 size-4' />
               </Link>
@@ -90,21 +115,12 @@ function LandingPage () {
           </div>
         </section>
 
-        <section className='w-full space-y-4'>
-          <div className='flex flex-wrap items-end justify-between gap-4'>
-            <div>
-              <h2 className='text-2xl font-semibold tracking-tight'>Open roles</h2>
-              <p className='text-sm text-muted-foreground'>
-                Filter by role, experience, location, and more. Open the full jobs page anytime
-                without losing your filters.
-              </p>
-            </div>
-            <Button asChild variant='outline' size='sm'>
-              <Link to='/jobs' search={jobFilters}>
-                Full jobs page
-                <ArrowRight className='ms-1 size-4' />
-              </Link>
-            </Button>
+        <section id='open-roles' className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'>
+          <div>
+            <h2 className='text-2xl font-semibold tracking-tight'>Open roles</h2>
+            <p className='text-sm text-muted-foreground'>
+              Filters stay pinned under the nav while you scroll. Share the URL to save a search.
+            </p>
           </div>
 
           <PublishedJobsFiltersBar search={search} navigate={navigate} />
@@ -169,6 +185,7 @@ function LandingPage () {
           </div>
         </section>
       </main>
+      </div>
       <PublicSiteFooter />
     </div>
   )

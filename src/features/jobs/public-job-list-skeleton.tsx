@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 function PublicJobCardSkeleton () {
   return (
-    <Card>
+    <Card className='rounded-none border-0 border-b border-border bg-card shadow-none'>
       <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0 pb-2'>
         <div className='flex min-w-0 flex-1 gap-3'>
           <Skeleton className='size-11 shrink-0 rounded-md' />

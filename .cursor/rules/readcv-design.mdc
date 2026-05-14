@@ -1,0 +1,16 @@
+---
+description: Apply ReadCV / Beonely token-driven UI per docs/design.md
+alwaysApply: false
+---
+
+# ReadCV design system
+
+When editing UI, layout, forms, tables, or global styles in this repo:
+
+- **Use the `readcv-beonely-ui` Cursor skill** for Tailwind, shadcn, layout, and visual accessibility: read **[.cursor/skills/readcv-beonely-ui/SKILL.md](.cursor/skills/readcv-beonely-ui/SKILL.md)** first (it links `docs/design.md`, `docs/skills.md`, and the per-file checklist).
+- Follow **[docs/design.md](docs/design.md)** for tokens, contrast, states, and QA expectations.
+- Follow **[docs/skills.md](docs/skills.md)** for implementation habits (semantic Tailwind, shadcn primitives, focus-visible, loading/error).
+- Prefer **`bg-background`**, **`text-foreground`**, **`text-muted-foreground`**, **`border-border`**, **`ring-ring`** over raw hex.
+- Base typography is **14px / line-height 1.8** on `body`; keep new screens consistent unless the spec documents an exception.
+
+Do not add raw hex colors for theme surfaces or text without updating `docs/design.md` and `src/styles/theme.css` in the same change.

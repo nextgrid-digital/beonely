@@ -1,12 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Helmet } from 'react-helmet-async'
-import { ExternalLink } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { useAuth } from '@/context/auth-provider'
+import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
+import {
+  PUBLIC_SITE_BREADCRUMB_LINK,
+  PUBLIC_SITE_BREADCRUMB_LIST,
+  PUBLIC_SITE_MAIN_COLUMN,
+  PublicSiteStickySubheader,
+} from '@/features/jobs/public-site-layout'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const Route = createFileRoute('/jobs/$slug')({
@@ -20,8 +29,31 @@ function siteUrl () {
   )
 }
 
+function JobDetailBreadcrumb ({ currentLabel }: { currentLabel: string }) {
+  return (
+    <ol className={PUBLIC_SITE_BREADCRUMB_LIST}>
+      <li className='inline-flex items-center gap-2'>
+        <Link to='/' className={PUBLIC_SITE_BREADCRUMB_LINK}>
+          Home
+        </Link>
+        <ChevronRight className='size-4 shrink-0 opacity-60' aria-hidden />
+      </li>
+      <li className='inline-flex items-center gap-2'>
+        <Link to='/' className={PUBLIC_SITE_BREADCRUMB_LINK}>
+          All jobs
+        </Link>
+        <ChevronRight className='size-4 shrink-0 opacity-60' aria-hidden />
+      </li>
+      <li className='min-w-0 font-medium text-stone-800' aria-current='page'>
+        <span className='block truncate'>{currentLabel}</span>
+      </li>
+    </ol>
+  )
+}
+
 function JobDetailPage () {
   const { slug } = Route.useParams()
+  const { user } = useAuth()
 
   const jobQuery = useQuery({
     queryKey: ['job', slug],
@@ -34,13 +66,22 @@ function JobDetailPage () {
     return (
       <main
         id='main-content'
-        className='mx-auto w-full max-w-5xl px-4 py-16'
+        className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-h-svh flex-col pb-12`}
       >
-        <div className='mx-auto max-w-3xl space-y-4' aria-busy='true' aria-label='Loading job'>
-          <Skeleton className='h-4 w-28' />
-          <Skeleton className='h-10 w-full max-w-xl' />
-          <Skeleton className='h-5 w-48' />
-          <Skeleton className='h-40 w-full' />
+        <div className='w-full pt-2'>
+          <PublicSiteStickySubheader
+            breadcrumb={<JobDetailBreadcrumb currentLabel='Loading…' />}
+          />
+          <div
+            className='mx-auto max-w-3xl space-y-4 pb-16 pt-6'
+            aria-busy='true'
+            aria-label='Loading job'
+          >
+            <Skeleton className='h-4 w-28' />
+            <Skeleton className='h-10 w-full max-w-xl' />
+            <Skeleton className='h-5 w-48' />
+            <Skeleton className='h-40 w-full' />
+          </div>
         </div>
       </main>
     )
@@ -50,13 +91,18 @@ function JobDetailPage () {
     return (
       <main
         id='main-content'
-        className='mx-auto w-full max-w-5xl px-4 py-16'
+        className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-h-svh flex-col pb-12`}
       >
-        <div className='mx-auto max-w-3xl'>
-          <h1 className='text-xl font-semibold'>Job not found</h1>
-          <Button asChild className='mt-4' variant='outline'>
-            <Link to='/jobs'>Back to jobs</Link>
-          </Button>
+        <div className='w-full pt-2'>
+          <PublicSiteStickySubheader
+            breadcrumb={<JobDetailBreadcrumb currentLabel='Job not found' />}
+          />
+          <div className='mx-auto max-w-3xl pb-16 pt-6'>
+            <h1 className='text-xl font-semibold'>Job not found</h1>
+            <Button asChild className='mt-4' variant='outline'>
+              <Link to='/'>Back to jobs</Link>
+            </Button>
+          </div>
         </div>
       </main>
     )
@@ -83,50 +129,51 @@ function JobDetailPage () {
 
       <main
         id='main-content'
-        className='mx-auto w-full max-w-5xl px-4 py-16'
+        className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-h-svh flex-col pb-12`}
       >
-        <div className='mx-auto max-w-3xl space-y-8'>
-          <div className='text-sm text-muted-foreground'>
-            <Link to='/jobs' className='hover:text-foreground'>
-              All jobs
-            </Link>
-            <span className='mx-2'>/</span>
-            <span>{job.company_name}</span>
-          </div>
-
-          <div className='flex flex-wrap items-start justify-between gap-4'>
-            <div className='min-w-0 flex-1'>
-              <div className='flex flex-wrap items-center gap-2'>
-                <h1 className='text-3xl font-semibold tracking-tight'>{job.job_title}</h1>
-                {job.featured && <Badge>Featured</Badge>}
+        <div className='w-full pt-2'>
+          <PublicSiteStickySubheader
+            breadcrumb={<JobDetailBreadcrumb currentLabel={job.job_title} />}
+            actions={
+              user ? (
+                <RecordApplicationButton
+                  jobId={job.id}
+                  jobTitle={job.job_title}
+                  size='sm'
+                />
+              ) : null
+            }
+          />
+          <div className='mx-auto max-w-3xl space-y-8 pb-16 pt-6'>
+            <div className='flex flex-wrap items-start justify-between gap-4'>
+              <div className='min-w-0 flex-1'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <h1 className='text-3xl font-semibold tracking-tight'>{job.job_title}</h1>
+                  {job.featured && <Badge>Featured</Badge>}
+                </div>
+                <p className='mt-2 text-lg text-muted-foreground'>{job.company_name}</p>
+                <div className='mt-3 flex flex-wrap gap-2'>
+                  {job.location && <Badge variant='outline'>{job.location}</Badge>}
+                  {job.employment_type && (
+                    <Badge variant='outline'>{job.employment_type}</Badge>
+                  )}
+                  {job.work_mode && <Badge variant='outline'>{job.work_mode}</Badge>}
+                </div>
               </div>
-              <p className='mt-2 text-lg text-muted-foreground'>{job.company_name}</p>
-              <div className='mt-3 flex flex-wrap gap-2'>
-                {job.location && <Badge variant='outline'>{job.location}</Badge>}
-                {job.employment_type && (
-                  <Badge variant='outline'>{job.employment_type}</Badge>
-                )}
-                {job.work_mode && <Badge variant='outline'>{job.work_mode}</Badge>}
+              <div className='flex shrink-0 flex-col gap-2 sm:flex-row sm:sticky sm:top-[7.125rem] sm:z-10'>
+                <ApplyWithCandidateAuth job={job} />
               </div>
             </div>
-            <div className='flex shrink-0 flex-col gap-2 sm:flex-row sm:sticky sm:top-20 sm:z-10'>
-              <Button asChild size='lg'>
-                <a href={job.apply_url} target='_blank' rel='noreferrer'>
-                  Apply externally
-                  <ExternalLink className='ms-2 size-4' />
-                </a>
-              </Button>
-            </div>
-          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>About this role</CardTitle>
-            </CardHeader>
-            <CardContent className='max-w-none whitespace-pre-wrap text-sm leading-relaxed'>
-              {job.job_description}
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>About this role</CardTitle>
+              </CardHeader>
+              <CardContent className='max-w-none whitespace-pre-wrap text-sm leading-relaxed'>
+                {job.job_description}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </>

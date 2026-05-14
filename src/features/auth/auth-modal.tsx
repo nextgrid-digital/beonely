@@ -13,6 +13,7 @@ import {
   SignUpForm,
   type SignUpSuccessInfo,
 } from '@/features/auth/sign-up/components/sign-up-form'
+import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 
 export type AuthModalProps = {
@@ -22,6 +23,8 @@ export type AuthModalProps = {
   description?: string
   /** Initial tab when the dialog opens. */
   defaultTab?: 'signIn' | 'signUp'
+  /** Forwarded to sign-up tab (e.g. `recruiter` for “Post a job” modal). */
+  signUpIntent?: SignInIntent
   /** After sign-in or immediate post-sign-up session; profile from refreshed app profile. */
   onAuthComplete?: (profile: ProfileRow | null) => void
 }
@@ -34,10 +37,12 @@ function AuthModalBody ({
   defaultTab,
   onAuthComplete,
   onOpenChange,
+  signUpIntent,
 }: {
   defaultTab: 'signIn' | 'signUp'
   onAuthComplete?: (profile: ProfileRow | null) => void
   onOpenChange: (open: boolean) => void
+  signUpIntent?: SignInIntent
 }) {
   const { refreshProfile } = useAuth()
   const [tab, setTab] = useState<'signIn' | 'signUp'>(defaultTab)
@@ -92,7 +97,7 @@ function AuthModalBody ({
         <UserAuthForm onSuccess={finishSignIn} defaultEmail={prefillEmail} />
       </TabsContent>
       <TabsContent value='signUp' className='mt-0'>
-        <SignUpForm onSuccess={handleSignUpSuccess} />
+        <SignUpForm onSuccess={handleSignUpSuccess} intent={signUpIntent} />
       </TabsContent>
     </Tabs>
   )
@@ -104,6 +109,7 @@ export function AuthModal ({
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
   defaultTab = 'signIn',
+  signUpIntent,
   onAuthComplete,
 }: AuthModalProps) {
   return (
@@ -120,6 +126,7 @@ export function AuthModal ({
           <AuthModalBody
             key={defaultTab}
             defaultTab={defaultTab}
+            signUpIntent={signUpIntent}
             onAuthComplete={onAuthComplete}
             onOpenChange={onOpenChange}
           />

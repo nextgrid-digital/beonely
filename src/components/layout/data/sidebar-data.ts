@@ -1,203 +1,147 @@
 import {
-  Construction,
+  Briefcase,
+  IndianRupee,
   LayoutDashboard,
-  Monitor,
-  Bug,
   ListTodo,
-  FileX,
-  HelpCircle,
-  Lock,
-  Bell,
-  Package,
-  Palette,
-  ServerOff,
   Settings,
-  Wrench,
-  UserCog,
-  UserX,
+  Shield,
+  UserCircle,
   Users,
-  MessagesSquare,
-  ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
-import { type SidebarData } from '../types'
+import type { UserRole } from '@/lib/supabase/database.types'
+import { type SidebarData, type NavItem } from '../types'
+
+function filterNavForRole (items: NavItem[], role: UserRole): NavItem[] {
+  return items
+    .filter((item) => {
+      if (item.forRoles?.length && !item.forRoles.includes(role)) {
+        return false
+      }
+      if ('items' in item && item.items) {
+        const subs = item.items.filter(
+          (sub) => !sub.forRoles?.length || sub.forRoles.includes(role)
+        )
+        return subs.length > 0
+      }
+      return true
+    })
+    .map((item) => {
+      if ('items' in item && item.items) {
+        return {
+          ...item,
+          items: item.items.filter(
+            (sub) => !sub.forRoles?.length || sub.forRoles.includes(role)
+          ),
+        }
+      }
+      return item
+    })
+}
+
+export function getSidebarNavGroupsForRole (
+  role: UserRole,
+  candidateNavTitle?: string
+): SidebarData['navGroups'] {
+  const groups = sidebarData.navGroups.map((g) => ({
+    ...g,
+    items: filterNavForRole(g.items, role),
+  }))
+  if (role !== 'candidate' || !candidateNavTitle?.trim()) return groups
+  const title = candidateNavTitle.trim()
+  return groups.map((g) => ({
+    ...g,
+    items: g.items.map((item) => {
+      if ('url' in item && item.url === '/candidate/profile') {
+        return { ...item, title }
+      }
+      return item
+    }),
+  }))
+}
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
+    name: 'Account',
+    email: '',
     avatar: '/avatars/shadcn.jpg',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      name: 'Beonely',
+      plan: 'ServiceNow hiring',
+      logoSrc: '/images/beonely-logo.png',
     },
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Beonely',
       items: [
         {
-          title: 'Dashboard',
-          url: '/',
+          title: 'Home',
+          url: '/recruiter',
           icon: LayoutDashboard,
+          forRoles: ['recruiter'],
+        },
+        {
+          title: 'Home',
+          url: '/admin',
+          icon: LayoutDashboard,
+          forRoles: ['admin'],
+        },
+        {
+          title: 'Profile & resume',
+          url: '/candidate/profile',
+          icon: UserCircle,
+          forRoles: ['candidate'],
         },
         {
           title: 'Tasks',
           url: '/tasks',
           icon: ListTodo,
+          forRoles: ['admin', 'recruiter'],
         },
         {
-          title: 'Apps',
-          url: '/apps',
-          icon: Package,
+          title: 'Jobs (public)',
+          url: '/',
+          icon: Briefcase,
+          forRoles: ['recruiter', 'admin'],
         },
         {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
+          title: 'Recruiter',
+          url: '/recruiter',
+          icon: UserCircle,
+          forRoles: ['recruiter', 'admin'],
+        },
+        {
+          title: 'Pricing',
+          url: '/recruiter/pricing',
+          icon: IndianRupee,
+          forRoles: ['recruiter', 'admin'],
+        },
+        {
+          title: 'Moderation',
+          url: '/admin/jobs',
+          icon: Shield,
+          forRoles: ['admin'],
         },
         {
           title: 'Users',
           url: '/users',
           icon: Users,
-        },
-        {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
+          forRoles: ['admin'],
         },
       ],
     },
     {
-      title: 'Pages',
-      items: [
-        {
-          title: 'Auth',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
-          ],
-        },
-        {
-          title: 'Errors',
-          icon: Bug,
-          items: [
-            {
-              title: 'Unauthorized',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: 'Forbidden',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Other',
+      title: 'Account',
       items: [
         {
           title: 'Settings',
           icon: Settings,
           items: [
-            {
-              title: 'Profile',
-              url: '/settings',
-              icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
-            },
+            { title: 'Profile', url: '/settings', icon: UserCircle },
+            { title: 'Appearance', url: '/settings/appearance', icon: Settings },
           ],
-        },
-        {
-          title: 'Help Center',
-          url: '/help-center',
-          icon: HelpCircle,
         },
       ],
     },

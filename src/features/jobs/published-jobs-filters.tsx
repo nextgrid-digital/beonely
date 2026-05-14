@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-/** Narrow enough for both `/` (merged with `setup`) and `/jobs/` search. */
+/** Narrow enough for `/` (merged with `setup`) and legacy `/jobs/` redirect (same filter shape). */
 export type PublishedJobsSearchState = PublishedJobsFilters & { setup?: string }
 
 export type PublishedJobsNavigate = (opts: {
@@ -44,7 +44,10 @@ export function clearPublishedJobSearchPreserveSetup (
   return next
 }
 
-/** URL-backed filters for published jobs (home + `/jobs` index). */
+/** Sticky offset below fixed [`PublicSiteHeader`](./public-site-layout.tsx) (`h-14`). */
+const STICKY_BELOW_HEADER = 'top-14'
+
+/** URL-backed filters for published jobs (home; `/jobs/` redirects to `/` with same params). */
 export function PublishedJobsFiltersBar (props: {
   search: PublishedJobsSearchState
   navigate: PublishedJobsNavigate
@@ -87,150 +90,128 @@ export function PublishedJobsFiltersBar (props: {
   return (
     <section
       aria-labelledby='job-filters-heading'
-      className='relative overflow-hidden rounded-2xl border border-border/90 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]'
+      className={cn(
+        'sticky z-40 -mx-4 bg-background/95 px-4 py-2 backdrop-blur',
+        'supports-[backdrop-filter]:bg-background/85',
+        STICKY_BELOW_HEADER
+      )}
     >
-      <div
-        className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-muted/50 dark:from-primary/[0.08] dark:to-muted/20'
-        aria-hidden
-      />
-      <div className='relative min-w-0 space-y-5 p-4 sm:p-5 md:p-6'>
-          <div className='flex flex-wrap items-start justify-between gap-3'>
-            <div className='space-y-1'>
-              <div className='flex items-center gap-2'>
-                <SlidersHorizontal
-                  className='size-4 text-primary/80'
-                  aria-hidden
-                />
-                <h3
-                  id='job-filters-heading'
-                  className='text-sm font-semibold tracking-tight text-foreground'
-                >
-                  Find your next role
-                </h3>
-              </div>
-              <p className='max-w-md text-xs leading-relaxed text-muted-foreground'>
-                Tune keywords and constraints — the list updates as you go. Share
-                the URL to save a search.
-              </p>
-            </div>
-            {filtersActive && (
-              <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                className='shrink-0 text-muted-foreground hover:text-foreground'
-                onClick={resetFilters}
-              >
-                Reset filters
-              </Button>
-            )}
-          </div>
+      <h3 id='job-filters-heading' className='sr-only'>
+        Find your next role — search and filters
+      </h3>
 
-          <div className='relative'>
-            <label htmlFor='published-jobs-q' className='sr-only'>
-              Search by title or company
-            </label>
-            <Search
-              className='pointer-events-none absolute left-3 top-1/2 z-[1] size-4 -translate-y-1/2 text-muted-foreground'
+      <div className='flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0'>
+        <div className='relative min-w-[12rem] max-w-[min(100%,20rem)] shrink-0 sm:max-w-none sm:min-w-0 sm:flex-1'>
+          <label htmlFor='published-jobs-q' className='sr-only'>
+            Search by title or company
+          </label>
+          <Search
+            className='pointer-events-none absolute left-2.5 top-1/2 z-[1] size-3.5 -translate-y-1/2 text-muted-foreground'
+            aria-hidden
+          />
+          <Input
+            id='published-jobs-q'
+            placeholder='Search title or company…'
+            value={localQ}
+            onChange={(e) => setLocalQ(e.target.value)}
+            className={cn(
+              'h-9 border-border/80 bg-background/90 pl-8 text-sm shadow-none',
+              'transition-[box-shadow,background-color,border-color] duration-200',
+              'focus-visible:bg-background focus-visible:shadow-sm'
+            )}
+          />
+        </div>
+
+        <FilterSelect
+          label='Role'
+          value={search.role}
+          onChange={(v) => setParam('role', v)}
+          triggerClass='min-w-[7.5rem] w-[7.5rem] sm:min-w-[8.25rem] sm:w-[8.25rem]'
+          options={[
+            { value: '_any', label: 'Any role' },
+            { value: 'developer', label: 'Developer' },
+            { value: 'architect', label: 'Architect' },
+            { value: 'consultant', label: 'Consultant' },
+            { value: 'admin', label: 'Admin' },
+          ]}
+        />
+        <FilterSelect
+          label='Experience'
+          value={search.experience}
+          onChange={(v) => setParam('experience', v)}
+          triggerClass='min-w-[6.5rem] w-[6.5rem] sm:min-w-[7rem] sm:w-[7rem]'
+          options={[
+            { value: '_any', label: 'Any' },
+            { value: 'junior', label: 'Junior' },
+            { value: 'mid', label: 'Mid' },
+            { value: 'senior', label: 'Senior' },
+            { value: 'lead', label: 'Lead' },
+          ]}
+        />
+        <FilterSelect
+          label='Work mode'
+          value={search.work}
+          onChange={(v) => setParam('work', v)}
+          triggerClass='min-w-[6.75rem] w-[6.75rem] sm:min-w-[7.25rem] sm:w-[7.25rem]'
+          options={[
+            { value: '_any', label: 'Any' },
+            { value: 'remote', label: 'Remote' },
+            { value: 'hybrid', label: 'Hybrid' },
+            { value: 'onsite', label: 'Onsite' },
+          ]}
+        />
+        <FilterSelect
+          label='Employment'
+          value={search.type}
+          onChange={(v) => setParam('type', v)}
+          triggerClass='min-w-[7rem] w-[7rem] sm:min-w-[7.5rem] sm:w-[7.5rem]'
+          options={[
+            { value: '_any', label: 'Any' },
+            { value: 'full_time', label: 'Full-time' },
+            { value: 'part_time', label: 'Part-time' },
+            { value: 'contract', label: 'Contract' },
+            { value: 'freelance', label: 'Freelance' },
+          ]}
+        />
+
+        <div className='flex min-w-0 shrink-0 flex-col gap-1'>
+          <label
+            htmlFor='published-jobs-location'
+            className='text-[10px] font-semibold uppercase leading-none tracking-[0.16em] text-muted-foreground'
+          >
+            Location
+          </label>
+          <div className='relative w-[8.5rem] sm:w-[9.5rem]'>
+            <MapPin
+              className='pointer-events-none absolute left-2 top-1/2 z-[1] size-3 -translate-y-1/2 text-muted-foreground/80'
               aria-hidden
             />
             <Input
-              id='published-jobs-q'
-              placeholder='Search title or company…'
-              value={localQ}
-              onChange={(e) => setLocalQ(e.target.value)}
-              className={cn(
-                'h-11 border-border/80 bg-background/80 pl-10 text-base shadow-none sm:h-10 sm:text-sm',
-                'transition-[box-shadow,background-color,border-color] duration-200',
-                'focus-visible:bg-background focus-visible:shadow-sm'
-              )}
+              id='published-jobs-location'
+              placeholder='City / region'
+              value={search.location ?? ''}
+              onChange={(e) => {
+                const v = e.target.value
+                void navigate({ search: (p) => ({ ...p, location: v || undefined }) })
+              }}
+              className='h-9 border-border/80 bg-background/90 pl-7 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background'
             />
           </div>
-
-          <div
-            className='h-px w-full bg-gradient-to-r from-transparent via-border to-transparent'
-            role='presentation'
-          />
-
-          <div>
-            <p className='mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground'>
-              Refine
-            </p>
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5'>
-              <FilterSelect
-                label='Role'
-                value={search.role}
-                onChange={(v) => setParam('role', v)}
-                options={[
-                  { value: '_any', label: 'Any role' },
-                  { value: 'developer', label: 'Developer' },
-                  { value: 'architect', label: 'Architect' },
-                  { value: 'consultant', label: 'Consultant' },
-                  { value: 'admin', label: 'Admin' },
-                ]}
-              />
-              <FilterSelect
-                label='Experience'
-                value={search.experience}
-                onChange={(v) => setParam('experience', v)}
-                options={[
-                  { value: '_any', label: 'Any' },
-                  { value: 'junior', label: 'Junior' },
-                  { value: 'mid', label: 'Mid' },
-                  { value: 'senior', label: 'Senior' },
-                  { value: 'lead', label: 'Lead' },
-                ]}
-              />
-              <FilterSelect
-                label='Work mode'
-                value={search.work}
-                onChange={(v) => setParam('work', v)}
-                options={[
-                  { value: '_any', label: 'Any' },
-                  { value: 'remote', label: 'Remote' },
-                  { value: 'hybrid', label: 'Hybrid' },
-                  { value: 'onsite', label: 'Onsite' },
-                ]}
-              />
-              <FilterSelect
-                label='Employment'
-                value={search.type}
-                onChange={(v) => setParam('type', v)}
-                options={[
-                  { value: '_any', label: 'Any' },
-                  { value: 'full_time', label: 'Full-time' },
-                  { value: 'part_time', label: 'Part-time' },
-                  { value: 'contract', label: 'Contract' },
-                  { value: 'freelance', label: 'Freelance' },
-                ]}
-              />
-              <div className='grid gap-2'>
-                <label
-                  htmlFor='published-jobs-location'
-                  className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground'
-                >
-                  Location
-                </label>
-                <div className='relative'>
-                  <MapPin
-                    className='pointer-events-none absolute left-2.5 top-1/2 z-[1] size-3.5 -translate-y-1/2 text-muted-foreground/80'
-                    aria-hidden
-                  />
-                  <Input
-                    id='published-jobs-location'
-                    placeholder='City or region'
-                    value={search.location ?? ''}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      void navigate({ search: (p) => ({ ...p, location: v || undefined }) })
-                    }}
-                    className='h-9 border-border/80 bg-background/60 pl-8 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background'
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
+
+        {filtersActive && (
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='mb-0.5 h-8 shrink-0 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground'
+            onClick={resetFilters}
+          >
+            <SlidersHorizontal className='size-3.5' aria-hidden />
+            <span className='hidden sm:inline'>Reset</span>
+          </Button>
+        )}
+      </div>
     </section>
   )
 }
@@ -240,11 +221,12 @@ function FilterSelect (props: {
   value: string | undefined
   onChange: (v: string | undefined) => void
   options: { value: string; label: string }[]
+  triggerClass?: string
 }) {
   const val = props.value ?? '_any'
   return (
-    <div className='grid min-w-0 gap-2'>
-      <label className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground'>
+    <div className='flex shrink-0 flex-col gap-1'>
+      <label className='text-[10px] font-semibold uppercase leading-none tracking-[0.16em] text-muted-foreground'>
         {props.label}
       </label>
       <Select
@@ -253,8 +235,9 @@ function FilterSelect (props: {
       >
         <SelectTrigger
           className={cn(
-            'h-9 w-full border-border/80 bg-background/60 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-200',
-            'hover:bg-muted/40 focus-visible:bg-background data-[state=open]:bg-background'
+            'h-9 border-border/80 bg-background/90 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-200',
+            'hover:bg-muted/40 focus-visible:bg-background data-[state=open]:bg-background',
+            props.triggerClass
           )}
         >
           <SelectValue />

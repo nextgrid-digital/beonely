@@ -7,27 +7,56 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  signInCardDescription,
+  signInCardTitle,
+} from '@/lib/auth/sign-in-intent'
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from './components/user-auth-form'
 
-export function SignIn() {
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+export function SignIn () {
+  const { redirect, intent } = useSearch({ from: '/(auth)/sign-in' })
+
+  const title = intent === undefined ? 'Sign in' : signInCardTitle(intent)
 
   return (
     <AuthLayout>
       <Card className='max-w-sm gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
+          <CardTitle className='text-lg tracking-tight'>{title}</CardTitle>
           <CardDescription>
-            Enter your email and password below to log into{' '}
-            <br className='max-sm:hidden' /> your account. Don't have an
-            account?{' '}
-            <Link
-              to='/sign-up'
-              className='text-nowrap underline underline-offset-4 hover:text-primary'
-            >
-              Sign Up
-            </Link>
+            {intent === undefined ? (
+              <>
+                Enter your email and password below to log into{' '}
+                <br className='max-sm:hidden' />
+                your account. Don&apos;t have an account?{' '}
+                <Link
+                  to='/sign-up'
+                  className='text-nowrap underline underline-offset-4 hover:text-primary'
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                {signInCardDescription(intent)}{' '}
+                <Link
+                  to='/sign-up'
+                  search={{ intent }}
+                  className='text-nowrap underline underline-offset-4 hover:text-primary'
+                >
+                  Sign up
+                </Link>
+                {' · '}
+                <Link
+                  to='/sign-in'
+                  search={redirect ? { redirect } : {}}
+                  className='text-nowrap underline underline-offset-4 hover:text-primary'
+                >
+                  Not this flow?
+                </Link>
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>

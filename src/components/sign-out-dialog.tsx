@@ -1,21 +1,24 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuth } from '@/context/auth-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { isPublicMarketingPath } from '@/lib/auth/public-marketing-path'
 
 interface SignOutDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
+export function SignOutDialog ({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { auth } = useAuthStore()
+  const { signOut } = useAuth()
 
-  const handleSignOut = () => {
-    auth.reset()
-    // Preserve current location for redirect after sign-in
-    const currentPath = location.href
+  const handleSignOut = async () => {
+    await signOut()
+    const currentPath = location.pathname
+    if (isPublicMarketingPath(currentPath)) {
+      return
+    }
     navigate({
       to: '/sign-in',
       search: { redirect: currentPath },

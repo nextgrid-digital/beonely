@@ -9,9 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
+import { Route as JobsRouteRouteImport } from './routes/jobs/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as JobsIndexRouteImport } from './routes/jobs/index'
+import { Route as StaffSignInRouteImport } from './routes/staff/sign-in'
+import { Route as JobsSlugRouteImport } from './routes/jobs/$slug'
+import { Route as HireSignUpRouteImport } from './routes/hire/sign-up'
+import { Route as HireSignInRouteImport } from './routes/hire/sign-in'
+import { Route as ApplySignUpRouteImport } from './routes/apply/sign-up'
+import { Route as ApplySignInRouteImport } from './routes/apply/sign-in'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -22,37 +29,76 @@ import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedCandidateRouteRouteImport } from './routes/_authenticated/candidate/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedRecruiterIndexRouteImport } from './routes/_authenticated/recruiter/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
+import { Route as AuthenticatedCandidateIndexRouteImport } from './routes/_authenticated/candidate/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
-import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedCandidateResumeRouteImport } from './routes/_authenticated/candidate/resume'
+import { Route as AuthenticatedCandidateProfileRouteImport } from './routes/_authenticated/candidate/profile'
+import { Route as AuthenticatedCandidateApplicationsRouteImport } from './routes/_authenticated/candidate/applications'
+import { Route as AuthenticatedRecruiterPricingIndexRouteImport } from './routes/_authenticated/recruiter/pricing/index'
+import { Route as AuthenticatedAdminJobsIndexRouteImport } from './routes/_authenticated/admin/jobs/index'
 
-const ClerkRouteRoute = ClerkRouteRouteImport.update({
-  id: '/clerk',
-  path: '/clerk',
+const JobsRouteRoute = JobsRouteRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsIndexRoute = JobsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => JobsRouteRoute,
+} as any)
+const StaffSignInRoute = StaffSignInRouteImport.update({
+  id: '/staff/sign-in',
+  path: '/staff/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsSlugRoute = JobsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => JobsRouteRoute,
+} as any)
+const HireSignUpRoute = HireSignUpRouteImport.update({
+  id: '/hire/sign-up',
+  path: '/hire/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HireSignInRoute = HireSignInRouteImport.update({
+  id: '/hire/sign-in',
+  path: '/hire/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplySignUpRoute = ApplySignUpRouteImport.update({
+  id: '/apply/sign-up',
+  path: '/apply/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplySignInRoute = ApplySignInRouteImport.update({
+  id: '/apply/sign-in',
+  path: '/apply/sign-in',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
@@ -104,18 +150,16 @@ const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
-const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
-  id: '/(auth)',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCandidateRouteRoute =
+  AuthenticatedCandidateRouteRouteImport.update({
+    id: '/candidate',
+    path: '/candidate',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
@@ -134,10 +178,22 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedRecruiterIndexRoute =
+  AuthenticatedRecruiterIndexRouteImport.update({
+    id: '/recruiter/',
+    path: '/recruiter/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
     path: '/help-center/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/dashboard/',
+    path: '/dashboard/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
@@ -145,26 +201,21 @@ const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   path: '/chats/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCandidateIndexRoute =
+  AuthenticatedCandidateIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCandidateRouteRoute,
+  } as any)
 const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   id: '/apps/',
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
-const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
-const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => ClerkauthRouteRoute,
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
@@ -184,22 +235,47 @@ const AuthenticatedSettingsAppearanceRoute =
     path: '/appearance',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedSettingsAccountRoute =
-  AuthenticatedSettingsAccountRouteImport.update({
-    id: '/account',
-    path: '/account',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCandidateResumeRoute =
+  AuthenticatedCandidateResumeRouteImport.update({
+    id: '/resume',
+    path: '/resume',
+    getParentRoute: () => AuthenticatedCandidateRouteRoute,
+  } as any)
+const AuthenticatedCandidateProfileRoute =
+  AuthenticatedCandidateProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedCandidateRouteRoute,
+  } as any)
+const AuthenticatedCandidateApplicationsRoute =
+  AuthenticatedCandidateApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AuthenticatedCandidateRouteRoute,
+  } as any)
+const AuthenticatedRecruiterPricingIndexRoute =
+  AuthenticatedRecruiterPricingIndexRouteImport.update({
+    id: '/recruiter/pricing/',
+    path: '/recruiter/pricing/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminJobsIndexRoute =
+  AuthenticatedAdminJobsIndexRouteImport.update({
+    id: '/admin/jobs/',
+    path: '/admin/jobs/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
+  '/jobs': typeof JobsRouteRouteWithChildren
+  '/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -211,23 +287,35 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/apply/sign-in': typeof ApplySignInRoute
+  '/apply/sign-up': typeof ApplySignUpRoute
+  '/hire/sign-in': typeof HireSignInRoute
+  '/hire/sign-up': typeof HireSignUpRoute
+  '/jobs/$slug': typeof JobsSlugRoute
+  '/staff/sign-in': typeof StaffSignInRoute
+  '/jobs/': typeof JobsIndexRoute
+  '/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
+  '/candidate/profile': typeof AuthenticatedCandidateProfileRoute
+  '/candidate/resume': typeof AuthenticatedCandidateResumeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
+  '/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/recruiter/': typeof AuthenticatedRecruiterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
+  '/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
 }
 export interface FileRoutesByTo {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -238,29 +326,40 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/': typeof AuthenticatedIndexRoute
+  '/apply/sign-in': typeof ApplySignInRoute
+  '/apply/sign-up': typeof ApplySignUpRoute
+  '/hire/sign-in': typeof HireSignInRoute
+  '/hire/sign-up': typeof HireSignUpRoute
+  '/jobs/$slug': typeof JobsSlugRoute
+  '/staff/sign-in': typeof StaffSignInRoute
+  '/jobs': typeof JobsIndexRoute
+  '/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
+  '/candidate/profile': typeof AuthenticatedCandidateProfileRoute
+  '/candidate/resume': typeof AuthenticatedCandidateResumeRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
+  '/candidate': typeof AuthenticatedCandidateIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/recruiter': typeof AuthenticatedRecruiterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/admin/jobs': typeof AuthenticatedAdminJobsIndexRoute
+  '/recruiter/pricing': typeof AuthenticatedRecruiterPricingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/clerk': typeof ClerkRouteRouteWithChildren
+  '/jobs': typeof JobsRouteRouteWithChildren
+  '/_authenticated/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -271,27 +370,39 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
-  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/apply/sign-in': typeof ApplySignInRoute
+  '/apply/sign-up': typeof ApplySignUpRoute
+  '/hire/sign-in': typeof HireSignInRoute
+  '/hire/sign-up': typeof HireSignUpRoute
+  '/jobs/$slug': typeof JobsSlugRoute
+  '/staff/sign-in': typeof StaffSignInRoute
+  '/jobs/': typeof JobsIndexRoute
+  '/_authenticated/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
+  '/_authenticated/candidate/profile': typeof AuthenticatedCandidateProfileRoute
+  '/_authenticated/candidate/resume': typeof AuthenticatedCandidateResumeRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
+  '/_authenticated/candidate/': typeof AuthenticatedCandidateIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/recruiter/': typeof AuthenticatedRecruiterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
+  '/_authenticated/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/clerk'
+    | '/jobs'
+    | '/candidate'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -303,23 +414,35 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/apply/sign-in'
+    | '/apply/sign-up'
+    | '/hire/sign-in'
+    | '/hire/sign-up'
+    | '/jobs/$slug'
+    | '/staff/sign-in'
+    | '/jobs/'
+    | '/candidate/applications'
+    | '/candidate/profile'
+    | '/candidate/resume'
     | '/errors/$error'
-    | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
+    | '/admin/'
     | '/apps/'
+    | '/candidate/'
     | '/chats/'
+    | '/dashboard/'
     | '/help-center/'
+    | '/recruiter/'
     | '/settings/'
     | '/tasks/'
     | '/users/'
+    | '/admin/jobs/'
+    | '/recruiter/pricing/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/clerk'
+    | '/'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -330,28 +453,39 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/'
+    | '/apply/sign-in'
+    | '/apply/sign-up'
+    | '/hire/sign-in'
+    | '/hire/sign-up'
+    | '/jobs/$slug'
+    | '/staff/sign-in'
+    | '/jobs'
+    | '/candidate/applications'
+    | '/candidate/profile'
+    | '/candidate/resume'
     | '/errors/$error'
-    | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
+    | '/admin'
     | '/apps'
+    | '/candidate'
     | '/chats'
+    | '/dashboard'
     | '/help-center'
+    | '/recruiter'
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/admin/jobs'
+    | '/recruiter/pricing'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
-    | '/clerk'
+    | '/jobs'
+    | '/_authenticated/candidate'
     | '/_authenticated/settings'
-    | '/clerk/(auth)'
-    | '/clerk/_authenticated'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
@@ -362,26 +496,38 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
-    | '/_authenticated/'
+    | '/apply/sign-in'
+    | '/apply/sign-up'
+    | '/hire/sign-in'
+    | '/hire/sign-up'
+    | '/jobs/$slug'
+    | '/staff/sign-in'
+    | '/jobs/'
+    | '/_authenticated/candidate/applications'
+    | '/_authenticated/candidate/profile'
+    | '/_authenticated/candidate/resume'
     | '/_authenticated/errors/$error'
-    | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
-    | '/clerk/(auth)/sign-in'
-    | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
+    | '/_authenticated/admin/'
     | '/_authenticated/apps/'
+    | '/_authenticated/candidate/'
     | '/_authenticated/chats/'
+    | '/_authenticated/dashboard/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/recruiter/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/admin/jobs/'
+    | '/_authenticated/recruiter/pricing/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  JobsRouteRoute: typeof JobsRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -392,15 +538,20 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  ApplySignInRoute: typeof ApplySignInRoute
+  ApplySignUpRoute: typeof ApplySignUpRoute
+  HireSignInRoute: typeof HireSignInRoute
+  HireSignUpRoute: typeof HireSignUpRoute
+  StaffSignInRoute: typeof StaffSignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/clerk': {
-      id: '/clerk'
-      path: '/clerk'
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkRouteRouteImport
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -410,12 +561,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/': {
+      id: '/jobs/'
+      path: '/'
+      fullPath: '/jobs/'
+      preLoaderRoute: typeof JobsIndexRouteImport
+      parentRoute: typeof JobsRouteRoute
+    }
+    '/staff/sign-in': {
+      id: '/staff/sign-in'
+      path: '/staff/sign-in'
+      fullPath: '/staff/sign-in'
+      preLoaderRoute: typeof StaffSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/$slug': {
+      id: '/jobs/$slug'
+      path: '/$slug'
+      fullPath: '/jobs/$slug'
+      preLoaderRoute: typeof JobsSlugRouteImport
+      parentRoute: typeof JobsRouteRoute
+    }
+    '/hire/sign-up': {
+      id: '/hire/sign-up'
+      path: '/hire/sign-up'
+      fullPath: '/hire/sign-up'
+      preLoaderRoute: typeof HireSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/sign-in': {
+      id: '/hire/sign-in'
+      path: '/hire/sign-in'
+      fullPath: '/hire/sign-in'
+      preLoaderRoute: typeof HireSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply/sign-up': {
+      id: '/apply/sign-up'
+      path: '/apply/sign-up'
+      fullPath: '/apply/sign-up'
+      preLoaderRoute: typeof ApplySignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply/sign-in': {
+      id: '/apply/sign-in'
+      path: '/apply/sign-in'
+      fullPath: '/apply/sign-in'
+      preLoaderRoute: typeof ApplySignInRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(errors)/503': {
       id: '/(errors)/503'
@@ -487,25 +687,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clerk/_authenticated': {
-      id: '/clerk/_authenticated'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
-    '/clerk/(auth)': {
-      id: '/clerk/(auth)'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkauthRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/candidate': {
+      id: '/_authenticated/candidate'
+      path: '/candidate'
+      fullPath: '/candidate'
+      preLoaderRoute: typeof AuthenticatedCandidateRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users/': {
@@ -529,11 +722,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/recruiter/': {
+      id: '/_authenticated/recruiter/'
+      path: '/recruiter'
+      fullPath: '/recruiter/'
+      preLoaderRoute: typeof AuthenticatedRecruiterIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
       fullPath: '/help-center/'
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard/': {
+      id: '/_authenticated/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chats/': {
@@ -543,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/candidate/': {
+      id: '/_authenticated/candidate/'
+      path: '/'
+      fullPath: '/candidate/'
+      preLoaderRoute: typeof AuthenticatedCandidateIndexRouteImport
+      parentRoute: typeof AuthenticatedCandidateRouteRoute
+    }
     '/_authenticated/apps/': {
       id: '/_authenticated/apps/'
       path: '/apps'
@@ -550,26 +764,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
-    '/clerk/(auth)/sign-up': {
-      id: '/clerk/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/clerk/sign-up'
-      preLoaderRoute: typeof ClerkauthSignUpRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
-    '/clerk/(auth)/sign-in': {
-      id: '/clerk/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/clerk/sign-in'
-      preLoaderRoute: typeof ClerkauthSignInRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
@@ -592,13 +792,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
-    '/_authenticated/settings/account': {
-      id: '/_authenticated/settings/account'
-      path: '/account'
-      fullPath: '/settings/account'
-      preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
@@ -606,11 +799,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/candidate/resume': {
+      id: '/_authenticated/candidate/resume'
+      path: '/resume'
+      fullPath: '/candidate/resume'
+      preLoaderRoute: typeof AuthenticatedCandidateResumeRouteImport
+      parentRoute: typeof AuthenticatedCandidateRouteRoute
+    }
+    '/_authenticated/candidate/profile': {
+      id: '/_authenticated/candidate/profile'
+      path: '/profile'
+      fullPath: '/candidate/profile'
+      preLoaderRoute: typeof AuthenticatedCandidateProfileRouteImport
+      parentRoute: typeof AuthenticatedCandidateRouteRoute
+    }
+    '/_authenticated/candidate/applications': {
+      id: '/_authenticated/candidate/applications'
+      path: '/applications'
+      fullPath: '/candidate/applications'
+      preLoaderRoute: typeof AuthenticatedCandidateApplicationsRouteImport
+      parentRoute: typeof AuthenticatedCandidateRouteRoute
+    }
+    '/_authenticated/recruiter/pricing/': {
+      id: '/_authenticated/recruiter/pricing/'
+      path: '/recruiter/pricing'
+      fullPath: '/recruiter/pricing/'
+      preLoaderRoute: typeof AuthenticatedRecruiterPricingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/jobs/': {
+      id: '/_authenticated/admin/jobs/'
+      path: '/admin/jobs'
+      fullPath: '/admin/jobs/'
+      preLoaderRoute: typeof AuthenticatedAdminJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedCandidateRouteRouteChildren {
+  AuthenticatedCandidateApplicationsRoute: typeof AuthenticatedCandidateApplicationsRoute
+  AuthenticatedCandidateProfileRoute: typeof AuthenticatedCandidateProfileRoute
+  AuthenticatedCandidateResumeRoute: typeof AuthenticatedCandidateResumeRoute
+  AuthenticatedCandidateIndexRoute: typeof AuthenticatedCandidateIndexRoute
+}
+
+const AuthenticatedCandidateRouteRouteChildren: AuthenticatedCandidateRouteRouteChildren =
+  {
+    AuthenticatedCandidateApplicationsRoute:
+      AuthenticatedCandidateApplicationsRoute,
+    AuthenticatedCandidateProfileRoute: AuthenticatedCandidateProfileRoute,
+    AuthenticatedCandidateResumeRoute: AuthenticatedCandidateResumeRoute,
+    AuthenticatedCandidateIndexRoute: AuthenticatedCandidateIndexRoute,
+  }
+
+const AuthenticatedCandidateRouteRouteWithChildren =
+  AuthenticatedCandidateRouteRoute._addFileChildren(
+    AuthenticatedCandidateRouteRouteChildren,
+  )
+
 interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
@@ -619,7 +867,6 @@ interface AuthenticatedSettingsRouteRouteChildren {
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
-    AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
     AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
     AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
     AuthenticatedSettingsNotificationsRoute:
@@ -633,76 +880,60 @@ const AuthenticatedSettingsRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCandidateRouteRoute: typeof AuthenticatedCandidateRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedAdminJobsIndexRoute: typeof AuthenticatedAdminJobsIndexRoute
+  AuthenticatedRecruiterPricingIndexRoute: typeof AuthenticatedRecruiterPricingIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCandidateRouteRoute:
+    AuthenticatedCandidateRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedRecruiterIndexRoute: AuthenticatedRecruiterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedAdminJobsIndexRoute: AuthenticatedAdminJobsIndexRoute,
+  AuthenticatedRecruiterPricingIndexRoute:
+    AuthenticatedRecruiterPricingIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ClerkauthRouteRouteChildren {
-  ClerkauthSignInRoute: typeof ClerkauthSignInRoute
-  ClerkauthSignUpRoute: typeof ClerkauthSignUpRoute
+interface JobsRouteRouteChildren {
+  JobsSlugRoute: typeof JobsSlugRoute
+  JobsIndexRoute: typeof JobsIndexRoute
 }
 
-const ClerkauthRouteRouteChildren: ClerkauthRouteRouteChildren = {
-  ClerkauthSignInRoute: ClerkauthSignInRoute,
-  ClerkauthSignUpRoute: ClerkauthSignUpRoute,
+const JobsRouteRouteChildren: JobsRouteRouteChildren = {
+  JobsSlugRoute: JobsSlugRoute,
+  JobsIndexRoute: JobsIndexRoute,
 }
 
-const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
-  ClerkauthRouteRouteChildren,
-)
-
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
-interface ClerkRouteRouteChildren {
-  ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
-}
-
-const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
-  ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
-}
-
-const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
-  ClerkRouteRouteChildren,
+const JobsRouteRouteWithChildren = JobsRouteRoute._addFileChildren(
+  JobsRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  JobsRouteRoute: JobsRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,
@@ -713,6 +944,11 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  ApplySignInRoute: ApplySignInRoute,
+  ApplySignUpRoute: ApplySignUpRoute,
+  HireSignInRoute: HireSignInRoute,
+  HireSignUpRoute: HireSignUpRoute,
+  StaffSignInRoute: StaffSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

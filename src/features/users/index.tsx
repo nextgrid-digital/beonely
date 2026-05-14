@@ -1,45 +1,62 @@
 import { getRouteApi } from '@tanstack/react-router'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { UsersDialogs } from './components/users-dialogs'
-import { UsersPrimaryButtons } from './components/users-primary-buttons'
-import { UsersProvider } from './components/users-provider'
-import { UsersTable } from './components/users-table'
-import { users } from './data/users'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AdminProfilesTable } from './components/admin-profiles-table'
+import { useAdminProfiles } from './hooks/use-admin-profiles'
 
 const route = getRouteApi('/_authenticated/users/')
 
-export function Users() {
+export function Users () {
   const search = route.useSearch()
   const navigate = route.useNavigate()
+  const query = useAdminProfiles()
 
   return (
-    <UsersProvider>
+    <>
       <Header fixed>
         <Search className='me-auto' />
         <ThemeSwitch />
         <ConfigDrawer />
-        <ProfileDropdown />
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
-            <p className='text-muted-foreground'>
-              Manage your users and their roles here.
-            </p>
-          </div>
-          <UsersPrimaryButtons />
+        <div>
+          <h2 className='text-2xl font-bold tracking-tight'>Users</h2>
+          <p className='text-muted-foreground'>
+            Recruiter accounts from Supabase (<code className='text-xs'>recruiters</code>
+            ). Read-only in this version.
+          </p>
         </div>
-        <UsersTable data={users} search={search} navigate={navigate} />
-      </Main>
 
-      <UsersDialogs />
-    </UsersProvider>
+        {query.isLoading && (
+          <div className='flex justify-center py-12'>
+            <Loader2 className='size-8 animate-spin text-muted-foreground' />
+          </div>
+        )}
+
+        {query.isError && (
+          <Alert variant='destructive'>
+            <AlertCircle className='size-4' />
+            <AlertTitle>Could not load recruiters</AlertTitle>
+            <AlertDescription>
+              {(query.error as Error)?.message ?? 'Unknown error'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {query.data && (
+          <AdminProfilesTable
+            data={query.data}
+            search={search}
+            navigate={navigate}
+          />
+        )}
+      </Main>
+    </>
   )
 }

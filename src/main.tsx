@@ -7,8 +7,10 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { HelmetProvider } from 'react-helmet-async'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
+import { AuthProvider } from '@/context/auth-provider'
+import { getSupabaseBrowserClient, getSupabaseConfigured } from '@/lib/supabase/client'
 import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -53,8 +55,10 @@ const queryClient = new QueryClient({
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
-          useAuthStore.getState().auth.reset()
-          const redirect = `${router.history.location.href}`
+          if (getSupabaseConfigured()) {
+            void getSupabaseBrowserClient().auth.signOut()
+          }
+          const redirect = router.history.location.pathname
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
         if (error.response?.status === 500) {
@@ -93,15 +97,19 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <ThemeProvider>
+              <FontProvider>
+                <DirectionProvider>
+                  <RouterProvider router={router} />
+                </DirectionProvider>
+              </FontProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     </StrictMode>
   )
 }

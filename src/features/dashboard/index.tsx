@@ -11,7 +11,6 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Analytics } from './components/analytics'
@@ -27,7 +26,6 @@ export function Dashboard() {
         <Search />
         <ThemeSwitch />
         <ConfigDrawer />
-        <ProfileDropdown />
       </Header>
 
       {/* ===== Main ===== */}
@@ -192,27 +190,21 @@ export function Dashboard() {
 
 const topNav = [
   {
-    title: 'Overview',
-    href: 'dashboard/overview',
-    isActive: true,
+    title: 'Jobs',
+    href: '/',
+    isActive: false,
     disabled: false,
   },
   {
-    title: 'Customers',
-    href: 'dashboard/customers',
+    title: 'Recruiter',
+    href: '/recruiter',
     isActive: false,
-    disabled: true,
+    disabled: false,
   },
   {
-    title: 'Products',
-    href: 'dashboard/products',
+    title: 'Admin',
+    href: '/admin/jobs',
     isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Settings',
-    href: 'dashboard/settings',
-    isActive: false,
-    disabled: true,
+    disabled: false,
   },
 ]

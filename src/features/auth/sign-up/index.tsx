@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -7,30 +7,58 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  signUpCardDescription,
+  signUpCardTitle,
+} from '@/lib/auth/sign-in-intent'
 import { AuthLayout } from '../auth-layout'
 import { SignUpForm } from './components/sign-up-form'
 
-export function SignUp() {
+export function SignUp () {
+  const { intent } = useSearch({ from: '/(auth)/sign-up' })
+  const title = intent === undefined ? 'Create an account' : signUpCardTitle(intent)
+
   return (
     <AuthLayout>
       <Card className='max-w-sm gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
-            Create an account
-          </CardTitle>
+          <CardTitle className='text-lg tracking-tight'>{title}</CardTitle>
           <CardDescription>
-            Enter your email and password to create an account. <br />
-            Already have an account?{' '}
-            <Link
-              to='/sign-in'
-              className='underline underline-offset-4 hover:text-primary'
-            >
-              Sign In
-            </Link>
+            {intent === undefined ? (
+              <>
+                Enter your email and password to create an account. <br />
+                Already have an account?{' '}
+                <Link
+                  to='/sign-in'
+                  className='underline underline-offset-4 hover:text-primary'
+                >
+                  Sign In
+                </Link>
+              </>
+            ) : (
+              <>
+                {signUpCardDescription(intent)}{' '}
+                Already have an account?{' '}
+                <Link
+                  to='/sign-in'
+                  search={{ intent }}
+                  className='underline underline-offset-4 hover:text-primary'
+                >
+                  Sign in
+                </Link>
+                {' · '}
+                <Link
+                  to='/sign-up'
+                  className='underline underline-offset-4 hover:text-primary'
+                >
+                  Other account type
+                </Link>
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SignUpForm />
+          <SignUpForm intent={intent} />
         </CardContent>
         <CardFooter>
           <p className='px-8 text-center text-sm text-muted-foreground'>
