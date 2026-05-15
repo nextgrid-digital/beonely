@@ -235,7 +235,7 @@ export function RecruiterPortal() {
           </TableHeader>
           <TableBody>
             {jobs.map((job) => {
-              const canEdit =
+              const canPay =
                 job.approval_status === 'pending' &&
                 job.payment_status === 'unpaid'
               const isLive =
@@ -297,17 +297,15 @@ export function RecruiterPortal() {
                           accessToken={session?.access_token}
                         />
                       )}
-                      {canEdit && (
-                        <Button variant='outline' size='sm' asChild>
-                          <Link
-                            to='/recruiter/jobs/$jobId/edit'
-                            params={{ jobId: job.id }}
-                          >
-                            Edit
-                          </Link>
-                        </Button>
-                      )}
-                      {canEdit && (
+                      <Button variant='outline' size='sm' asChild>
+                        <Link
+                          to='/recruiter/jobs/$jobId/edit'
+                          params={{ jobId: job.id }}
+                        >
+                          Edit
+                        </Link>
+                      </Button>
+                      {canPay && (
                         <PayJobButton
                           job={job}
                           accessToken={session?.access_token}

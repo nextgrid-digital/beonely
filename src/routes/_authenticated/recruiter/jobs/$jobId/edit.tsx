@@ -66,13 +66,7 @@ function RecruiterJobEditRoute() {
     if (!recruiterQuery.isSuccess || !jobQuery.isSuccess) return
     const recruiter = recruiterQuery.data
     const job = jobQuery.data
-    if (
-      !recruiter ||
-      !job ||
-      job.recruiter_id !== recruiter.id ||
-      job.approval_status !== 'pending' ||
-      job.payment_status !== 'unpaid'
-    ) {
+    if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
       void navigate({ to: '/recruiter', replace: true })
     }
   }, [
@@ -101,13 +95,7 @@ function RecruiterJobEditRoute() {
 
   const recruiter = recruiterQuery.data
   const job = jobQuery.data
-  if (
-    !recruiter ||
-    !job ||
-    job.recruiter_id !== recruiter.id ||
-    job.approval_status !== 'pending' ||
-    job.payment_status !== 'unpaid'
-  ) {
+  if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
     return null
   }
 

@@ -3,21 +3,11 @@ import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-
-function companyInitials(name: string): string {
-  const t = name.trim()
-  if (!t) return '?'
-  const parts = t.split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase()
-  }
-  return t.slice(0, 2).toUpperCase()
-}
 
 /** Single-line-ish plain text for card excerpt (HTML descriptions are flattened first). */
 function excerptPlain(text: string): string {
@@ -26,8 +16,6 @@ function excerptPlain(text: string): string {
 
 export function PublicJobCard({ job }: { job: JobRow }) {
   const { profile, user, loading } = useAuth()
-  const logoUrl = job.company_logo?.trim()
-  const hasLogo = Boolean(logoUrl)
   const descriptionExcerpt = excerptPlain(
     plainTextFromJobDescription(job.job_description ?? '')
   )
@@ -36,8 +24,7 @@ export function PublicJobCard({ job }: { job: JobRow }) {
     profile?.role === 'recruiter' || profile?.role === 'admin'
   const ownsBeonelyListing =
     job.source_kind === 'recruiter_posted' &&
-    Boolean(profile?.recruiter_row_id) &&
-    profile.recruiter_row_id === job.recruiter_id
+    profile?.recruiter_row_id === job.recruiter_id
 
   return (
     <Card
@@ -48,19 +35,10 @@ export function PublicJobCard({ job }: { job: JobRow }) {
     >
       <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0 pb-2'>
         <div className='flex min-w-0 flex-1 gap-3'>
-          <Avatar className='size-11 shrink-0 rounded-md border border-border/60 bg-muted/30'>
-            {hasLogo && (
-              <AvatarImage
-                src={logoUrl}
-                alt={`${job.company_name} logo`}
-                className='object-cover'
-                loading='lazy'
-              />
-            )}
-            <AvatarFallback className='rounded-md bg-muted text-xs font-semibold text-muted-foreground uppercase'>
-              {companyInitials(job.company_name)}
-            </AvatarFallback>
-          </Avatar>
+          <CompanyLogoAvatar
+            companyName={job.company_name}
+            logoUrl={job.company_logo}
+          />
           <div className='min-w-0 flex-1'>
             <div className='flex flex-wrap items-center gap-2'>
               <h2 className='text-lg leading-tight font-medium'>

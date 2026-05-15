@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState, type ChangeEventHandler } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,14 +7,20 @@ import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { buildJobSlug } from '@/lib/jobs/slug'
 import {
+  uploadJobCompanyLogo,
+  validateJobCompanyLogoFile,
+} from '@/lib/jobs/upload-job-company-logo'
+import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { companyInitials } from '@/features/jobs/company-logo-avatar'
 import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
 import {
   plainTextFromJobDescription,
@@ -37,6 +44,7 @@ import {
 export const jobEditorSchema = z.object({
   title: z.string().min(2),
   company: z.string().min(2),
+  company_logo: z.string().optional(),
   description: z
     .string()
     .refine((s) => plainTextFromJobDescription(s).length >= 10, {
@@ -64,6 +72,7 @@ function defaultFormValues(job: JobRow | null): JobEditorValues {
   return {
     title: job?.job_title ?? '',
     company: job?.company_name ?? '',
+    company_logo: job?.company_logo ?? '',
     description: job?.job_description ?? '',
     location: job?.location ?? '',
     employment_type: job?.employment_type ?? 'full_time',
@@ -73,12 +82,20 @@ function defaultFormValues(job: JobRow | null): JobEditorValues {
   }
 }
 
+function companyLogoForSave(value: string | undefined): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
 export function RecruiterJobEditorPage(props: {
   recruiter: RecruiterRow
   job: JobRow | null
 }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
+  const [logoBusy, setLogoBusy] = useState(false)
   const form = useForm<JobEditorValues>({
     resolver: zodResolver(jobEditorSchema),
     defaultValues: defaultFormValues(props.job),
@@ -86,7 +103,11 @@ export function RecruiterJobEditorPage(props: {
 
   useEffect(() => {
     form.reset(defaultFormValues(props.job))
+    setPendingLogoFile(null)
   }, [props.job, form])
+
+  const companyName = form.watch('company')
+  const companyLogo = form.watch('company_logo')
 
   const save = useMutation({
     mutationFn: async (values: JobEditorValues) => {
@@ -101,12 +122,15 @@ export function RecruiterJobEditorPage(props: {
       const applyUrl = props.job
         ? props.job.apply_url
         : applyUrlForJobSlug(job_slug)
+      const logoFromForm = companyLogoForSave(values.company_logo)
+
       if (props.job) {
         const { error } = await sb
           .from('jobs')
           .update({
             job_title: values.title,
             company_name: values.company,
+            company_logo: logoFromForm,
             job_description: sanitizeJobDescriptionHtml(values.description),
             location: values.location,
             apply_url: applyUrl,
@@ -117,12 +141,17 @@ export function RecruiterJobEditorPage(props: {
           })
           .eq('id', props.job.id)
         if (error) throw error
-      } else {
-        const { error } = await sb.from('jobs').insert({
+        return { jobId: props.job.id, jobSlug: props.job.job_slug }
+      }
+
+      const { data: inserted, error } = await sb
+        .from('jobs')
+        .insert({
           recruiter_id: props.recruiter.id,
           job_slug,
           job_title: values.title,
           company_name: values.company,
+          company_logo: pendingLogoFile ? null : logoFromForm,
           job_description: sanitizeJobDescriptionHtml(values.description),
           location: values.location,
           apply_url: applyUrl,
@@ -142,19 +171,87 @@ export function RecruiterJobEditorPage(props: {
           recruiter_email: props.recruiter.email,
           recruiter_name: props.recruiter.name,
         })
-        if (error) throw error
+        .select('id, job_slug')
+        .single()
+      if (error) throw error
+      if (!inserted) throw new Error('Job was not created')
+
+      if (pendingLogoFile) {
+        const logoUrl = await uploadJobCompanyLogo(
+          sb,
+          props.recruiter.id,
+          inserted.id,
+          pendingLogoFile
+        )
+        const { error: logoError } = await sb
+          .from('jobs')
+          .update({ company_logo: logoUrl })
+          .eq('id', inserted.id)
+        if (logoError) throw logoError
       }
+
+      return { jobId: inserted.id, jobSlug: inserted.job_slug }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success('Job saved')
       void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
-      if (props.job) {
-        void qc.invalidateQueries({ queryKey: ['recruiter-job', props.job.id] })
+      void qc.invalidateQueries({ queryKey: ['public-jobs'] })
+      if (result?.jobId) {
+        void qc.invalidateQueries({ queryKey: ['recruiter-job', result.jobId] })
+      }
+      if (result?.jobSlug) {
+        void qc.invalidateQueries({ queryKey: ['job', result.jobSlug] })
       }
       void navigate({ to: '/recruiter' })
     },
     onError: () => toast.error('Save failed'),
   })
+
+  const onLogoFileChange: ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!getSupabaseConfigured()) {
+      toast.error('Connect Supabase to upload a logo.')
+      return
+    }
+    const validation = validateJobCompanyLogoFile(file)
+    if (validation) {
+      toast.error(validation)
+      return
+    }
+
+    if (!props.job) {
+      setPendingLogoFile(file)
+      form.setValue('company_logo', URL.createObjectURL(file), {
+        shouldDirty: true,
+      })
+      toast.success('Logo added. Save the job to upload it.')
+      return
+    }
+
+    setLogoBusy(true)
+    try {
+      const sb = getSupabaseBrowserClient()
+      const url = await uploadJobCompanyLogo(
+        sb,
+        props.recruiter.id,
+        props.job.id,
+        file
+      )
+      form.setValue('company_logo', url, { shouldDirty: true })
+      toast.success('Logo uploaded. Save changes to keep other edits.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not upload logo')
+    } finally {
+      setLogoBusy(false)
+    }
+  }
+
+  const clearLogo = () => {
+    setPendingLogoFile(null)
+    form.setValue('company_logo', '', { shouldDirty: true })
+  }
 
   if (!getSupabaseConfigured()) {
     return (
@@ -165,14 +262,18 @@ export function RecruiterJobEditorPage(props: {
   }
 
   const heading = props.job ? 'Edit job' : 'New job'
+  const isNewJob = !props.job
+  const helperText = isNewJob
+    ? 'Save as a draft, then pay from My jobs when you are ready to submit.'
+    : 'Updates publish immediately on live listings.'
+  const submitLabel = isNewJob ? 'Save draft' : 'Save changes'
+  const logoPreviewUrl = companyLogo?.trim() || undefined
 
   return (
     <div className='mx-auto w-full max-w-2xl space-y-6 pb-6'>
       <div className='space-y-1'>
         <h1 className='text-lg font-semibold tracking-tight'>{heading}</h1>
-        <p className='text-sm text-muted-foreground'>
-          Save as a draft, then pay from My jobs when you are ready to submit.
-        </p>
+        <p className='text-sm text-muted-foreground'>{helperText}</p>
       </div>
       <Form {...form}>
         <form
@@ -205,6 +306,54 @@ export function RecruiterJobEditorPage(props: {
               </FormItem>
             )}
           />
+          <FormItem>
+            <FormLabel>Company logo</FormLabel>
+            <div className='flex flex-wrap items-center gap-3'>
+              <Avatar className='size-14 rounded-md border border-border/60 bg-muted/30'>
+                {logoPreviewUrl ? (
+                  <AvatarImage
+                    src={logoPreviewUrl}
+                    alt={`${companyName || 'Company'} logo`}
+                    className='object-cover'
+                  />
+                ) : null}
+                <AvatarFallback className='rounded-md text-sm font-semibold uppercase'>
+                  {companyInitials(companyName || 'Co')}
+                </AvatarFallback>
+              </Avatar>
+              <div className='flex flex-wrap gap-2'>
+                <input
+                  ref={logoInputRef}
+                  type='file'
+                  accept='image/jpeg,image/png,image/webp'
+                  className='sr-only'
+                  onChange={onLogoFileChange}
+                />
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  disabled={logoBusy}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {logoBusy ? 'Uploading…' : 'Upload logo'}
+                </Button>
+                {(logoPreviewUrl || pendingLogoFile) && (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearLogo}
+                  >
+                    Remove logo
+                  </Button>
+                )}
+              </div>
+            </div>
+            <FormDescription className='mt-1.5'>
+              JPEG, PNG, or WebP, up to 5 MB. Shown on the public job board.
+            </FormDescription>
+          </FormItem>
           <FormField
             control={form.control}
             name='location'
@@ -355,7 +504,7 @@ export function RecruiterJobEditorPage(props: {
               Cancel
             </Button>
             <Button type='submit' disabled={save.isPending}>
-              Save draft
+              {submitLabel}
             </Button>
           </div>
         </form>

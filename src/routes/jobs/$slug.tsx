@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
+import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
 import { JobDescriptionRichTextRead } from '@/features/jobs/job-description-rich-text-field'
 import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
@@ -197,7 +198,13 @@ function JobDetailPage() {
           />
           <div className='mx-auto max-w-3xl space-y-8 pt-6 pb-16'>
             <div className='flex flex-wrap items-start justify-between gap-4'>
-              <div className='min-w-0 flex-1'>
+              <div className='flex min-w-0 flex-1 gap-4'>
+                <CompanyLogoAvatar
+                  companyName={job.company_name}
+                  logoUrl={job.company_logo}
+                  className='size-14'
+                />
+                <div className='min-w-0 flex-1'>
                 <div className='flex flex-wrap items-center gap-2'>
                   <h1 className='text-3xl font-semibold tracking-tight'>
                     {job.job_title}
@@ -222,6 +229,7 @@ function JobDetailPage() {
                   {job.work_mode && (
                     <Badge variant='outline'>{job.work_mode}</Badge>
                   )}
+                </div>
                 </div>
               </div>
               <div className='flex shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:flex-row'>

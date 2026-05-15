@@ -6,7 +6,6 @@ import { displayFromUser } from '@/lib/auth/display-name'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
 import {
   signInCardDescription,
-  signInCardTitle,
   type SignInIntent,
 } from '@/lib/auth/sign-in-intent'
 import {
@@ -133,19 +132,9 @@ export function PublicSiteAccountNav() {
     if (loading) return
     pendingAfterSignInRef.current = null
     openAuthModal({
-      title: signInCardTitle('candidate'),
+      title: DEFAULT_SIGN_IN_TITLE,
       description: signInCardDescription('candidate'),
       signUpIntent: 'candidate',
-    })
-  }, [loading, openAuthModal])
-
-  const openHiringAuthModal = useCallback(() => {
-    if (loading) return
-    pendingAfterSignInRef.current = null
-    openAuthModal({
-      title: signInCardTitle('recruiter'),
-      description: signInCardDescription('recruiter'),
-      signUpIntent: 'recruiter',
     })
   }, [loading, openAuthModal])
 
@@ -179,7 +168,7 @@ export function PublicSiteAccountNav() {
         <div className='flex items-center gap-2'>
           {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
             <Button size='sm' type='button' onClick={requireAuthForPostJob}>
-              Post a job
+              Post a Job
             </Button>
           )}
           <DropdownMenu>
@@ -251,23 +240,16 @@ export function PublicSiteAccountNav() {
 
   return (
     <>
-      <div className='flex max-w-[min(100%,28rem)] flex-wrap items-center justify-end gap-x-3 gap-y-1.5 text-sm sm:max-w-none'>
+      <div className='flex items-center justify-end gap-x-3 text-sm'>
         <button
           type='button'
           className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
           onClick={openCandidateAuthModal}
         >
-          Candidate sign in
-        </button>
-        <button
-          type='button'
-          className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
-          onClick={openHiringAuthModal}
-        >
-          Hiring sign in
+          Sign in
         </button>
         <Button size='sm' type='button' onClick={requireAuthForPostJob}>
-          Post a job
+          Post a Job
         </Button>
       </div>
       <AuthModal

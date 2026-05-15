@@ -97,6 +97,21 @@ Fix:
 2. If `candidate_user_id` (or `resume_structured_snapshot`) is missing, apply migrations to **that** project — e.g. CLI `supabase db push` linked to the project, or run the SQL from [`supabase/migrations/20260516120000_applications_recruiter_pipeline.sql`](../supabase/migrations/20260516120000_applications_recruiter_pipeline.sql) and optionally [`20260516140000_applications_resume_structured_snapshot.sql`](../supabase/migrations/20260516140000_applications_resume_structured_snapshot.sql) in the SQL Editor.
 3. Hard-refresh the app and retry apply (PostgREST usually picks up new columns immediately).
 
+## Troubleshooting: company logo upload fails on production
+
+Symptoms: recruiter **Upload logo** toast mentions missing **`job-logos`** bucket, or upload returns a storage error.
+
+Cause: the Supabase project behind **`VITE_SUPABASE_URL`** is missing the **`job-logos`** bucket, **`company_logo`** column on **`jobs`**, or storage policies from [`supabase/migrations/20260517120000_job_company_logos_storage.sql`](../supabase/migrations/20260517120000_job_company_logos_storage.sql).
+
+Fix:
+
+1. Confirm **`VITE_SUPABASE_URL`** for **Production** on Vercel is `https://<project-ref>.supabase.co` for the same project where migrations were applied (Beonely production uses one project for app + DB).
+2. In Supabase → **Storage**, verify bucket **`job-logos`** exists and is **public**.
+3. In SQL Editor, verify column:  
+   `select column_name from information_schema.columns where table_schema = 'public' and table_name = 'jobs' and column_name = 'company_logo';`
+4. If missing, run the migration SQL file above (or `supabase db push` linked to that project).
+5. **Redeploy** the Vercel **Production** deployment so the app bundle includes recruiter edit + logo UI ([`recruiter-job-editor-page.tsx`](../src/features/recruiter/recruiter-job-editor-page.tsx)). Logo upload is client-side to Supabase Storage; no new Vercel server env vars are required beyond existing Supabase keys.
+
 ## Troubleshooting: “Supabase is not configured” or empty jobs on the live site
 
 Symptoms: toast **Supabase is not configured** on sign-in/sign-up, or the public jobs list is empty while localhost works.
