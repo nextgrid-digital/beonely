@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { HelmetProvider } from 'react-helmet-async'
+import { Analytics } from '@vercel/analytics/react'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
 import {
@@ -107,6 +108,7 @@ if (!rootElement.innerHTML) {
               <FontProvider>
                 <DirectionProvider>
                   <RouterProvider router={router} />
+                  <Analytics />
                 </DirectionProvider>
               </FontProvider>
             </ThemeProvider>
