@@ -37,12 +37,20 @@ jobs:
           node -e '
             const fs = require("node:fs");
             const log = fs.readFileSync("scrape.log", "utf8");
-            const match = log.match(/SCRAPE_SUMMARY\\s+({[^\\n]+})/);
-            if (!match) {
+            const line = log
+              .split(/\\r?\\n/)
+              .filter((entry) => entry.includes("SCRAPE_SUMMARY"))
+              .at(-1);
+            if (!line) {
               console.error("SCRAPE_SUMMARY not found in scrape.log");
               process.exit(1);
             }
-            const summary = JSON.parse(match[1]);
+            const jsonStart = line.indexOf("{");
+            if (jsonStart < 0) {
+              console.error("SCRAPE_SUMMARY line missing JSON payload");
+              process.exit(1);
+            }
+            const summary = JSON.parse(line.slice(jsonStart));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\\n`);
             fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\\n`);
@@ -56,12 +64,20 @@ jobs:
           node -e '
             const fs = require("node:fs");
             const log = fs.readFileSync("ingest.log", "utf8");
-            const match = log.match(/INGEST_SUMMARY\\s+({[^\\n]+})/);
-            if (!match) {
+            const line = log
+              .split(/\\r?\\n/)
+              .filter((entry) => entry.includes("INGEST_SUMMARY"))
+              .at(-1);
+            if (!line) {
               console.error("INGEST_SUMMARY not found in ingest.log");
               process.exit(1);
             }
-            const summary = JSON.parse(match[1]);
+            const jsonStart = line.indexOf("{");
+            if (jsonStart < 0) {
+              console.error("INGEST_SUMMARY line missing JSON payload");
+              process.exit(1);
+            }
+            const summary = JSON.parse(line.slice(jsonStart));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\\n`);
             fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\\n`);
