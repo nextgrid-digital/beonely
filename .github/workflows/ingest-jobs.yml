@@ -33,25 +33,16 @@ jobs:
       - name: Scrape LinkedIn jobs JSON
         run: |
           set -euo pipefail
+          export SCRAPE_LINKEDIN_SUMMARY_FILE="$RUNNER_TEMP/scrape-summary.json"
           pnpm scrape:linkedin 2>&1 | tee scrape.log
           node -e '
             const fs = require("node:fs");
-            const log = fs.readFileSync("scrape.log", "utf8");
-            const line = log
-              .split(/\\r?\\n/)
-              .filter((entry) => entry.includes("SCRAPE_SUMMARY"))
-              .at(-1);
-            if (!line) {
-              console.error("SCRAPE_SUMMARY not found in scrape.log");
+            const summaryPath = process.env.SCRAPE_LINKEDIN_SUMMARY_FILE;
+            if (!summaryPath || !fs.existsSync(summaryPath)) {
+              console.error("SCRAPE summary file not found");
               process.exit(1);
             }
-            const jsonStart = line.indexOf("{");
-            const jsonEnd = line.lastIndexOf("}");
-            if (jsonStart < 0 || jsonEnd < jsonStart) {
-              console.error("SCRAPE_SUMMARY line missing JSON payload");
-              process.exit(1);
-            }
-            const summary = JSON.parse(line.slice(jsonStart, jsonEnd + 1));
+            const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\\n`);
             fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\\n`);
@@ -61,25 +52,16 @@ jobs:
       - name: Ingest LinkedIn jobs into Supabase
         run: |
           set -euo pipefail
+          export INGEST_SUMMARY_FILE="$RUNNER_TEMP/ingest-summary.json"
           pnpm ingest:jobs 2>&1 | tee ingest.log
           node -e '
             const fs = require("node:fs");
-            const log = fs.readFileSync("ingest.log", "utf8");
-            const line = log
-              .split(/\\r?\\n/)
-              .filter((entry) => entry.includes("INGEST_SUMMARY"))
-              .at(-1);
-            if (!line) {
-              console.error("INGEST_SUMMARY not found in ingest.log");
+            const summaryPath = process.env.INGEST_SUMMARY_FILE;
+            if (!summaryPath || !fs.existsSync(summaryPath)) {
+              console.error("INGEST summary file not found");
               process.exit(1);
             }
-            const jsonStart = line.indexOf("{");
-            const jsonEnd = line.lastIndexOf("}");
-            if (jsonStart < 0 || jsonEnd < jsonStart) {
-              console.error("INGEST_SUMMARY line missing JSON payload");
-              process.exit(1);
-            }
-            const summary = JSON.parse(line.slice(jsonStart, jsonEnd + 1));
+            const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\\n`);
             fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\\n`);

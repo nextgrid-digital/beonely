@@ -3,7 +3,8 @@
  *
  * Writes normalized JSON for ingestion at `data/linkedin-jobs.json` by default.
  */
-import { resolve } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 
 import {
   resolveLinkedInScrapeConfigFromEnv,
@@ -17,8 +18,15 @@ function resolveOutputPath(): string {
   return resolve(process.cwd(), 'data/linkedin-jobs.json')
 }
 
+function resolveSummaryPath(): string | null {
+  const explicit = process.env.SCRAPE_LINKEDIN_SUMMARY_FILE?.trim()
+  if (!explicit) return null
+  return resolve(explicit)
+}
+
 async function main() {
   const outputPath = resolveOutputPath()
+  const summaryPath = resolveSummaryPath()
   const config = resolveLinkedInScrapeConfigFromEnv()
 
   console.info('[linkedin-scrape] start', JSON.stringify({ outputPath, config }))
@@ -29,8 +37,15 @@ async function main() {
 
   await writeJobsJsonAtomically(outputPath, jobs)
 
+  const summaryPayload = { ...summary, jobsWritten: jobs.length, outputPath }
+
+  if (summaryPath) {
+    await mkdir(dirname(summaryPath), { recursive: true })
+    await writeFile(summaryPath, `${JSON.stringify(summaryPayload)}\n`, 'utf8')
+  }
+
   console.info('[linkedin-scrape] wrote file', JSON.stringify({ outputPath, jobs: jobs.length }))
-  console.log('SCRAPE_SUMMARY', JSON.stringify({ ...summary, jobsWritten: jobs.length, outputPath }))
+  console.log('SCRAPE_SUMMARY', JSON.stringify(summaryPayload))
 }
 
 main().catch((error) => {

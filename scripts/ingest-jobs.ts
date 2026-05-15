@@ -10,8 +10,8 @@
  * Single demo row (no batch file):
  *   INGEST_JOB_DESCRIPTION / INGEST_JOB_DESCRIPTION_FILE optional
  */
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import {
   buildIngestJobRow,
@@ -200,16 +200,21 @@ async function main() {
   console.log(
     `Done. inserted=${inserted} updated=${updated} skipped=${skipped} failed=${failed}`
   )
-  console.log(
-    'INGEST_SUMMARY',
-    JSON.stringify({
-      inserted,
-      updated,
-      skipped,
-      failed,
-      processed: inputs.length,
-    })
-  )
+  const summaryPayload = {
+    inserted,
+    updated,
+    skipped,
+    failed,
+    processed: inputs.length,
+  }
+
+  const summaryFile = process.env.INGEST_SUMMARY_FILE?.trim()
+  if (summaryFile) {
+    mkdirSync(dirname(summaryFile), { recursive: true })
+    writeFileSync(summaryFile, `${JSON.stringify(summaryPayload)}\n`, 'utf8')
+  }
+
+  console.log('INGEST_SUMMARY', JSON.stringify(summaryPayload))
   if (failed > 0) process.exit(1)
 }
 
