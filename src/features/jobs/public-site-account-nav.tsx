@@ -1,13 +1,8 @@
-import { useCallback, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react'
 import { displayFromUser } from '@/lib/auth/display-name'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
-import {
-  signInCardDescription,
-  type SignInIntent,
-} from '@/lib/auth/sign-in-intent'
 import {
   PROFILE_AVATAR_PLACEHOLDER_URL,
   resumeStructuredEnvelopeSchema,
@@ -16,7 +11,6 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import type { ProfileRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -29,15 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
-import { AuthModal } from '@/features/auth/auth-modal'
-
-const POST_JOB_MODAL_TITLE = 'Post a job'
-const POST_JOB_MODAL_DESCRIPTION =
-  'Sign in or create a recruiter account. After that you will open the new listing page to enter details and save a draft.'
-
-const DEFAULT_SIGN_IN_TITLE = 'Sign in'
-const DEFAULT_SIGN_IN_DESCRIPTION =
-  'Enter your email and password to access your account.'
+import { usePublicSiteAuth } from '@/features/jobs/public-site-auth-provider'
+import { useState } from 'react'
 
 function candidateAvatarFromResumeRow(
   row: { resume_structured: unknown } | null | undefined
@@ -52,19 +39,9 @@ function candidateAvatarFromResumeRow(
 }
 
 export function PublicSiteAccountNav() {
-  const navigate = useNavigate()
   const { user, loading, profile } = useAuth()
-  const [signInOpen, setSignInOpen] = useState(false)
-  const [signInTitle, setSignInTitle] = useState(DEFAULT_SIGN_IN_TITLE)
-  const [signInDescription, setSignInDescription] = useState(
-    DEFAULT_SIGN_IN_DESCRIPTION
-  )
+  const { requireAuthForPostJob, openCandidateAuthModal } = usePublicSiteAuth()
   const [signOutDialogOpen, setSignOutDialogOpen] = useState(false)
-  const [modalSignUpIntent, setModalSignUpIntent] = useState<
-    SignInIntent | undefined
-  >('recruiter')
-  const [authModalKey, setAuthModalKey] = useState(0)
-  const pendingAfterSignInRef = useRef<(() => void) | null>(null)
 
   const candidateAvatarQuery = useQuery({
     queryKey: ['job-seeker-profile', user?.id ?? ''],
@@ -84,59 +61,6 @@ export function PublicSiteAccountNav() {
       return data
     },
   })
-
-  type OpenAuthOpts = {
-    title?: string
-    description?: string
-    signUpIntent?: SignInIntent
-  }
-
-  const openAuthModal = useCallback((opts?: OpenAuthOpts) => {
-    setSignInTitle(opts?.title ?? DEFAULT_SIGN_IN_TITLE)
-    setSignInDescription(opts?.description ?? DEFAULT_SIGN_IN_DESCRIPTION)
-    setModalSignUpIntent(opts?.signUpIntent ?? 'recruiter')
-    setAuthModalKey((k) => k + 1)
-    setSignInOpen(true)
-  }, [])
-
-  const handleAuthComplete = useCallback(
-    (profile: ProfileRow | null) => {
-      const fn = pendingAfterSignInRef.current
-      pendingAfterSignInRef.current = null
-      if (fn) {
-        fn()
-        return
-      }
-      void navigate({ to: getPostAuthPath(profile) })
-    },
-    [navigate]
-  )
-
-  const requireAuthForPostJob = useCallback(() => {
-    if (loading) return
-    if (user) {
-      void navigate({ to: '/recruiter/jobs/new' })
-      return
-    }
-    pendingAfterSignInRef.current = () => {
-      void navigate({ to: '/recruiter/jobs/new' })
-    }
-    openAuthModal({
-      title: POST_JOB_MODAL_TITLE,
-      description: POST_JOB_MODAL_DESCRIPTION,
-      signUpIntent: 'recruiter',
-    })
-  }, [loading, user, navigate, openAuthModal])
-
-  const openCandidateAuthModal = useCallback(() => {
-    if (loading) return
-    pendingAfterSignInRef.current = null
-    openAuthModal({
-      title: DEFAULT_SIGN_IN_TITLE,
-      description: signInCardDescription('candidate'),
-      signUpIntent: 'candidate',
-    })
-  }, [loading, openAuthModal])
 
   if (loading) {
     return (
@@ -239,31 +163,17 @@ export function PublicSiteAccountNav() {
   }
 
   return (
-    <>
-      <div className='flex items-center justify-end gap-x-3 text-sm'>
-        <button
-          type='button'
-          className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
-          onClick={openCandidateAuthModal}
-        >
-          Sign in
-        </button>
-        <Button size='sm' type='button' onClick={requireAuthForPostJob}>
-          Post a Job
-        </Button>
-      </div>
-      <AuthModal
-        key={authModalKey}
-        open={signInOpen}
-        onOpenChange={(open) => {
-          setSignInOpen(open)
-          if (!open) pendingAfterSignInRef.current = null
-        }}
-        title={signInTitle}
-        description={signInDescription}
-        signUpIntent={modalSignUpIntent}
-        onAuthComplete={handleAuthComplete}
-      />
-    </>
+    <div className='flex items-center justify-end gap-x-3 text-sm'>
+      <button
+        type='button'
+        className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+        onClick={openCandidateAuthModal}
+      >
+        Sign in
+      </button>
+      <Button size='sm' type='button' onClick={requireAuthForPostJob}>
+        Post a Job
+      </Button>
+    </div>
   )
 }

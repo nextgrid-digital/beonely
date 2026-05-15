@@ -21,10 +21,12 @@ import { Button } from '@/components/ui/button'
 import { PublicJobCard } from '@/features/jobs/public-job-card'
 import { PublicJobListSkeleton } from '@/features/jobs/public-job-list-skeleton'
 import {
+  PublicSiteAuthShell,
   PublicSiteFooter,
   PublicSiteHeader,
   PUBLIC_SITE_MAIN_COLUMN,
 } from '@/features/jobs/public-site-layout'
+import { usePublicSiteAuth } from '@/features/jobs/public-site-auth-provider'
 import {
   PublishedJobsFiltersBar,
   clearPublishedJobSearchPreserveSetup,
@@ -70,6 +72,15 @@ function publishedJobFiltersFromHomeSearch(
 }
 
 function LandingPage() {
+  return (
+    <PublicSiteAuthShell>
+      <LandingPageContent />
+    </PublicSiteAuthShell>
+  )
+}
+
+function LandingPageContent() {
+  const { requireAuthForPostJob } = usePublicSiteAuth()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const { setup } = search
@@ -118,8 +129,13 @@ function LandingPage() {
                   <ArrowRight className='ms-1 size-4' />
                 </Link>
               </Button>
-              <Button asChild variant='outline' size='lg'>
-                <Link to='/sign-up'>I&apos;m hiring</Link>
+              <Button
+                type='button'
+                variant='outline'
+                size='lg'
+                onClick={requireAuthForPostJob}
+              >
+                I&apos;m hiring
               </Button>
             </div>
           </section>

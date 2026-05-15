@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Logo } from '@/assets/logo'
 import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
+import { PublicSiteAuthProvider } from '@/features/jobs/public-site-auth-provider'
 
 /** Shared with profile resume builder and jobs detail sticky subheaders. */
 export const PUBLIC_SITE_BREADCRUMB_LIST =
@@ -37,6 +38,10 @@ export const PUBLIC_SITE_MAX = 'max-w-5xl'
 
 /** Same outer column as landing `#main-content`: centered, full width up to max, horizontal padding. */
 export const PUBLIC_SITE_MAIN_COLUMN = `mx-auto w-full ${PUBLIC_SITE_MAX} px-4`
+
+export function PublicSiteAuthShell({ children }: { children: ReactNode }) {
+  return <PublicSiteAuthProvider>{children}</PublicSiteAuthProvider>
+}
 
 export function PublicSiteHeader() {
   return (
