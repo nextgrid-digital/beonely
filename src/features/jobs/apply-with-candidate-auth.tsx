@@ -52,6 +52,16 @@ export type ApplyJob = Pick<
   | 'job_title'
 >
 
+function applyFlowErrorMessage(error: unknown): string {
+  const fallback = 'Could not continue with this application. Please try again.'
+  if (!(error instanceof Error)) return fallback
+  const msg = error.message.trim()
+  if (!msg) return fallback
+  if (/not signed in/i.test(msg)) return 'Please sign in again and retry.'
+  if (/complete your profile first/i.test(msg)) return msg
+  return msg
+}
+
 async function fetchJobSeekerCompletionRow(userId: string) {
   const sb = getSupabaseBrowserClient()
   const { data, error } = await sb
@@ -91,15 +101,22 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       user && getSupabaseConfigured() && beonely && profile?.role === 'candidate'
     ),
     queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from('applications')
-        .select('id')
-        .eq('job_id', job.id)
-        .eq('candidate_user_id', user!.id)
-        .maybeSingle()
-      if (error) throw error
-      return Boolean(data)
+      try {
+        const sb = getSupabaseBrowserClient()
+        const { data, error } = await sb
+          .from('applications')
+          .select('id')
+          .eq('job_id', job.id)
+          .eq('candidate_user_id', user!.id)
+          .maybeSingle()
+        if (error) throw error
+        return Boolean(data)
+      } catch (error) {
+        toast.error(
+          'Could not verify your application status right now. You can still continue.'
+        )
+        return false
+      }
     },
   })
 
@@ -149,13 +166,84 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
 
   const goProfileOrApply = useCallback(
     async (authProfile: ProfileRow | null) => {
-      if (!getSupabaseConfigured()) return
-      const sb = getSupabaseBrowserClient()
-      const { data: authUserRes } = await sb.auth.getUser()
-      const authUser = authUserRes.user
-      if (!authUser) return
+      try {
+        if (!getSupabaseConfigured()) return
+        const sb = getSupabaseBrowserClient()
+        const { data: authUserRes } = await sb.auth.getUser()
+        const authUser = authUserRes.user
+        if (!authUser) return
 
-      if (authProfile?.role === 'recruiter' || authProfile?.role === 'admin') {
+        if (authProfile?.role === 'recruiter' || authProfile?.role === 'admin') {
+          if (beonely) {
+            toast.message(
+              'Switch to a candidate account to apply on Beonely for this role.'
+            )
+            return
+          }
+          openExternalApply()
+          return
+        }
+
+        await syncJobSeekerFromUserMetadata(sb, authUser)
+        const row = await fetchJobSeekerCompletionRow(authUser.id)
+        if (!isJobSeekerProfileComplete(row)) {
+          const returnTo = `/jobs/${job.job_slug}`
+          void navigate({
+            to: '/candidate/profile',
+            search: { returnTo },
+          })
+          return
+        }
+        if (beonely) {
+          const full = await fetchJobSeekerSnapshotRow(authUser.id)
+          if (!full) {
+            toast.error('Complete your profile first')
+            return
+          }
+          const { error } = await submitBeonelyApplication({
+            sb,
+            job,
+            authUser,
+            jobSeekerRow: {
+              email: full.email,
+              full_name: full.full_name,
+              phone: full.phone,
+              linkedin_url: full.linkedin_url,
+              portfolio_url: full.portfolio_url,
+              resume_structured: full.resume_structured,
+              resume_storage_path: full.resume_storage_path,
+            },
+          })
+          if (error) {
+            toast.error(error)
+            return
+          }
+          toast.success('Application sent to the employer')
+          void qc.invalidateQueries({
+            queryKey: ['beonely-application', authUser.id, job.id],
+          })
+          void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+          void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+          void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
+          return
+        }
+        openExternalApply()
+      } catch (error) {
+        toast.error(applyFlowErrorMessage(error))
+      }
+    },
+    [beonely, job, navigate, openExternalApply, qc]
+  )
+
+  const handleApplyClick = useCallback(async () => {
+    try {
+      if (!user) {
+        setAuthKey((k) => k + 1)
+        setAuthOpen(true)
+        return
+      }
+      if (!getSupabaseConfigured()) return
+      if (profile?.role === 'recruiter' || profile?.role === 'admin') {
         if (beonely) {
           toast.message(
             'Switch to a candidate account to apply on Beonely for this role.'
@@ -165,88 +253,25 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         openExternalApply()
         return
       }
-
-      await syncJobSeekerFromUserMetadata(sb, authUser)
-      const row = await fetchJobSeekerCompletionRow(authUser.id)
+      const sb = getSupabaseBrowserClient()
+      await syncJobSeekerFromUserMetadata(sb, user)
+      const row = await fetchJobSeekerCompletionRow(user.id)
       if (!isJobSeekerProfileComplete(row)) {
-        const returnTo = `/jobs/${job.job_slug}`
+        const returnTo = sanitizeProfileReturnTo(`/jobs/${job.job_slug}`)
         void navigate({
           to: '/candidate/profile',
-          search: { returnTo },
+          search: returnTo ? { returnTo } : {},
         })
         return
       }
       if (beonely) {
-        const full = await fetchJobSeekerSnapshotRow(authUser.id)
-        if (!full) {
-          toast.error('Complete your profile first')
-          return
-        }
-        const { error } = await submitBeonelyApplication({
-          sb,
-          job,
-          authUser,
-          jobSeekerRow: {
-            email: full.email,
-            full_name: full.full_name,
-            phone: full.phone,
-            linkedin_url: full.linkedin_url,
-            portfolio_url: full.portfolio_url,
-            resume_structured: full.resume_structured,
-            resume_storage_path: full.resume_storage_path,
-          },
-        })
-        if (error) {
-          toast.error(error)
-          return
-        }
-        toast.success('Application sent to the employer')
-        void qc.invalidateQueries({
-          queryKey: ['beonely-application', authUser.id, job.id],
-        })
-        void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
-        void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
-        void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
+        applyBeonelyMutate()
         return
       }
       openExternalApply()
-    },
-    [beonely, job, navigate, openExternalApply, qc]
-  )
-
-  const handleApplyClick = useCallback(async () => {
-    if (!user) {
-      setAuthKey((k) => k + 1)
-      setAuthOpen(true)
-      return
+    } catch (error) {
+      toast.error(applyFlowErrorMessage(error))
     }
-    if (!getSupabaseConfigured()) return
-    if (profile?.role === 'recruiter' || profile?.role === 'admin') {
-      if (beonely) {
-        toast.message(
-          'Switch to a candidate account to apply on Beonely for this role.'
-        )
-        return
-      }
-      openExternalApply()
-      return
-    }
-    const sb = getSupabaseBrowserClient()
-    await syncJobSeekerFromUserMetadata(sb, user)
-    const row = await fetchJobSeekerCompletionRow(user.id)
-    if (!isJobSeekerProfileComplete(row)) {
-      const returnTo = sanitizeProfileReturnTo(`/jobs/${job.job_slug}`)
-      void navigate({
-        to: '/candidate/profile',
-        search: returnTo ? { returnTo } : {},
-      })
-      return
-    }
-    if (beonely) {
-      applyBeonelyMutate()
-      return
-    }
-    openExternalApply()
   }, [
     user,
     profile?.role,

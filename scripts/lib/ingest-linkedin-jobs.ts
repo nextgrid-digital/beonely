@@ -33,6 +33,8 @@ export type IngestLinkedInJobInput = {
   external_id?: string
   job_title: string
   company_name: string
+  company_logo?: string
+  company_website?: string
   location?: string
   apply_url: string
   job_description: string
@@ -57,6 +59,37 @@ export function normalizeLinkedInApplyUrl(raw: string): string {
   } catch {
     return trimmed
   }
+}
+
+function sanitizeHttpUrl(raw: string | undefined): string | null {
+  const trimmed = raw?.trim()
+  if (!trimmed) return null
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    if (parsed.hostname === 'linkedin.com') parsed.hostname = 'www.linkedin.com'
+    return parsed.toString()
+  } catch {
+    return null
+  }
+}
+
+export function normalizeCompanyLogoUrl(raw: string | undefined): string | null {
+  const sanitized = sanitizeHttpUrl(raw)
+  if (!sanitized) return null
+  const parsed = new URL(sanitized)
+  parsed.hash = ''
+  return parsed.toString()
+}
+
+export function normalizeCompanyWebsiteUrl(raw: string | undefined): string | null {
+  const sanitized = sanitizeHttpUrl(raw)
+  if (!sanitized) return null
+  const parsed = new URL(sanitized)
+  if (parsed.hostname.endsWith('linkedin.com')) return null
+  parsed.hash = ''
+  parsed.search = ''
+  return parsed.toString().replace(/\/$/, '')
 }
 
 export function slugFromIngestJob(job: IngestLinkedInJobInput): string {
@@ -105,6 +138,8 @@ export function buildIngestJobRow(
     job_slug: slugFromIngestJob({ ...job, apply_url: applyUrl }),
     job_title: job.job_title.trim(),
     company_name: job.company_name.trim(),
+    company_logo: normalizeCompanyLogoUrl(job.company_logo),
+    company_website: normalizeCompanyWebsiteUrl(job.company_website),
     job_description: job.job_description.trim(),
     location: (job.location ?? '').trim() || 'Location TBD',
     employment_type: pickEnum(job.employment_type, EMPLOYMENT_TYPES, 'full_time'),
@@ -153,6 +188,10 @@ export function parseIngestJobsFile(raw: string): IngestLinkedInJobInput[] {
         row.external_id != null ? String(row.external_id) : undefined,
       job_title,
       company_name,
+      company_logo:
+        row.company_logo != null ? String(row.company_logo) : undefined,
+      company_website:
+        row.company_website != null ? String(row.company_website) : undefined,
       location: row.location != null ? String(row.location) : undefined,
       apply_url,
       job_description,

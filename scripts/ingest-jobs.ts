@@ -15,6 +15,8 @@ import { dirname, resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import {
   buildIngestJobRow,
+  normalizeCompanyLogoUrl,
+  normalizeCompanyWebsiteUrl,
   normalizeLinkedInApplyUrl,
   parseIngestJobsFile,
   type IngestLinkedInJobInput,
@@ -23,6 +25,31 @@ import {
 const DEFAULT_JOBS_FILE = resolve(process.cwd(), 'data/linkedin-jobs.json')
 const DEFAULT_JOB_DESCRIPTION =
   'Demo listing created by scripts/ingest-jobs.ts — replace with real pipeline output.'
+
+function isGeneratedFavicon(url: string): boolean {
+  return /google\.com\/s2\/favicons/i.test(url)
+}
+
+function pickCompanyLogoForUpdate(input: {
+  existingLogo: string | null
+  incomingLogo: string | null
+}): string | null {
+  const existing = normalizeCompanyLogoUrl(input.existingLogo ?? undefined)
+  const incoming = normalizeCompanyLogoUrl(input.incomingLogo ?? undefined)
+
+  if (incoming && !isGeneratedFavicon(incoming)) return incoming
+  if (existing) return existing
+  return incoming
+}
+
+function pickCompanyWebsiteForUpdate(input: {
+  existingWebsite: string | null
+  incomingWebsite: string | null
+}): string | null {
+  const existing = normalizeCompanyWebsiteUrl(input.existingWebsite ?? undefined)
+  const incoming = normalizeCompanyWebsiteUrl(input.incomingWebsite ?? undefined)
+  return incoming ?? existing
+}
 
 function resolveIngestJobDescription(): string {
   const filePath = process.env.INGEST_JOB_DESCRIPTION_FILE
@@ -138,7 +165,7 @@ async function main() {
 
     const { data: existing, error: findErr } = await sb
       .from('jobs')
-      .select('id, job_slug')
+      .select('id, job_slug, company_logo, company_website')
       .eq('apply_url', applyKey)
       .maybeSingle()
 
@@ -149,6 +176,15 @@ async function main() {
     }
 
     if (existing) {
+      const companyLogo = pickCompanyLogoForUpdate({
+        existingLogo: existing.company_logo,
+        incomingLogo: row.company_logo,
+      })
+      const companyWebsite = pickCompanyWebsiteForUpdate({
+        existingWebsite: existing.company_website,
+        incomingWebsite: row.company_website,
+      })
+
       const { error: updateErr } = await sb
         .from('jobs')
         .update({
@@ -164,6 +200,8 @@ async function main() {
           approval_status: row.approval_status,
           payment_status: row.payment_status,
           listing_expires_at: row.listing_expires_at,
+          company_logo: companyLogo,
+          company_website: companyWebsite,
           skills: row.skills,
           modules: row.modules,
           certifications: row.certifications,

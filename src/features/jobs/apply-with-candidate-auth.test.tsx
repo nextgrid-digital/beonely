@@ -32,6 +32,12 @@ const mocks = vi.hoisted(() => ({
     .mockResolvedValue({ data: { user: { id: 'auth-u1' } }, error: null }),
 }))
 
+const toastMock = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  message: vi.fn(),
+}))
+
 vi.mock('@/context/auth-provider', () => ({
   useAuth: () => useAuthMock(),
 }))
@@ -85,11 +91,7 @@ vi.mock('@/lib/candidate/sync-job-seeker-from-metadata', () => ({
 }))
 
 vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    message: vi.fn(),
-  },
+  toast: toastMock,
 }))
 
 vi.mock('@/features/auth/auth-modal', () => ({
@@ -327,5 +329,32 @@ describe('ApplyWithCandidateAuth', () => {
       screen.getByRole('button', { name: /Apply with your Beonely profile/i })
     )
     await vi.waitFor(() => expect(insertApplication).toHaveBeenCalled())
+  })
+
+  it('shows inline error when profile lookup fails during apply flow', async () => {
+    useAuthMock.mockReturnValue({
+      user: candidateUser(),
+      session: {} as Session,
+      profile: candidateProfile(),
+      loading: false,
+      configured: true,
+      refreshProfile: vi.fn(),
+      signOut: vi.fn(),
+    })
+    maybeSingleProfile.mockRejectedValueOnce(new Error('Temporary backend error'))
+
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={linkedInJob} />
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
+    )
+
+    await vi.waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith('Temporary backend error')
+    )
+    expect(navigate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: '/500' })
+    )
   })
 })

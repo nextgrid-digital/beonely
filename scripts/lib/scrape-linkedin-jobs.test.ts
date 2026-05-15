@@ -122,6 +122,49 @@ describe('parseLinkedInJobDetailHtml', () => {
     expect(parsed?.jobDescription).toContain('Build workflows')
     expect(parsed?.jobDescription).toContain('ITSM')
   })
+
+  it('extracts company logo from top-card markup when available', () => {
+    const html = `
+      <a data-tracking-control-name="public_jobs_topcard_logo" href="https://www.linkedin.com/company/acme">
+        <img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/dms/image/v2/acme-logo.png?e=1&amp;v=beta" alt="Acme Corp" />
+      </a>
+      <h2 class="top-card-layout__title">ServiceNow Developer</h2>
+      <a class="topcard__org-name-link">Acme Corp</a>
+      <span class="topcard__flavor--bullet">Remote, India</span>
+      <div class="show-more-less-html__markup"><p>ServiceNow ITSM implementation role.</p></div>
+    `
+
+    const parsed = parseLinkedInJobDetailHtml('9999999999', html)
+    expect(parsed).toBeTruthy()
+    expect(parsed?.companyLogoUrl).toBe(
+      'https://media.licdn.com/dms/image/v2/acme-logo.png?e=1&v=beta'
+    )
+  })
+
+  it('falls back to deterministic favicon when website exists and logo is missing', () => {
+    const html = `
+      <script type="application/ld+json">
+      {
+        "@type": "JobPosting",
+        "title": "ServiceNow Consultant",
+        "description": "ServiceNow CSM role for India region.",
+        "url": "https://www.linkedin.com/jobs/view/8888888888",
+        "hiringOrganization": {
+          "name": "Example Co",
+          "sameAs": "https://example.com/careers"
+        }
+      }
+      </script>
+      <div class="topcard__flavor--bullet">Remote, India</div>
+    `
+
+    const parsed = parseLinkedInJobDetailHtml('8888888888', html)
+    expect(parsed).toBeTruthy()
+    expect(parsed?.companyWebsiteUrl).toBe('https://example.com/careers')
+    expect(parsed?.companyLogoUrl).toBe(
+      'https://www.google.com/s2/favicons?domain=example.com&sz=128'
+    )
+  })
 })
 
 describe('scrapeLinkedInJobs', () => {

@@ -153,6 +153,9 @@ type JobPostingJsonLd = {
   url?: string
   hiringOrganization?: {
     name?: string
+    logo?: string | { url?: string }
+    sameAs?: string | string[]
+    url?: string
   }
   jobLocation?:
     | {
@@ -178,6 +181,8 @@ type ParsedJobDetail = {
   location: string
   jobDescription: string
   employmentType?: string
+  companyLogoUrl?: string
+  companyWebsiteUrl?: string
 }
 
 const DEFAULT_CONFIG: LinkedInScrapeConfig = {
@@ -448,6 +453,13 @@ function captureAttrValue(html: string, pattern: RegExp): string {
   return match?.[1]?.trim() ?? ''
 }
 
+function captureAttrValueFromTag(tagHtml: string, attrName: string): string {
+  const escapedAttr = attrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`${escapedAttr}=["']([^"']+)["']`, 'i')
+  const match = tagHtml.match(pattern)
+  return decodeHtmlEntities(match?.[1]?.trim() ?? '')
+}
+
 function findTagContentByClass(html: string, classPattern: RegExp): string {
   const pattern = new RegExp(
     `<([a-z0-9]+)[^>]*class=["'][^"']*${classPattern.source}[^"']*["'][^>]*>([\\s\\S]*?)<\\/\\1>`,
@@ -491,6 +503,128 @@ function findDivInnerHtmlByClass(html: string, classPattern: RegExp): string {
   return html.slice(openEnd, endIndex)
 }
 
+function sanitizeHttpUrl(raw: string | undefined): string | null {
+  const trimmed = raw?.trim()
+  if (!trimmed) return null
+  try {
+    const url = new URL(trimmed)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    if (url.hostname === 'linkedin.com') url.hostname = 'www.linkedin.com'
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+function isLikelyCompanyWebsite(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return !parsed.hostname.endsWith('linkedin.com')
+  } catch {
+    return false
+  }
+}
+
+function canonicalCompanyWebsiteUrl(raw: string | undefined): string | undefined {
+  const sanitized = sanitizeHttpUrl(raw)
+  if (!sanitized || !isLikelyCompanyWebsite(sanitized)) return undefined
+  const parsed = new URL(sanitized)
+  parsed.search = ''
+  parsed.hash = ''
+  return parsed.toString().replace(/\/$/, '')
+}
+
+function canonicalCompanyLogoUrl(raw: string | undefined): string | undefined {
+  const sanitized = sanitizeHttpUrl(raw)
+  if (!sanitized) return undefined
+  const parsed = new URL(sanitized)
+  parsed.hash = ''
+  return parsed.toString()
+}
+
+function buildFaviconUrlForCompanyWebsite(website: string | undefined): string | undefined {
+  const canonicalWebsite = canonicalCompanyWebsiteUrl(website)
+  if (!canonicalWebsite) return undefined
+  const domain = new URL(canonicalWebsite).hostname.replace(/^www\./, '')
+  if (!domain) return undefined
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`
+}
+
+function extractCompanyWebsiteFromJsonLd(
+  hiringOrganization: JobPostingJsonLd['hiringOrganization']
+): string | undefined {
+  if (!hiringOrganization) return undefined
+
+  const sameAs = Array.isArray(hiringOrganization.sameAs)
+    ? hiringOrganization.sameAs
+    : hiringOrganization.sameAs
+      ? [hiringOrganization.sameAs]
+      : []
+  const candidates = [hiringOrganization.url, ...sameAs]
+
+  for (const candidate of candidates) {
+    const canonical = canonicalCompanyWebsiteUrl(candidate)
+    if (canonical) return canonical
+  }
+
+  return undefined
+}
+
+function extractCompanyLogoFromJsonLd(
+  hiringOrganization: JobPostingJsonLd['hiringOrganization']
+): string | undefined {
+  if (!hiringOrganization?.logo) return undefined
+  const raw =
+    typeof hiringOrganization.logo === 'string'
+      ? hiringOrganization.logo
+      : hiringOrganization.logo.url
+  return canonicalCompanyLogoUrl(raw)
+}
+
+function extractImageUrlFromTag(tagHtml: string): string | undefined {
+  const candidates = [
+    captureAttrValueFromTag(tagHtml, 'data-delayed-url'),
+    captureAttrValueFromTag(tagHtml, 'src'),
+    captureAttrValueFromTag(tagHtml, 'data-ghost-url'),
+  ]
+  for (const candidate of candidates) {
+    const canonical = canonicalCompanyLogoUrl(candidate)
+    if (canonical) return canonical
+  }
+  return undefined
+}
+
+function findCompanyLogoFromMarkup(html: string): string | undefined {
+  const topCardLogoMatch = html.match(
+    /data-tracking-control-name=["']public_jobs_topcard_logo["'][\s\S]*?<img[^>]*>/i
+  )
+  if (topCardLogoMatch) {
+    const tagMatch = topCardLogoMatch[0].match(/<img[^>]*>/i)
+    if (tagMatch) {
+      const logo = extractImageUrlFromTag(tagMatch[0])
+      if (logo) return logo
+    }
+  }
+
+  const contextualLogoMatch = html.match(
+    /<img[^>]*class=["'][^"']*contextual-sign-in-modal__img[^"']*["'][^>]*>/i
+  )
+  if (contextualLogoMatch) {
+    const logo = extractImageUrlFromTag(contextualLogoMatch[0])
+    if (logo) return logo
+  }
+
+  const firstEntityImageMatch = html.match(
+    /<img[^>]*class=["'][^"']*artdeco-entity-image[^"']*["'][^>]*>/i
+  )
+  if (firstEntityImageMatch) {
+    const logo = extractImageUrlFromTag(firstEntityImageMatch[0])
+    if (logo) return logo
+  }
+
+  return undefined
+}
+
 export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJobDetail | null {
   const jsonLd = parseJobPostingJsonLd(html)
 
@@ -512,6 +646,16 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
   const locationFromMarkup =
     findTagContentByClass(html, /topcard__flavor--bullet/) ||
     findTagContentByClass(html, /job-search-card__location/)
+
+  const companyWebsiteFromJsonLd = extractCompanyWebsiteFromJsonLd(jsonLd?.hiringOrganization)
+  const companyLogoFromJsonLd = extractCompanyLogoFromJsonLd(jsonLd?.hiringOrganization)
+  const companyLogoFromMarkup = findCompanyLogoFromMarkup(html)
+  const companyLogoFromMeta = canonicalCompanyLogoUrl(
+    captureAttrValue(
+      html,
+      /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i
+    )
+  )
 
   const descriptionHtml =
     findDivInnerHtmlByClass(html, /show-more-less-html__markup/) ||
@@ -542,6 +686,12 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
     ? jsonLd?.employmentType[0]
     : jsonLd?.employmentType
 
+  const companyLogoUrl =
+    companyLogoFromJsonLd ||
+    companyLogoFromMarkup ||
+    companyLogoFromMeta ||
+    buildFaviconUrlForCompanyWebsite(companyWebsiteFromJsonLd)
+
   return {
     jobId: normalizedJobId,
     jobTitle,
@@ -549,6 +699,8 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
     location: location || 'Remote, India',
     jobDescription,
     employmentType: employmentTypeRaw,
+    companyLogoUrl,
+    companyWebsiteUrl: companyWebsiteFromJsonLd,
   }
 }
 
@@ -640,6 +792,8 @@ function buildIngestInputFromParsed(job: ParsedJobDetail): IngestLinkedInJobInpu
     external_id: `linkedin-${job.jobId}`,
     job_title: job.jobTitle,
     company_name: job.companyName,
+    company_logo: job.companyLogoUrl,
+    company_website: job.companyWebsiteUrl,
     location: job.location,
     apply_url: canonicalLinkedInApplyUrl(job.jobId),
     job_description: job.jobDescription,

@@ -48,6 +48,7 @@ pnpm scrape:linkedin && pnpm ingest:jobs
 ```
 
 Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, and refresh `listing_expires_at` (+90 days).
+When present, `company_logo` and `company_website` are normalized to valid `http(s)` URLs. Existing non-empty logos are preserved unless a better non-favicon logo is discovered.
 
 ### JSON schema (`data/linkedin-jobs.json`)
 
@@ -58,6 +59,8 @@ Each array element:
   "external_id": "linkedin-1234567890",
   "job_title": "ServiceNow Developer",
   "company_name": "Acme Corp",
+  "company_logo": "https://media.licdn.com/dms/image/v2/....png",
+  "company_website": "https://acme.example/careers",
   "location": "Remote, India",
   "apply_url": "https://www.linkedin.com/jobs/view/1234567890",
   "job_description": "Full posting text…",
@@ -72,6 +75,7 @@ Each array element:
 ```
 
 `job_slug` is optional; otherwise derived from `external_id` or `apply_url`.
+`company_logo` and `company_website` are optional.
 
 ### Scraper tuning env vars (optional)
 
