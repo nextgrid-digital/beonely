@@ -135,6 +135,7 @@ describe('AuthModal', () => {
       role: 'candidate',
       created_at: '',
       updated_at: '',
+      recruiter_row_id: null,
     }
     refreshProfile.mockResolvedValue(profile)
     const onOpenChange = vi.fn()

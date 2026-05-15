@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function companyInitials(name: string): string {
   const t = name.trim()
@@ -23,11 +25,19 @@ function excerptPlain(text: string): string {
 }
 
 export function PublicJobCard({ job }: { job: JobRow }) {
+  const { profile, user, loading } = useAuth()
   const logoUrl = job.company_logo?.trim()
   const hasLogo = Boolean(logoUrl)
   const descriptionExcerpt = excerptPlain(
     plainTextFromJobDescription(job.job_description ?? '')
   )
+
+  const recruiterOrAdmin =
+    profile?.role === 'recruiter' || profile?.role === 'admin'
+  const ownsBeonelyListing =
+    job.source_kind === 'recruiter_posted' &&
+    Boolean(profile?.recruiter_row_id) &&
+    profile.recruiter_row_id === job.recruiter_id
 
   return (
     <Card
@@ -83,11 +93,26 @@ export function PublicJobCard({ job }: { job: JobRow }) {
             ) : null}
           </div>
         </div>
-        <Button asChild size='sm' variant='secondary'>
-          <Link to='/jobs/$slug' params={{ slug: job.job_slug }}>
-            Apply
-          </Link>
-        </Button>
+        {user && loading ? (
+          <Skeleton className='h-8 w-20 shrink-0' aria-hidden />
+        ) : recruiterOrAdmin ? (
+          ownsBeonelyListing ? (
+            <Button asChild size='sm' variant='outline'>
+              <Link
+                to='/recruiter/jobs/$jobId/applicants'
+                params={{ jobId: job.id }}
+              >
+                Applicants
+              </Link>
+            </Button>
+          ) : null
+        ) : (
+          <Button asChild size='sm' variant='secondary'>
+            <Link to='/jobs/$slug' params={{ slug: job.job_slug }}>
+              Apply
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
         {job.job_type && <Badge variant='outline'>{job.job_type}</Badge>}

@@ -56,6 +56,49 @@ function JobDetailBreadcrumb({ currentLabel }: { currentLabel: string }) {
   )
 }
 
+function JobDetailApplySection({ job }: { job: JobRow }) {
+  const { profile, loading, user } = useAuth()
+  const recruiterOrAdmin =
+    profile?.role === 'recruiter' || profile?.role === 'admin'
+
+  if (user && loading) {
+    return (
+      <div className='flex shrink-0 flex-col gap-2 sm:flex-row'>
+        <Skeleton className='h-10 w-36' aria-hidden />
+      </div>
+    )
+  }
+
+  if (recruiterOrAdmin) {
+    const ownsListing =
+      job.source_kind === 'recruiter_posted' &&
+      Boolean(profile?.recruiter_row_id) &&
+      profile.recruiter_row_id === job.recruiter_id
+
+    return (
+      <div className='flex max-w-[14rem] shrink-0 flex-col items-end gap-2 text-right'>
+        {ownsListing ? (
+          <Button asChild variant='outline' size='default'>
+            <Link
+              to='/recruiter/jobs/$jobId/applicants'
+              params={{ jobId: job.id }}
+            >
+              View applicants
+            </Link>
+          </Button>
+        ) : null}
+        {!ownsListing ? (
+          <p className='text-xs text-muted-foreground'>
+            Recruiter accounts cannot apply from this page.
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
+  return <ApplyWithCandidateAuth job={job} />
+}
+
 function JobDetailPage() {
   const { slug } = Route.useParams()
   const { user } = useAuth()
@@ -182,7 +225,7 @@ function JobDetailPage() {
                 </div>
               </div>
               <div className='flex shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:flex-row'>
-                <ApplyWithCandidateAuth job={job} />
+                <JobDetailApplySection job={job} />
               </div>
             </div>
 

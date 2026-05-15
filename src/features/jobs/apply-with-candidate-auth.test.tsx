@@ -140,6 +140,7 @@ function candidateProfile(): ProfileRow {
     role: 'candidate',
     created_at: '',
     updated_at: '',
+    recruiter_row_id: null,
   }
 }
 

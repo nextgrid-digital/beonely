@@ -135,6 +135,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         queryKey: ['beonely-application', user?.id, job.id],
       })
       void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+      void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+      void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
     },
     onError: (e: Error) => {
       toast.error(e.message || 'Could not submit application')
@@ -203,6 +205,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           queryKey: ['beonely-application', authUser.id, job.id],
         })
         void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+        void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+        void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
         return
       }
       openExternalApply()

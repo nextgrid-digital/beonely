@@ -9,6 +9,7 @@ function profile(role: ProfileRow['role']): ProfileRow {
     role,
     created_at: '',
     updated_at: '',
+    recruiter_row_id: null,
   }
 }
 

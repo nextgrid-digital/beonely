@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: rec.role === 'admin' ? 'admin' : 'recruiter',
         created_at: rec.created_at,
         updated_at: rec.created_at,
+        recruiter_row_id: rec.id,
       }
       setProfile(row)
       return row
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: 'recruiter',
         created_at: authUser.created_at ?? '',
         updated_at: authUser.updated_at ?? authUser.created_at ?? '',
+        recruiter_row_id: null,
       }
       setProfile(row)
       return row
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: 'candidate',
       created_at: authUser.created_at ?? '',
       updated_at: authUser.updated_at ?? authUser.created_at ?? '',
+      recruiter_row_id: null,
     }
     setProfile(candidate)
     return candidate

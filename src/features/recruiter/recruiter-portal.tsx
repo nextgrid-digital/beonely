@@ -47,6 +47,12 @@ const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
 })
 
+type RecruiterJobsPayload = {
+  jobs: JobRow[]
+  /** Count of in-app `applications` rows per job id. */
+  applicationCounts: Record<string, number>
+}
+
 export function RecruiterPortal() {
   const { user, session } = useAuth()
   const qc = useQueryClient()
@@ -69,15 +75,33 @@ export function RecruiterPortal() {
   const jobsQuery = useQuery({
     queryKey: ['recruiter-jobs', recruiterQuery.data?.id],
     enabled: Boolean(recruiterQuery.data?.id),
-    queryFn: async () => {
+    queryFn: async (): Promise<RecruiterJobsPayload> => {
       const sb = getSupabaseBrowserClient()
+      const recruiterId = recruiterQuery.data!.id
       const { data, error } = await sb
         .from('jobs')
         .select('*')
-        .eq('recruiter_id', recruiterQuery.data!.id)
+        .eq('recruiter_id', recruiterId)
         .order('created_at', { ascending: false })
       if (error) throw error
-      return (data ?? []) as JobRow[]
+      const jobs = (data ?? []) as JobRow[]
+      const applicationCounts: Record<string, number> = Object.fromEntries(
+        jobs.map((j) => [j.id, 0])
+      )
+      if (jobs.length === 0) {
+        return { jobs, applicationCounts }
+      }
+      const jobIds = jobs.map((j) => j.id)
+      const { data: appRows, error: appError } = await sb
+        .from('applications')
+        .select('job_id')
+        .in('job_id', jobIds)
+      if (appError) throw appError
+      for (const row of appRows ?? []) {
+        const jid = row.job_id as string
+        applicationCounts[jid] = (applicationCounts[jid] ?? 0) + 1
+      }
+      return { jobs, applicationCounts }
     },
   })
 
@@ -163,7 +187,8 @@ export function RecruiterPortal() {
     return null
   }
 
-  const jobs = jobsQuery.data ?? []
+  const jobs = jobsQuery.data?.jobs ?? []
+  const applicationCounts = jobsQuery.data?.applicationCounts ?? {}
   const showJobsSkeleton = jobsQuery.isLoading
   const showEmptyJobs =
     !jobsQuery.isLoading && jobsQuery.isSuccess && jobs.length === 0
@@ -199,6 +224,9 @@ export function RecruiterPortal() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
+              <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+                Applicants
+              </TableHead>
               <TableHead>Approval</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Featured</TableHead>
@@ -230,6 +258,9 @@ export function RecruiterPortal() {
                         {job.job_title?.trim() || 'Untitled job'}
                       </Link>
                     </Button>
+                  </TableCell>
+                  <TableCell className='text-end tabular-nums text-muted-foreground'>
+                    {applicationCounts[job.id] ?? 0}
                   </TableCell>
                   <TableCell>
                     <Badge variant='outline'>{job.approval_status}</Badge>
@@ -300,6 +331,9 @@ function RecruiterJobsTableSkeleton() {
       <TableHeader>
         <TableRow>
           <TableHead>Title</TableHead>
+          <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+            Applicants
+          </TableHead>
           <TableHead>Approval</TableHead>
           <TableHead>Payment</TableHead>
           <TableHead>Featured</TableHead>
@@ -311,6 +345,9 @@ function RecruiterJobsTableSkeleton() {
           <TableRow key={i}>
             <TableCell>
               <Skeleton className='h-5 w-44' />
+            </TableCell>
+            <TableCell className='text-end'>
+              <Skeleton className='ms-auto h-5 w-8' />
             </TableCell>
             <TableCell>
               <Skeleton className='h-5 w-20' />

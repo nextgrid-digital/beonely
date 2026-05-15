@@ -741,6 +741,8 @@ export type ProfileRow = {
   role: UserRole
   created_at: string
   updated_at: string
+  /** `public.recruiters.id` when a recruiters row exists; null for candidates or pending recruiter signup. */
+  recruiter_row_id?: string | null
 }
 
 export type JobRow = Database['public']['Tables']['jobs']['Row']

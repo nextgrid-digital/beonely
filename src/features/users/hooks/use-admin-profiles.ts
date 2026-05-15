@@ -13,6 +13,7 @@ function recruiterToProfileRow(r: RecruiterRow): ProfileRow {
     role: r.role === 'admin' ? 'admin' : 'recruiter',
     created_at: r.created_at,
     updated_at: r.created_at,
+    recruiter_row_id: r.id,
   }
 }
 
