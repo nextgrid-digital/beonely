@@ -1,8 +1,8 @@
 /**
  * LinkedIn job ingest → Supabase `public.jobs` (`source_kind = linkedin_import`).
  *
- * Run:
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... INGEST_RECRUITER_ID=<uuid> pnpm ingest:jobs
+ * Run (uses the same `.env` as the app — `VITE_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`):
+ *   pnpm ingest:jobs
  *
  * Batch file (default `data/linkedin-jobs.json`, override with INGEST_JOBS_FILE):
  *   Array of objects — see docs/linkedin-job-ingestion.md
@@ -63,16 +63,21 @@ function demoJob(): IngestLinkedInJobInput {
   }
 }
 
+function resolveSupabaseUrl(): string | undefined {
+  return (
+    process.env.SUPABASE_URL?.trim() ||
+    process.env.VITE_SUPABASE_URL?.trim() ||
+    undefined
+  )
+}
+
 async function main() {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const recruiterId = process.env.INGEST_RECRUITER_ID
+  const url = resolveSupabaseUrl()
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   if (!url || !key) {
-    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
-    process.exit(1)
-  }
-  if (!recruiterId) {
-    console.error('Missing INGEST_RECRUITER_ID (existing recruiters.id)')
+    console.error(
+      'Missing Supabase env. Set SUPABASE_SERVICE_ROLE_KEY and either SUPABASE_URL or VITE_SUPABASE_URL (same project as the app).'
+    )
     process.exit(1)
   }
 
@@ -80,15 +85,35 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: recruiter, error: recErr } = await sb
-    .from('recruiters')
-    .select('id, email, name')
-    .eq('id', recruiterId)
-    .maybeSingle()
+  const recruiterId = process.env.INGEST_RECRUITER_ID?.trim()
+  let recruiter: { id: string; email: string; name: string } | null = null
 
-  if (recErr || !recruiter) {
-    console.error('Invalid INGEST_RECRUITER_ID', recErr?.message)
-    process.exit(1)
+  if (recruiterId) {
+    const { data, error: recErr } = await sb
+      .from('recruiters')
+      .select('id, email, name')
+      .eq('id', recruiterId)
+      .maybeSingle()
+    if (recErr || !data) {
+      console.error('Invalid INGEST_RECRUITER_ID', recErr?.message)
+      process.exit(1)
+    }
+    recruiter = data
+  } else {
+    const { data, error: recErr } = await sb
+      .from('recruiters')
+      .select('id, email, name')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (recErr || !data) {
+      console.error(
+        'No INGEST_RECRUITER_ID and no row in public.recruiters. Create a recruiter account first.'
+      )
+      process.exit(1)
+    }
+    recruiter = data
+    console.log('Using recruiter for ingest:', recruiter.id, recruiter.email)
   }
 
   const jobsFile = resolveJobsFilePath()

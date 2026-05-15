@@ -23,9 +23,9 @@ The ingest script sets **approved + paid** automatically (no Razorpay). Admins c
 
 | Variable | Purpose |
 |----------|---------|
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (CI / scripts only) |
-| `INGEST_RECRUITER_ID` | UUID of `public.recruiters.id` used as owner for imported rows |
+| `SUPABASE_SERVICE_ROLE_KEY` | Same service role key already on Vercel for `/api` (never `VITE_*`) |
+| `SUPABASE_URL` or `VITE_SUPABASE_URL` | Same Supabase project URL as the browser app |
+| `INGEST_RECRUITER_ID` | Optional — defaults to your first `public.recruiters` row |
 | `INGEST_JOBS_FILE` | Path to JSON array (default: `data/linkedin-jobs.json` if present) |
 | `INGEST_JOB_DESCRIPTION` | Single demo row only, when no batch file |
 | `INGEST_JOB_DESCRIPTION_FILE` | File path for demo description |
@@ -33,7 +33,8 @@ The ingest script sets **approved + paid** automatically (no Razorpay). Admins c
 Run locally:
 
 ```bash
-SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... INGEST_RECRUITER_ID=... pnpm ingest:jobs
+# From repo root with the same `.env` as local dev / Vercel:
+pnpm ingest:jobs
 ```
 
 Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, and refresh `listing_expires_at` (+90 days).
@@ -79,11 +80,11 @@ Workflow: [`.github/workflows/ingest-jobs.yml`](../.github/workflows/ingest-jobs
 - **Schedule:** daily 06:00 UTC
 - **Manual:** Actions → Ingest jobs → Run workflow
 
-Required repository secrets:
+Required repository secrets (same Supabase project as Production on Vercel):
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `INGEST_RECRUITER_ID`
+- `SUPABASE_SERVICE_ROLE_KEY` — copy from Vercel Production env
+- `SUPABASE_URL` — same value as `VITE_SUPABASE_URL` on Vercel (scripts do not read `VITE_*` in GitHub Actions)
+- `INGEST_RECRUITER_ID` — optional if you only have one recruiter row
 
 Typical Codex loop:
 

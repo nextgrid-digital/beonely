@@ -1,5 +1,6 @@
 # Sync LinkedIn-import jobs from data/linkedin-jobs.json (or scraper output) into Supabase.
-# Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, INGEST_RECRUITER_ID
+# Secrets (same Supabase project as Vercel Production):
+# SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (= VITE_SUPABASE_URL value), optional INGEST_RECRUITER_ID
 name: Ingest jobs
 
 on:
