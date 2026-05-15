@@ -44,10 +44,10 @@ jobs:
             }
             const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
             const envPath = process.env.GITHUB_ENV;
-            fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\\n`);
-            fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\\n`);
-            fs.appendFileSync(envPath, `SCRAPE_DEDUPED=${summary.deduped ?? 0}\\n`);
-            fs.appendFileSync(envPath, `SCRAPE_FAILED=${summary.failed ?? 0}\\n`);
+            fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_DEDUPED=${summary.deduped ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FAILED=${summary.failed ?? 0}\n`);
           '
       - name: Ingest LinkedIn jobs into Supabase
         run: |
@@ -63,10 +63,10 @@ jobs:
             }
             const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
             const envPath = process.env.GITHUB_ENV;
-            fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\\n`);
-            fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\\n`);
-            fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.skipped ?? 0}\\n`);
-            fs.appendFileSync(envPath, `INGEST_FAILED=${summary.failed ?? 0}\\n`);
+            fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.skipped ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_FAILED=${summary.failed ?? 0}\n`);
           '
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
