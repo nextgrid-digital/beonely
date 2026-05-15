@@ -128,16 +128,6 @@ function LandingPage() {
             id='open-roles'
             className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'
           >
-            <div>
-              <h2 className='text-2xl font-semibold tracking-tight'>
-                Open roles
-              </h2>
-              <p className='text-sm text-muted-foreground'>
-                Filters stay pinned under the nav while you scroll. Share the
-                URL to save a search.
-              </p>
-            </div>
-
             <PublishedJobsFiltersBar search={search} navigate={navigate} />
 
             {jobsQuery.isLoading && <PublicJobListSkeleton />}

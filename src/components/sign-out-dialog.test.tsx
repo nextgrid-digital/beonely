@@ -6,8 +6,6 @@ import { SignOutDialog } from './sign-out-dialog'
 const navigate = vi.fn()
 const signOut = vi.fn().mockResolvedValue(undefined)
 
-const MOCK_PATH = '/candidate'
-
 vi.mock('@/context/auth-provider', () => ({
   useAuth: () => ({ signOut }),
 }))
@@ -17,7 +15,6 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => navigate,
-    useLocation: () => ({ pathname: MOCK_PATH }),
   }
 })
 
@@ -26,7 +23,7 @@ describe('SignOutDialog', () => {
     vi.clearAllMocks()
   })
 
-  it('calls signOut and navigates to sign-in with current path as redirect', async () => {
+  it('calls signOut and navigates to home', async () => {
     const { getByRole } = await render(
       <SignOutDialog open onOpenChange={vi.fn()} />
     )
@@ -35,11 +32,7 @@ describe('SignOutDialog', () => {
 
     await vi.waitFor(() => expect(signOut).toHaveBeenCalledOnce())
     await vi.waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        to: '/sign-in',
-        search: { redirect: MOCK_PATH },
-        replace: true,
-      })
+      expect(navigate).toHaveBeenCalledWith({ to: '/', replace: true })
     )
   })
 
