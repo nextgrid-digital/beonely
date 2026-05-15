@@ -6,7 +6,10 @@
 - **`apply_url`**: use the canonical LinkedIn job URL (typically `https://www.linkedin.com/jobs/view/...`). If the host is `linkedin.com` but `source_kind` was mis-set, the UI still treats it as LinkedIn apply when the URL matches.
 - **`job_description`**: store the **full** posting body your pipeline can obtain. Prefer **plain text** (line breaks preserved) or **sanitized HTML** matching the recruiter editor (paragraphs, headings, lists, links). If you only have raw HTML from LinkedIn, strip tags / decode entities server-side before insert or update unless you normalize to the same allowed tag subset.
 
-This app does **not** scrape LinkedIn from the browser (fragile, often blocked, and restricted by LinkedIn’s terms). Your worker, GitHub Action, or Codex automation should fetch or copy the full text and write it to Supabase via [`scripts/ingest-jobs.ts`](../scripts/ingest-jobs.ts).
+This app does **not** scrape LinkedIn from the browser app. Use server-side scripts only:
+
+- [`scripts/scrape-linkedin-jobs.ts`](../scripts/scrape-linkedin-jobs.ts) refreshes `data/linkedin-jobs.json`
+- [`scripts/ingest-jobs.ts`](../scripts/ingest-jobs.ts) upserts JSON rows into Supabase
 
 ## Public visibility (home page)
 
@@ -37,6 +40,13 @@ Run locally:
 pnpm ingest:jobs
 ```
 
+Run scrape + ingest locally:
+
+```bash
+# Scrape LinkedIn guest endpoints to data/linkedin-jobs.json, then ingest to Supabase.
+pnpm scrape:linkedin && pnpm ingest:jobs
+```
+
 Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, and refresh `listing_expires_at` (+90 days).
 
 ### JSON schema (`data/linkedin-jobs.json`)
@@ -63,6 +73,17 @@ Each array element:
 
 `job_slug` is optional; otherwise derived from `external_id` or `apply_url`.
 
+### Scraper tuning env vars (optional)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `SCRAPE_LINKEDIN_MAX_PAGES` | Search pages per keyword query | `3` |
+| `SCRAPE_LINKEDIN_PAGE_SIZE` | Pagination stride (`start` offset increment) | `25` |
+| `SCRAPE_LINKEDIN_TIMEOUT_MS` | Request timeout per HTTP request | `25000` |
+| `SCRAPE_LINKEDIN_DELAY_MS` | Delay between outbound requests | `1200` |
+| `SCRAPE_LINKEDIN_RETRY_MAX` | Retry count for transient failures | `2` |
+| `SCRAPE_LINKEDIN_OUTPUT_FILE` | Output JSON path for scrape results | `data/linkedin-jobs.json` |
+
 ### System recruiter (`INGEST_RECRUITER_ID`)
 
 Create or pick a recruiter row in Supabase (SQL editor):
@@ -79,6 +100,7 @@ Workflow: [`.github/workflows/ingest-jobs.yml`](../.github/workflows/ingest-jobs
 
 - **Schedule:** daily 06:00 UTC
 - **Manual:** Actions → Ingest jobs → Run workflow
+- **Pipeline:** `pnpm scrape:linkedin` then `pnpm ingest:jobs`
 
 Required repository secrets (same Supabase project as Production on Vercel):
 
@@ -88,9 +110,21 @@ Required repository secrets (same Supabase project as Production on Vercel):
 
 Typical Codex loop:
 
-1. Update `data/linkedin-jobs.json` (or add a scraper under `scripts/` in a follow-up PR).
-2. Merge to `main` → workflow runs `pnpm ingest:jobs`.
-3. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
+1. Merge scraper or ingestion updates to `main`.
+2. Workflow scrapes and refreshes `data/linkedin-jobs.json`.
+3. Workflow ingests JSON into Supabase (`source_kind = linkedin_import`).
+4. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
+
+## Legal / ToS note
+
+LinkedIn explicitly states in `robots.txt` that automated access without express permission is prohibited, and their crawling terms require permission before automated crawling. Keep this scraper conservative:
+
+- low request rate and bounded retries
+- predictable schedule (no aggressive burst jobs)
+- transparent user agent
+- fail fast when blocked (`SCRAPE_SUMMARY` and workflow failure)
+
+If LinkedIn enforcement increases, switch to an approved/licensed jobs data source before scaling.
 
 ## Legacy rows (pending / unpaid imports)
 

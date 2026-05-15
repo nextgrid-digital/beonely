@@ -11,8 +11,11 @@ on:
     branches: [main]
     paths:
       - 'data/linkedin-jobs.json'
+      - 'scripts/scrape-linkedin-jobs.ts'
+      - 'scripts/lib/scrape-linkedin-jobs.ts'
       - 'scripts/ingest-jobs.ts'
       - 'scripts/lib/ingest-linkedin-jobs.ts'
+      - '.github/workflows/ingest-jobs.yml'
 
 jobs:
   ingest:
@@ -27,9 +30,59 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install
+      - name: Scrape LinkedIn jobs JSON
+        run: |
+          set -euo pipefail
+          pnpm scrape:linkedin 2>&1 | tee scrape.log
+          node -e '
+            const fs = require("node:fs");
+            const log = fs.readFileSync("scrape.log", "utf8");
+            const match = log.match(/SCRAPE_SUMMARY\\s+({[^\\n]+})/);
+            if (!match) {
+              console.error("SCRAPE_SUMMARY not found in scrape.log");
+              process.exit(1);
+            }
+            const summary = JSON.parse(match[1]);
+            const envPath = process.env.GITHUB_ENV;
+            fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\\n`);
+            fs.appendFileSync(envPath, `SCRAPE_DEDUPED=${summary.deduped ?? 0}\\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FAILED=${summary.failed ?? 0}\\n`);
+          '
       - name: Ingest LinkedIn jobs into Supabase
-        run: pnpm ingest:jobs
+        run: |
+          set -euo pipefail
+          pnpm ingest:jobs 2>&1 | tee ingest.log
+          node -e '
+            const fs = require("node:fs");
+            const log = fs.readFileSync("ingest.log", "utf8");
+            const match = log.match(/INGEST_SUMMARY\\s+({[^\\n]+})/);
+            if (!match) {
+              console.error("INGEST_SUMMARY not found in ingest.log");
+              process.exit(1);
+            }
+            const summary = JSON.parse(match[1]);
+            const envPath = process.env.GITHUB_ENV;
+            fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\\n`);
+            fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\\n`);
+            fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.skipped ?? 0}\\n`);
+            fs.appendFileSync(envPath, `INGEST_FAILED=${summary.failed ?? 0}\\n`);
+          '
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           INGEST_RECRUITER_ID: ${{ secrets.INGEST_RECRUITER_ID }}
+      - name: Publish scrape + ingest summary
+        if: always()
+        run: |
+          {
+            echo "## LinkedIn scrape + ingest summary"
+            echo "- Scraped valid jobs: ${SCRAPED_COUNT:-0}"
+            echo "- Scrape filtered out: ${SCRAPE_FILTERED:-0}"
+            echo "- Scrape deduped: ${SCRAPE_DEDUPED:-0}"
+            echo "- Scrape failed requests: ${SCRAPE_FAILED:-0}"
+            echo "- Ingest inserted: ${INGEST_INSERTED:-0}"
+            echo "- Ingest updated: ${INGEST_UPDATED:-0}"
+            echo "- Ingest skipped duplicates: ${INGEST_SKIPPED:-0}"
+            echo "- Ingest failed: ${INGEST_FAILED:-0}"
+          } >> "$GITHUB_STEP_SUMMARY"

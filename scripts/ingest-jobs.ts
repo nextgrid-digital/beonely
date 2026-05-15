@@ -200,6 +200,16 @@ async function main() {
   console.log(
     `Done. inserted=${inserted} updated=${updated} skipped=${skipped} failed=${failed}`
   )
+  console.log(
+    'INGEST_SUMMARY',
+    JSON.stringify({
+      inserted,
+      updated,
+      skipped,
+      failed,
+      processed: inputs.length,
+    })
+  )
   if (failed > 0) process.exit(1)
 }
 
