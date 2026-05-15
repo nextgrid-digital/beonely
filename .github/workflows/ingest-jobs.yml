@@ -46,11 +46,12 @@ jobs:
               process.exit(1);
             }
             const jsonStart = line.indexOf("{");
-            if (jsonStart < 0) {
+            const jsonEnd = line.lastIndexOf("}");
+            if (jsonStart < 0 || jsonEnd < jsonStart) {
               console.error("SCRAPE_SUMMARY line missing JSON payload");
               process.exit(1);
             }
-            const summary = JSON.parse(line.slice(jsonStart));
+            const summary = JSON.parse(line.slice(jsonStart, jsonEnd + 1));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\\n`);
             fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\\n`);
@@ -73,11 +74,12 @@ jobs:
               process.exit(1);
             }
             const jsonStart = line.indexOf("{");
-            if (jsonStart < 0) {
+            const jsonEnd = line.lastIndexOf("}");
+            if (jsonStart < 0 || jsonEnd < jsonStart) {
               console.error("INGEST_SUMMARY line missing JSON payload");
               process.exit(1);
             }
-            const summary = JSON.parse(line.slice(jsonStart));
+            const summary = JSON.parse(line.slice(jsonStart, jsonEnd + 1));
             const envPath = process.env.GITHUB_ENV;
             fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\\n`);
             fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\\n`);
