@@ -8,10 +8,11 @@ import {
 } from '@tanstack/react-router'
 import { ArrowRight, Briefcase, LineChart, Shield } from 'lucide-react'
 import {
-  fetchPublishedJobs,
+  fetchRecruiterPublishedJobs,
   publishedJobsFilterSchema,
-  type PublishedJobsFilters,
 } from '@/lib/jobs/fetch-published-jobs'
+import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
+import { ScrapedJobsSection } from '@/features/scraped-jobs'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -87,8 +88,8 @@ function LandingPageContent() {
   const jobFilters = publishedJobFiltersFromHomeSearch(search)
 
   const jobsQuery = useQuery({
-    queryKey: ['public-jobs', 'home', jobFilters],
-    queryFn: () => fetchPublishedJobs(jobFilters),
+    queryKey: ['public-jobs', 'recruiter', jobFilters],
+    queryFn: () => fetchRecruiterPublishedJobs(jobFilters),
   })
   const homeJobs = jobsQuery.data ?? []
   const filtersActive = hasActivePublishedJobFilters(search)
@@ -127,6 +128,11 @@ function LandingPageContent() {
                 <Link to='/' search={search} hash='open-roles'>
                   Browse jobs
                   <ArrowRight className='ms-1 size-4' />
+                </Link>
+              </Button>
+              <Button asChild variant='outline' size='lg'>
+                <Link to='/' search={search} hash='linkedin-roles'>
+                  LinkedIn roles
                 </Link>
               </Button>
               <Button
@@ -181,6 +187,16 @@ function LandingPageContent() {
               </div>
             )}
           </section>
+
+          <ScrapedJobsSection
+            filters={jobFilters}
+            filtersActive={filtersActive}
+            onClearFilters={() => {
+              void navigate({
+                search: (prev) => clearPublishedJobSearchPreserveSetup(prev),
+              })
+            }}
+          />
 
           <section className='grid gap-6 md:grid-cols-3'>
             <div className='rounded-xl border bg-card p-6'>

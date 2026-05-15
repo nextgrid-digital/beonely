@@ -12,6 +12,6 @@ export default defineConfig({
     silent: 'passed-only',
     unstubEnvs: true,
     environment: 'node',
-    include: ['api/**/*.test.ts'],
+    include: ['api/**/*.test.ts', 'scripts/**/*.test.ts'],
   },
 })

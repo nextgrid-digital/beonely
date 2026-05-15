@@ -60,6 +60,11 @@ export function PublicJobCard({ job }: { job: JobRow }) {
                   On Beonely
                 </Badge>
               )}
+              {job.source_kind === 'linkedin_import' && (
+                <Badge variant='outline' className='text-[10px] uppercase'>
+                  LinkedIn
+                </Badge>
+              )}
             </div>
             <p className='text-sm text-muted-foreground'>
               {job.company_name} · {job.location || 'Location TBD'}

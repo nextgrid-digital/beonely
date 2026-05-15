@@ -3,18 +3,14 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
-import { sortPublishedJobsForFeed } from '@/lib/jobs/sort-published-jobs'
+import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import {
   applyPublishedJobFilters,
   filterNonExpiredJobs,
-  publishedJobsFilterSchema,
-  type PublishedJobsFilters,
 } from '@/lib/jobs/published-jobs-query'
 
-export { publishedJobsFilterSchema, type PublishedJobsFilters }
-
-/** Recruiter-paid Beonely listings: approved, paid, active. */
-export async function fetchRecruiterPublishedJobs(
+/** LinkedIn-import listings: approved, paid, active, newest first. */
+export async function fetchScrapedJobs(
   filters: PublishedJobsFilters
 ): Promise<JobRow[]> {
   if (!getSupabaseConfigured()) {
@@ -24,19 +20,14 @@ export async function fetchRecruiterPublishedJobs(
   let q = sb
     .from('jobs')
     .select('*')
-    .eq('source_kind', 'recruiter_posted')
+    .eq('source_kind', 'linkedin_import')
     .eq('approval_status', 'approved')
     .eq('payment_status', 'paid')
-    .order('featured', { ascending: false })
     .order('created_at', { ascending: false })
 
   q = applyPublishedJobFilters(q, filters)
 
   const { data, error } = await q
   if (error) throw error
-  const active = filterNonExpiredJobs((data ?? []) as JobRow[])
-  return sortPublishedJobsForFeed(active)
+  return filterNonExpiredJobs((data ?? []) as JobRow[])
 }
-
-/** @deprecated Use {@link fetchRecruiterPublishedJobs} */
-export const fetchPublishedJobs = fetchRecruiterPublishedJobs

@@ -1,0 +1,17 @@
+[
+  {
+    "external_id": "linkedin-sample-1",
+    "job_title": "ServiceNow Developer",
+    "company_name": "Sample Partner",
+    "location": "Remote",
+    "apply_url": "https://www.linkedin.com/jobs/view/sample-servicenow-developer",
+    "job_description": "Sample LinkedIn listing for local ingest testing. Replace with pipeline output from Codex automation.",
+    "employment_type": "full_time",
+    "experience_level": "mid",
+    "work_mode": "remote",
+    "job_type": "developer",
+    "skills": ["JavaScript", "ServiceNow"],
+    "modules": ["ITSM"],
+    "certifications": []
+  }
+]

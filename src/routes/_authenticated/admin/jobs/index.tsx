@@ -260,7 +260,8 @@ function AdminJobsPage() {
                     Edit description
                   </Button>
                   {job.approval_status === 'pending' &&
-                    job.payment_status === 'paid' && (
+                    (job.payment_status === 'paid' ||
+                      job.source_kind === 'linkedin_import') && (
                       <Button
                         size='sm'
                         onClick={() => approveListing.mutate(job)}
