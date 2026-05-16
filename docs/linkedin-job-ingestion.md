@@ -10,6 +10,7 @@ This app does **not** scrape LinkedIn from the browser app. Use server-side scri
 
 - [`scripts/scrape-linkedin-jobs.ts`](../scripts/scrape-linkedin-jobs.ts) refreshes `data/linkedin-jobs.json`
 - [`scripts/ingest-jobs.ts`](../scripts/ingest-jobs.ts) upserts JSON rows into Supabase
+- [`scripts/sync-jobs-daily.ts`](../scripts/sync-jobs-daily.ts) runs scrape + ingest + stale imported job cleanup
 
 ## Public visibility (home page)
 
@@ -50,6 +51,20 @@ pnpm scrape:linkedin && pnpm ingest:jobs
 Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, and refresh `listing_expires_at` (+90 days).
 When present, `company_logo` and `company_website` are normalized to valid `http(s)` URLs. Existing non-empty logos are preserved unless a better non-favicon logo is discovered.
 
+Run the full daily job maintenance locally:
+
+```bash
+# Scrape + ingest + stale-close cleanup in one command
+pnpm sync:jobs
+```
+
+Stale cleanup policy (`pnpm sync:jobs`):
+
+- checks imported jobs currently live in Supabase but missing from the latest scrape payload
+- expires only rows with a close signal (`404/410` or close text such as “no longer accepting applications”)
+- does not hard-delete rows
+- leaves uncertain/blocked checks untouched for the next run
+
 ### JSON schema (`data/linkedin-jobs.json`)
 
 Each array element:
@@ -88,6 +103,15 @@ Each array element:
 | `SCRAPE_LINKEDIN_RETRY_MAX` | Retry count for transient failures | `2` |
 | `SCRAPE_LINKEDIN_OUTPUT_FILE` | Output JSON path for scrape results | `data/linkedin-jobs.json` |
 
+### Daily sync stale-check tuning (optional)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `JOBS_STALE_CHECK_MAX` | Max stale candidate URLs to verify per run | `120` |
+| `JOBS_STALE_CHECK_TIMEOUT_MS` | Timeout per stale listing verify request | `12000` |
+| `JOBS_STALE_CHECK_DELAY_MS` | Delay between stale listing verify requests | `700` |
+| `JOBS_SYNC_SUMMARY_FILE` | Full sync summary JSON output path | unset |
+
 ### System recruiter (`INGEST_RECRUITER_ID`)
 
 Create or pick a recruiter row in Supabase (SQL editor):
@@ -104,7 +128,7 @@ Workflow: [`.github/workflows/ingest-jobs.yml`](../.github/workflows/ingest-jobs
 
 - **Schedule:** daily 06:00 UTC
 - **Manual:** Actions → Ingest jobs → Run workflow
-- **Pipeline:** `pnpm scrape:linkedin` then `pnpm ingest:jobs`
+- **Pipeline:** `pnpm sync:jobs` (`scrape → ingest → stale-close cleanup`)
 
 Required repository secrets (same Supabase project as Production on Vercel):
 
@@ -117,7 +141,8 @@ Typical Codex loop:
 1. Merge scraper or ingestion updates to `main`.
 2. Workflow scrapes and refreshes `data/linkedin-jobs.json`.
 3. Workflow ingests JSON into Supabase (`source_kind = linkedin_import`).
-4. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
+4. Workflow expires stale imported listings only when close signals are detected.
+5. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
 
 ## Legal / ToS note
 
