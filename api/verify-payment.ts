@@ -14,6 +14,7 @@ import { rateLimitOrThrow } from './_lib/rate-limit.js'
 import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
 import { beonelyTransactionalHtml } from './_lib/email-layout.js'
 import { sendTransactionalEmail } from './_lib/resend.js'
+import { dispatchTransactionalEmail } from './_lib/dispatch-transactional-email.js'
 
 const bodySchema = z.object({
   razorpay_order_id: z.string(),
@@ -213,6 +214,25 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
         ],
       }),
     })
+
+    const { data: paidJob } = await sb
+      .from('jobs')
+      .select('id, job_title, company_name')
+      .eq('id', payment.job_id)
+      .single()
+
+    if (paidJob && user.email) {
+      await dispatchTransactionalEmail(sb, {
+        trigger_key: 'job_submitted',
+        to: user.email,
+        recipient_role: 'recruiter',
+        payload: {
+          job_title: paidJob.job_title,
+          company_name: paidJob.company_name,
+        },
+        dedupe_key: `job_submitted:${paidJob.id}`,
+      })
+    }
 
     return res.status(200).json({
       ok: true,

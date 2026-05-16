@@ -116,11 +116,10 @@ function LandingPageContent() {
             </Alert>
           )}
           <section className='max-w-2xl space-y-5 sm:space-y-6'>
-            <p className='text-sm font-medium text-muted-foreground'>
-              ServiceNow talent network
-            </p>
             <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl'>
-              The hiring layer for the ServiceNow ecosystem.
+              ServiceNow Careers,
+              <br />
+              Curated.
             </h1>
             <p className='text-base text-muted-foreground sm:text-lg'>
               Focused roles for developers, architects, consultants, and admins.

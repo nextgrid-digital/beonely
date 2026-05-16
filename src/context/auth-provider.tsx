@@ -50,10 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq('user_id', uid)
       .maybeSingle()
     if (rec) {
+      const isActiveAdmin = rec.role === 'admin' && !rec.disabled
       const row: ProfileRow = {
         id: uid,
         email: rec.email,
-        role: rec.role === 'admin' ? 'admin' : 'recruiter',
+        role: isActiveAdmin ? 'admin' : 'recruiter',
         created_at: rec.created_at,
         updated_at: rec.created_at,
         recruiter_row_id: rec.id,

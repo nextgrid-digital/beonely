@@ -17,6 +17,7 @@ import {
   showLinkedInBrand,
 } from '@/lib/jobs/apply-target'
 import { submitBeonelyApplication } from '@/lib/jobs/submit-beonely-application'
+import { apiPost } from '@/lib/api-client'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -90,7 +91,7 @@ async function fetchJobSeekerSnapshotRow(userId: string) {
 }
 
 export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
-  const { user, profile } = useAuth()
+  const { user, profile, session } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [authOpen, setAuthOpen] = useState(false)
@@ -148,6 +149,14 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         },
       })
       if (error) throw new Error(error)
+      const token = session?.access_token
+      if (token) {
+        try {
+          await apiPost('/api/notify-application', { job_id: job.id }, token)
+        } catch {
+          /* application saved; email is best-effort */
+        }
+      }
     },
     onSuccess: () => {
       toast.success('Application sent to the employer')
@@ -219,6 +228,14 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           if (error) {
             toast.error(error)
             return
+          }
+          const token = session?.access_token
+          if (token) {
+            try {
+              await apiPost('/api/notify-application', { job_id: job.id }, token)
+            } catch {
+              /* best-effort */
+            }
           }
           toast.success('Application sent to the employer')
           void qc.invalidateQueries({

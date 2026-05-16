@@ -27,6 +27,9 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { MarketingOptInCheckbox } from '@/components/marketing-opt-in-checkbox'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
+import { useAuth } from '@/context/auth-provider'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
@@ -43,6 +46,7 @@ export type CandidateResumeBuilderProps = {
     linkedin_url?: string | null
     phone?: string | null
     notification_opt_in?: boolean
+    marketing_opt_in?: boolean
   } | null
   accountProfile: AccountResumePrefill
 }
@@ -54,7 +58,11 @@ export function CandidateResumeBuilder({
   accountProfile,
 }: CandidateResumeBuilderProps) {
   const qc = useQueryClient()
+  const { session } = useAuth()
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [marketingOptIn, setMarketingOptIn] = useState(
+    profileRow?.marketing_opt_in ?? false
+  )
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<ResumeStructuredV1>(() => {
@@ -96,6 +104,10 @@ export function CandidateResumeBuilder({
           .update({
             ...resumePayload,
             notification_opt_in: profileRow.notification_opt_in ?? true,
+            marketing_opt_in: marketingOptIn,
+            marketing_opt_in_at: marketingOptIn
+              ? new Date().toISOString()
+              : null,
           })
           .eq('id', profileRow.id)
         if (error) throw error
@@ -105,8 +117,20 @@ export function CandidateResumeBuilder({
           email,
           ...resumePayload,
           notification_opt_in: true,
+          marketing_opt_in: marketingOptIn,
+          marketing_opt_in_at: marketingOptIn
+            ? new Date().toISOString()
+            : null,
         })
         if (error) throw error
+      }
+      const token = session?.access_token
+      if (token) {
+        await updateMarketingConsent({
+          marketing_opt_in: marketingOptIn,
+          audience: 'candidate',
+          accessToken: token,
+        })
       }
     },
     onSuccess: () => {
@@ -219,6 +243,29 @@ export function CandidateResumeBuilder({
           )
         }
       />
+
+      <div className='mb-6 max-w-xl'>
+        <MarketingOptInCheckbox
+          checked={marketingOptIn}
+          disabled={saveResume.isPending}
+          onCheckedChange={async (checked) => {
+            setMarketingOptIn(checked)
+            const token = session?.access_token
+            if (!token) return
+            try {
+              await updateMarketingConsent({
+                marketing_opt_in: checked,
+                audience: 'candidate',
+                accessToken: token,
+              })
+              toast.success(checked ? 'Marketing preferences updated' : 'Unsubscribed from updates')
+            } catch {
+              toast.error('Could not update email preferences')
+              setMarketingOptIn(!checked)
+            }
+          }}
+        />
+      </div>
 
       <div id='resume' className='bg-white font-sans text-slate-900'>
         <ReadCvResumePreview

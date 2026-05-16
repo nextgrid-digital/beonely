@@ -15,6 +15,7 @@ import {
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
 import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
+import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,6 +45,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RecruiterMarketingPreferences } from '@/features/recruiter/recruiter-marketing-preferences'
 
 const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
@@ -124,9 +126,18 @@ export function RecruiterPortal() {
       })
       if (error) throw error
     },
-    onSuccess: () => {
+    onSuccess: async (_data, company_name) => {
       void qc.invalidateQueries({ queryKey: ['recruiter', user?.id] })
       toast.success('Recruiter profile created')
+      const token = (await getSupabaseBrowserClient().auth.getSession()).data
+        .session?.access_token
+      if (token && user?.id) {
+        void dispatchLifecycleEmail(token, {
+          trigger_key: 'recruiter_signup',
+          payload: { company_name },
+          dedupe_key: `recruiter_signup:${user.id}`,
+        }).catch(() => undefined)
+      }
     },
     onError: () => toast.error('Could not create recruiter profile'),
   })
@@ -220,6 +231,9 @@ export function RecruiterPortal() {
 
   return (
     <div className='space-y-6'>
+      <div className='max-w-xl'>
+        <RecruiterMarketingPreferences recruiter={recruiter} />
+      </div>
       {jobsQuery.isError ? (
         <div className='space-y-4'>
           <Alert variant='destructive'>

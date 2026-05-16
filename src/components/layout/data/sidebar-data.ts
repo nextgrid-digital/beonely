@@ -98,7 +98,7 @@ export const sidebarData: SidebarData = {
           title: 'Tasks',
           url: '/tasks',
           icon: ListTodo,
-          forRoles: ['admin', 'recruiter'],
+          forRoles: ['recruiter'],
         },
         {
           title: 'Jobs (public)',
@@ -125,9 +125,21 @@ export const sidebarData: SidebarData = {
           forRoles: ['admin'],
         },
         {
-          title: 'Users',
-          url: '/users',
+          title: 'Revenue',
+          url: '/admin/revenue',
+          icon: IndianRupee,
+          forRoles: ['admin'],
+        },
+        {
+          title: 'Recruiters',
+          url: '/admin/recruiters',
           icon: Users,
+          forRoles: ['admin'],
+        },
+        {
+          title: 'Candidates',
+          url: '/admin/candidates',
+          icon: UserCircle,
           forRoles: ['admin'],
         },
       ],

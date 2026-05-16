@@ -15,6 +15,7 @@ import {
 } from '@/lib/supabase/client'
 import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
+import { useEffectivePersona } from '@/lib/auth/use-effective-persona'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 
@@ -25,7 +26,8 @@ export const Route = createFileRoute('/_authenticated/candidate')({
 })
 
 function CandidateSectionLayout() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
+  const effectivePersona = useEffectivePersona()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
@@ -33,7 +35,7 @@ function CandidateSectionLayout() {
   const completionQuery = useQuery({
     queryKey: ['job-seeker-profile-completion', user?.id],
     enabled: Boolean(
-      user && getSupabaseConfigured() && profile?.role === 'candidate'
+      user && getSupabaseConfigured() && effectivePersona === 'candidate'
     ),
     queryFn: async () => {
       const sb = getSupabaseBrowserClient()
@@ -50,7 +52,7 @@ function CandidateSectionLayout() {
   })
 
   useEffect(() => {
-    if (!user || profile?.role !== 'candidate') return
+    if (!user || effectivePersona !== 'candidate') return
     if (pathname.startsWith('/candidate/profile')) return
     if (completionQuery.isError) return
     if (completionQuery.isLoading || completionQuery.isFetching) return
@@ -63,7 +65,7 @@ function CandidateSectionLayout() {
     })
   }, [
     user,
-    profile?.role,
+    effectivePersona,
     pathname,
     completionQuery.isError,
     completionQuery.isLoading,

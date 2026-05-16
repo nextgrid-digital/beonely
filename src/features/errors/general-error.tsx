@@ -16,7 +16,12 @@ export function GeneralError({
   const { profile, signOut } = useAuth()
   const recruiterSession =
     profile?.role === 'recruiter' || profile?.role === 'admin'
-  const homeTarget = recruiterSession ? '/recruiter' : '/'
+  const homeTarget =
+    profile?.role === 'admin'
+      ? '/admin'
+      : recruiterSession
+        ? '/recruiter'
+        : '/'
 
   const signInAgain = async () => {
     try {

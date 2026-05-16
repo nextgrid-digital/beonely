@@ -11,6 +11,7 @@ Add these in the Vercel project → **Settings** → **Environment Variables** f
 | `VITE_PUBLIC_SITE_URL` | Canonical site origin, e.g. `https://your-domain.com` |
 | `VITE_RAZORPAY_KEY_ID` | Optional. Same value as `RAZORPAY_KEY_ID` (publishable **key id** only). If set, the client uses it for Checkout; if omitted, [`api/create-order`](../api/create-order.ts) still returns `keyId` from the server env so checkout works. **Never** put `RAZORPAY_KEY_SECRET` here or under any `VITE_*` name. |
 | `VITE_TURNSTILE_SITE_KEY` | Optional Cloudflare Turnstile |
+| `VITE_ADMIN_EMAIL_ALLOWLIST` | Comma-separated staff emails allowed to use `/admin` after sign-in at `/staff/sign-in` (must match `recruiters.role = admin`). Also set `ADMIN_EMAIL_ALLOWLIST` with the same values for documentation parity. |
 
 If you use the **Supabase ↔ Vercel integration**, Supabase may sync **`SUPABASE_URL`** and **`SUPABASE_ANON_KEY`** instead of `VITE_*`. That is fine: the Vite build maps those into the browser bundle when `VITE_*` are not set. You still need **`VITE_PUBLIC_SITE_URL`** (or add it in Vercel) for correct canonical links and branded transactional email asset URLs.
 

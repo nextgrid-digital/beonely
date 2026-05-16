@@ -93,6 +93,24 @@ export type Database = {
           },
         ]
       }
+      email_automation_rules: {
+        Row: {
+          enabled: boolean
+          trigger_key: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          trigger_key: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          trigger_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_campaign_recipients: {
         Row: {
           campaign_id: string
@@ -102,6 +120,7 @@ export type Database = {
           error_message: string | null
           id: string
           recipient_type: string
+          resend_message_id: string | null
           sent_at: string | null
         }
         Insert: {
@@ -112,6 +131,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           recipient_type: string
+          resend_message_id?: string | null
           sent_at?: string | null
         }
         Update: {
@@ -122,6 +142,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           recipient_type?: string
+          resend_message_id?: string | null
           sent_at?: string | null
         }
         Relationships: [
@@ -173,8 +194,59 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_log: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          recipient_email: string
+          recipient_role: string
+          resend_message_id: string | null
+          status: string
+          subject: string | null
+          trigger_key: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          recipient_email: string
+          recipient_role?: string
+          resend_message_id?: string | null
+          status?: string
+          subject?: string | null
+          trigger_key?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          recipient_email?: string
+          recipient_role?: string
+          resend_message_id?: string | null
+          status?: string
+          subject?: string | null
+          trigger_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_send_log_campaign_id_fkey'
+            columns: ['campaign_id']
+            isOneToOne: false
+            referencedRelation: 'email_campaigns'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       email_subscribers: {
         Row: {
+          audience: Database['public']['Enums']['subscriber_audience']
           created_at: string
           email: string
           id: string
@@ -185,6 +257,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audience?: Database['public']['Enums']['subscriber_audience']
           created_at?: string
           email: string
           id?: string
@@ -195,6 +268,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audience?: Database['public']['Enums']['subscriber_audience']
           created_at?: string
           email?: string
           id?: string
@@ -214,6 +288,8 @@ export type Database = {
           id: string
           last_profile_update_at: string | null
           linkedin_url: string | null
+          marketing_opt_in: boolean
+          marketing_opt_in_at: string | null
           phone: string | null
           notification_opt_in: boolean
           portfolio_url: string | null
@@ -231,6 +307,8 @@ export type Database = {
           id?: string
           last_profile_update_at?: string | null
           linkedin_url?: string | null
+          marketing_opt_in?: boolean
+          marketing_opt_in_at?: string | null
           phone?: string | null
           notification_opt_in?: boolean
           portfolio_url?: string | null
@@ -248,6 +326,8 @@ export type Database = {
           id?: string
           last_profile_update_at?: string | null
           linkedin_url?: string | null
+          marketing_opt_in?: boolean
+          marketing_opt_in_at?: string | null
           phone?: string | null
           notification_opt_in?: boolean
           portfolio_url?: string | null
@@ -491,6 +571,8 @@ export type Database = {
           disabled: boolean
           email: string
           id: string
+          marketing_opt_in: boolean
+          marketing_opt_in_at: string | null
           name: string
           role: Database['public']['Enums']['recruiter_role']
           user_id: string
@@ -502,6 +584,8 @@ export type Database = {
           disabled?: boolean
           email: string
           id?: string
+          marketing_opt_in?: boolean
+          marketing_opt_in_at?: string | null
           name: string
           role?: Database['public']['Enums']['recruiter_role']
           user_id: string
@@ -513,6 +597,8 @@ export type Database = {
           disabled?: boolean
           email?: string
           id?: string
+          marketing_opt_in?: boolean
+          marketing_opt_in_at?: string | null
           name?: string
           role?: Database['public']['Enums']['recruiter_role']
           user_id?: string
@@ -555,7 +641,14 @@ export type Database = {
     Enums: {
       application_status: 'new' | 'reviewed' | 'shortlisted' | 'rejected'
       approval_status: 'pending' | 'approved' | 'rejected'
-      campaign_audience: 'subscribers' | 'recruiters' | 'both'
+      campaign_audience:
+        | 'subscribers'
+        | 'recruiters'
+        | 'both'
+        | 'candidates'
+        | 'newsletter'
+        | 'all_marketing'
+      subscriber_audience: 'newsletter' | 'candidate' | 'recruiter'
       campaign_status: 'draft' | 'sending' | 'sent' | 'failed'
       delivery_status: 'pending' | 'sent' | 'failed' | 'skipped'
       employment_type: 'full_time' | 'part_time' | 'contract' | 'freelance'
@@ -705,7 +798,15 @@ export const Constants = {
     Enums: {
       application_status: ['new', 'reviewed', 'shortlisted', 'rejected'],
       approval_status: ['pending', 'approved', 'rejected'],
-      campaign_audience: ['subscribers', 'recruiters', 'both'],
+      campaign_audience: [
+        'subscribers',
+        'recruiters',
+        'both',
+        'candidates',
+        'newsletter',
+        'all_marketing',
+      ],
+      subscriber_audience: ['newsletter', 'candidate', 'recruiter'],
       campaign_status: ['draft', 'sending', 'sent', 'failed'],
       delivery_status: ['pending', 'sent', 'failed', 'skipped'],
       employment_type: ['full_time', 'part_time', 'contract', 'freelance'],

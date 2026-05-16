@@ -1,19 +1,76 @@
 import { Resend } from 'resend'
 
-export async function sendTransactionalEmail (opts: {
+export type SendEmailResult =
+  | { skipped: true }
+  | { skipped: false; messageId: string | null }
+
+function resendClient(): Resend | null {
+  const key = process.env.RESEND_API_KEY?.trim()
+  if (!key) return null
+  return new Resend(key)
+}
+
+export function transactionalFromEmail(): string | null {
+  return process.env.RESEND_FROM_EMAIL?.trim() || null
+}
+
+export function marketingFromEmail(audience?: string): string | null {
+  if (audience === 'recruiters' || audience === 'recruiter') {
+    return (
+      process.env.RESEND_FROM_HIRING?.trim() ||
+      process.env.RESEND_FROM_EMAIL?.trim() ||
+      null
+    )
+  }
+  if (audience === 'candidates' || audience === 'candidate') {
+    return (
+      process.env.RESEND_FROM_TALENT?.trim() ||
+      process.env.RESEND_FROM_EMAIL?.trim() ||
+      null
+    )
+  }
+  return (
+    process.env.RESEND_FROM_TALENT?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    null
+  )
+}
+
+export async function sendTransactionalEmail(opts: {
   to: string
   subject: string
   html: string
-}) {
-  const key = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM_EMAIL
-  if (!key || !from) return { skipped: true as const }
-  const resend = new Resend(key)
-  await resend.emails.send({
+}): Promise<SendEmailResult> {
+  const from = transactionalFromEmail()
+  const resend = resendClient()
+  if (!resend || !from) return { skipped: true }
+  const { data, error } = await resend.emails.send({
     from,
     to: opts.to,
     subject: opts.subject,
     html: opts.html,
   })
-  return { skipped: false as const }
+  if (error) throw error
+  return { skipped: false, messageId: data?.id ?? null }
 }
+
+export async function sendMarketingEmail(opts: {
+  to: string
+  subject: string
+  html: string
+  audienceHint?: string
+}): Promise<SendEmailResult> {
+  const from = marketingFromEmail(opts.audienceHint)
+  const resend = resendClient()
+  if (!resend || !from) return { skipped: true }
+  const { data, error } = await resend.emails.send({
+    from,
+    to: opts.to,
+    subject: opts.subject,
+    html: opts.html,
+  })
+  if (error) throw error
+  return { skipped: false, messageId: data?.id ?? null }
+}
+
+export const CAMPAIGN_BATCH_SIZE = 50

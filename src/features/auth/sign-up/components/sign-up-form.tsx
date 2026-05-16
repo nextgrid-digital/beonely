@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import { MarketingOptInCheckbox } from '@/components/marketing-opt-in-checkbox'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
+import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 
 type CandidateSignUpFields = {
   linkedin_url: string
@@ -83,7 +86,8 @@ async function persistCandidateJobSeekerRow(opts: {
   email: string
   linkedin_url: string
   phone: string
-}): Promise<void> {
+  marketing_opt_in: boolean
+}): Promise<{ created: boolean }> {
   const sb = getSupabaseBrowserClient()
   const { data: existing, error: selErr } = await sb
     .from('job_seeker_profiles')
@@ -98,6 +102,8 @@ async function persistCandidateJobSeekerRow(opts: {
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit' as const,
     notification_opt_in: true,
+    marketing_opt_in: opts.marketing_opt_in,
+    marketing_opt_in_at: opts.marketing_opt_in ? new Date().toISOString() : null,
   }
   if (existing?.id) {
     const { error } = await sb
@@ -105,13 +111,14 @@ async function persistCandidateJobSeekerRow(opts: {
       .update(payload)
       .eq('id', existing.id)
     if (error) throw error
-  } else {
-    const { error } = await sb.from('job_seeker_profiles').insert({
-      ...payload,
-      user_id: opts.userId,
-    })
-    if (error) throw error
+    return { created: false }
   }
+  const { error } = await sb.from('job_seeker_profiles').insert({
+    ...payload,
+    user_id: opts.userId,
+  })
+  if (error) throw error
+  return { created: true }
 }
 
 type SignUpFormFields = {
@@ -129,6 +136,7 @@ export function SignUpForm({
   ...props
 }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const navigate = useNavigate()
   const schema = useMemo(() => buildSignUpFormSchema(intent), [intent])
@@ -200,12 +208,33 @@ export function SignUpForm({
 
       if (intent === 'candidate' && uid && candidateMeta && hasSession) {
         try {
-          await persistCandidateJobSeekerRow({
+          const { created } = await persistCandidateJobSeekerRow({
             userId: uid,
             email,
             linkedin_url: candidateMeta.linkedin_url,
             phone: candidateMeta.phone,
+            marketing_opt_in: marketingOptIn,
           })
+          const accessToken = signUpData.session?.access_token
+          if (created && accessToken) {
+            void dispatchLifecycleEmail(accessToken, {
+              trigger_key: 'candidate_signup',
+              payload: {
+                name:
+                  (signUpData.user?.user_metadata?.full_name as
+                    | string
+                    | undefined)?.trim() || email.split('@')[0],
+              },
+              dedupe_key: `candidate_signup:${uid}`,
+            }).catch(() => undefined)
+          }
+          if (accessToken && marketingOptIn) {
+            await updateMarketingConsent({
+              marketing_opt_in: true,
+              audience: 'candidate',
+              accessToken,
+            })
+          }
         } catch {
           toast.error(
             'Account created but profile could not be saved. Update your profile in settings.'
@@ -346,6 +375,13 @@ export function SignUpForm({
               onExpire={() => setTurnstileToken(null)}
             />
           </div>
+        ) : null}
+        {intent === 'candidate' || intent === 'recruiter' ? (
+          <MarketingOptInCheckbox
+            checked={marketingOptIn}
+            onCheckedChange={setMarketingOptIn}
+            id='signup-marketing-opt-in'
+          />
         ) : null}
         <Button className='mt-2 min-h-11 w-full sm:min-h-10' disabled={isLoading}>
           {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}

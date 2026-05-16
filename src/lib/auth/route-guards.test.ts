@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
+  requireAdminBeforeLoad,
   requireCandidateAccountBeforeLoad,
   requireRecruiterAccountBeforeLoad,
 } from '@/lib/auth/route-guards'
@@ -46,8 +47,16 @@ vi.mock('@/lib/auth/registration-intent', () => ({
     mockIsRecruiterRegistrationMetadata(user),
 }))
 
-function session(role = 'u1') {
-  return { data: { session: { user: { id: role } } } }
+const mockIsAllowlistedAdminEmail = vi.hoisted(() =>
+  vi.fn((_email?: string) => true)
+)
+
+vi.mock('@/lib/auth/admin-access', () => ({
+  isAllowlistedAdminEmail: (email: string) => mockIsAllowlistedAdminEmail(email),
+}))
+
+function session(userId = 'u1', email = 'staff@company.com') {
+  return { data: { session: { user: { id: userId, email } } } }
 }
 
 describe('route-guards fail-safe redirects', () => {
@@ -55,7 +64,8 @@ describe('route-guards fail-safe redirects', () => {
     vi.clearAllMocks()
     mockConfigured.mockReturnValue(true)
     mockIsRecruiterRegistrationMetadata.mockReturnValue(false)
-    mockMaybeSingle.mockResolvedValue({ data: { role: 'recruiter' } })
+    mockIsAllowlistedAdminEmail.mockReturnValue(true)
+    mockMaybeSingle.mockResolvedValue({ data: { role: 'recruiter', disabled: false } })
   })
 
   it('redirects to sign-in when session fetch fails in recruiter beforeLoad', async () => {
@@ -81,6 +91,20 @@ describe('route-guards fail-safe redirects', () => {
       __redirect: true,
       to: '/sign-in',
       search: { redirect: '/recruiter' },
+    })
+  })
+
+  it('redirects non-allowlisted email from admin beforeLoad to staff sign-in', async () => {
+    mockGetSession.mockResolvedValue(session('u1', 'blocked@company.com'))
+    mockIsAllowlistedAdminEmail.mockReturnValue(false)
+    mockMaybeSingle.mockResolvedValue({ data: { role: 'admin', disabled: false } })
+
+    await expect(
+      requireAdminBeforeLoad({ loginRedirectPath: '/admin' })
+    ).rejects.toMatchObject({
+      __redirect: true,
+      to: '/staff/sign-in',
+      search: { redirect: '/admin', denied: 'allowlist' },
     })
   })
 

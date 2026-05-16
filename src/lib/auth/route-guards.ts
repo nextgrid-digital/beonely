@@ -1,4 +1,5 @@
 import { redirect } from '@tanstack/react-router'
+import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
 import { isRecruiterRegistrationMetadata } from '@/lib/auth/registration-intent'
 import {
   getSupabaseBrowserClient,
@@ -6,6 +7,11 @@ import {
 } from '@/lib/supabase/client'
 
 export type SessionPersona = 'candidate' | 'recruiter' | 'admin'
+
+type RecruiterPersonaRow = {
+  role: 'recruiter' | 'admin'
+  disabled: boolean
+}
 
 /** Resolves signed-in user to app persona using `recruiters` row (matches AuthProvider). */
 export async function fetchSessionPersona(): Promise<SessionPersona | null> {
@@ -18,27 +24,26 @@ export async function fetchSessionPersona(): Promise<SessionPersona | null> {
     if (!session?.user?.id) return null
     const { data: rec } = await sb
       .from('recruiters')
-      .select('role')
+      .select('role, disabled')
       .eq('user_id', session.user.id)
       .maybeSingle()
     if (!rec) {
       if (isRecruiterRegistrationMetadata(session.user)) return 'recruiter'
       return 'candidate'
     }
-    if (rec.role === 'admin') return 'admin'
+    const row = rec as RecruiterPersonaRow
+    if (row.disabled) return 'recruiter'
+    if (row.role === 'admin') return 'admin'
     return 'recruiter'
   } catch {
     return null
   }
 }
 
-function nonAdminHome(
-  persona: SessionPersona
-): '/candidate/profile' | '/recruiter' {
-  return persona === 'recruiter' ? '/recruiter' : '/candidate/profile'
-}
-
-async function requireSessionOrRedirect(opts: { loginRedirectPath: string }) {
+async function requireSessionOrRedirect(opts: {
+  loginTo: string
+  loginRedirectPath: string
+}) {
   const sb = getSupabaseBrowserClient()
   try {
     const {
@@ -49,29 +54,42 @@ async function requireSessionOrRedirect(opts: { loginRedirectPath: string }) {
     // Continue to sign-in redirect below.
   }
   throw redirect({
-    to: '/sign-in',
+    to: opts.loginTo,
     search: { redirect: opts.loginRedirectPath },
   })
 }
 
-/** Use in `beforeLoad` for routes that require `recruiters.role = admin`. */
+/** Use in `beforeLoad` for routes that require staff allowlist + `recruiters.role = admin`. */
 export async function requireAdminBeforeLoad(opts: {
-  /** Path passed to `/sign-in` as `redirect` when unauthenticated. */
+  /** Path passed to staff sign-in as `redirect` when unauthenticated. */
   loginRedirectPath: string
 }) {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  await requireSessionOrRedirect(opts)
+  const session = await requireSessionOrRedirect({
+    loginTo: '/staff/sign-in',
+    loginRedirectPath: opts.loginRedirectPath,
+  })
+  const email = session.user.email ?? ''
+  if (!isAllowlistedAdminEmail(email)) {
+    throw redirect({
+      to: '/staff/sign-in',
+      search: { redirect: opts.loginRedirectPath, denied: 'allowlist' },
+    })
+  }
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
-      to: '/sign-in',
+      to: '/staff/sign-in',
       search: { redirect: opts.loginRedirectPath },
     })
   }
   if (persona === 'admin') return
-  throw redirect({ to: nonAdminHome(persona) })
+  throw redirect({
+    to: '/staff/sign-in',
+    search: { redirect: opts.loginRedirectPath, denied: 'role' },
+  })
 }
 
 /** Recruiter portal: must have a recruiters row (recruiter or admin). */
@@ -81,7 +99,10 @@ export async function requireRecruiterAccountBeforeLoad(opts: {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  await requireSessionOrRedirect(opts)
+  await requireSessionOrRedirect({
+    loginTo: '/sign-in',
+    loginRedirectPath: opts.loginRedirectPath,
+  })
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
@@ -100,7 +121,10 @@ export async function requireCandidateAccountBeforeLoad(opts: {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  await requireSessionOrRedirect(opts)
+  await requireSessionOrRedirect({
+    loginTo: '/sign-in',
+    loginRedirectPath: opts.loginRedirectPath,
+  })
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
@@ -109,6 +133,11 @@ export async function requireCandidateAccountBeforeLoad(opts: {
     })
   }
   if (persona === 'candidate') return
-  if (persona === 'admin') throw redirect({ to: '/admin' })
+  if (persona === 'admin') {
+    const email = (await getSupabaseBrowserClient().auth.getSession()).data
+      .session?.user?.email
+    if (email && isAllowlistedAdminEmail(email)) return
+    throw redirect({ to: '/admin' })
+  }
   throw redirect({ to: '/recruiter' })
 }

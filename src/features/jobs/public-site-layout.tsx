@@ -6,6 +6,7 @@ import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
 import { PublicSiteAuthProvider } from '@/features/jobs/public-site-auth-provider'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { FooterNewsletterSubscribe } from '@/features/jobs/footer-newsletter-subscribe'
 
 /** Shared with profile resume builder and jobs detail sticky subheaders. */
 export const PUBLIC_SITE_BREADCRUMB_LIST =
@@ -143,7 +144,9 @@ export function PublicSiteHeader() {
 export function PublicSiteFooter() {
   return (
     <footer className='border-t border-border py-8 text-center text-sm text-muted-foreground'>
-      Beonely — niche hiring for ServiceNow.
+      <p>Beonely — niche hiring for ServiceNow.</p>
+      <p className='mt-2'>Subscribe to ServiceNow job updates</p>
+      <FooterNewsletterSubscribe />
     </footer>
   )
 }
