@@ -52,6 +52,25 @@ test.describe('responsive smoke', () => {
     await expect(page.locator('#linkedin-roles')).toBeVisible()
   })
 
+  test('/500 redirects to home without a 500 error page', async ({ page }) => {
+    await page.goto('/500')
+    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL(/\/$/)
+    await expect(
+      page.getByRole('heading', { name: '500', exact: true })
+    ).toHaveCount(0)
+  })
+
+  test('public routes do not show a 500 error page', async ({ page }) => {
+    for (const route of CORE_ROUTES) {
+      await page.goto(route)
+      await page.waitForLoadState('networkidle')
+      await expect(
+        page.getByRole('heading', { name: '500', exact: true })
+      ).toHaveCount(0)
+    }
+  })
+
   test('primary home CTA is visible in mobile viewport', async ({ page }, testInfo) => {
     if (!testInfo.project.name.toLowerCase().includes('iphone')) {
       test.skip()

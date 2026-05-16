@@ -1,13 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
 import { useAuth } from '@/context/auth-provider'
+import { formatQueryError } from '@/lib/format-query-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { RecruiterRow } from '@/lib/supabase/database.types'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/_authenticated/recruiter/jobs/new')({
   component: RecruiterJobNewRoute,
@@ -43,13 +46,44 @@ function RecruiterJobNewRoute() {
     return <Loader2 className='size-6 animate-spin text-muted-foreground' />
   }
 
-  const recruiter = recruiterQuery.data
-  if (!recruiter) {
+  if (recruiterQuery.isError) {
+    return (
+      <div className='max-w-lg space-y-4'>
+        <Alert variant='destructive'>
+          <AlertTitle>Could not load recruiter account</AlertTitle>
+          <AlertDescription>
+            {formatQueryError(
+              recruiterQuery.error,
+              'Something went wrong while loading your account.'
+            )}
+          </AlertDescription>
+        </Alert>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => void recruiterQuery.refetch()}
+        >
+          Try again
+        </Button>
+      </div>
+    )
+  }
+
+  if (recruiterQuery.isSuccess && !recruiterQuery.data) {
     return (
       <p className='text-sm text-muted-foreground'>
-        Complete your recruiter profile from My jobs first.
+        Complete your recruiter profile from{' '}
+        <Link to='/recruiter' className='font-medium text-primary underline-offset-4 hover:underline'>
+          My jobs
+        </Link>{' '}
+        first.
       </p>
     )
+  }
+
+  const recruiter = recruiterQuery.data
+  if (!recruiter) {
+    return null
   }
 
   return <RecruiterJobEditorPage recruiter={recruiter} job={null} />

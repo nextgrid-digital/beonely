@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Link,
   createFileRoute,
+  isRedirect,
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
-import { ArrowRight, Briefcase, LineChart, Shield } from 'lucide-react'
+import { Briefcase, LineChart, Shield } from 'lucide-react'
 import {
   fetchRecruiterPublishedJobs,
   publishedJobsFilterSchema,
@@ -27,7 +27,6 @@ import {
   PublicSiteHeader,
   PUBLIC_SITE_MAIN_COLUMN,
 } from '@/features/jobs/public-site-layout'
-import { usePublicSiteAuth } from '@/features/jobs/public-site-auth-provider'
 import {
   PublishedJobsFiltersBar,
   clearPublishedJobSearchPreserveSetup,
@@ -44,22 +43,27 @@ export const Route = createFileRoute('/')({
   validateSearch: homeSearchSchema,
   beforeLoad: async () => {
     if (!getSupabaseConfigured()) return
-    const supabase = getSupabaseBrowserClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const uid = session?.user?.id
-    if (!uid) return
-    const { data: rec } = await supabase
-      .from('recruiters')
-      .select('user_id, role')
-      .eq('user_id', uid)
-      .maybeSingle()
-    if (rec) {
-      if (rec.role === 'admin') {
-        throw redirect({ to: '/admin' })
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const uid = session?.user?.id
+      if (!uid) return
+      const { data: rec } = await supabase
+        .from('recruiters')
+        .select('user_id, role')
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (rec) {
+        if (rec.role === 'admin') {
+          throw redirect({ to: '/admin' })
+        }
+        throw redirect({ to: '/recruiter' })
       }
-      throw redirect({ to: '/recruiter' })
+    } catch (e) {
+      if (isRedirect(e)) throw e
+      return
     }
   },
   component: LandingPage,
@@ -81,7 +85,6 @@ function LandingPage() {
 }
 
 function LandingPageContent() {
-  const { requireAuthForPostJob } = usePublicSiteAuth()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const { setup } = search
@@ -123,33 +126,6 @@ function LandingPageContent() {
               Focused roles for developers, architects, consultants, and admins.
               Paid listings for partners and enterprise teams—no generic noise.
             </p>
-            <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap'>
-              <Button asChild size='lg' className='min-h-11 w-full sm:w-auto'>
-                <Link to='/' search={search} hash='open-roles'>
-                  Browse jobs
-                  <ArrowRight className='ms-1 size-4' />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant='outline'
-                size='lg'
-                className='min-h-11 w-full sm:w-auto'
-              >
-                <Link to='/' search={search} hash='linkedin-roles'>
-                  LinkedIn roles
-                </Link>
-              </Button>
-              <Button
-                type='button'
-                variant='outline'
-                size='lg'
-                className='min-h-11 w-full sm:w-auto'
-                onClick={requireAuthForPostJob}
-              >
-                I&apos;m hiring
-              </Button>
-            </div>
           </section>
 
           <section

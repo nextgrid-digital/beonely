@@ -219,11 +219,6 @@ function JobDetailPage() {
                     {job.job_title}
                   </h1>
                   {job.featured && <Badge>Featured</Badge>}
-              {job.source_kind === 'recruiter_posted' && (
-                <Badge variant='secondary' className='text-[10px] uppercase'>
-                  On Beonely
-                </Badge>
-              )}
                 </div>
                 <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
                   {job.company_name}
@@ -246,7 +241,7 @@ function JobDetailPage() {
               </div>
             </div>
 
-            <Card>
+            <Card className='border-0 shadow-none'>
               <CardHeader>
                 <CardTitle>About this role</CardTitle>
               </CardHeader>

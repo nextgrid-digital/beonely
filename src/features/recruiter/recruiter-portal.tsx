@@ -13,7 +13,9 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -146,7 +148,30 @@ export function RecruiterPortal() {
     return <Loader2 className='size-6 animate-spin text-muted-foreground' />
   }
 
-  if (!recruiterQuery.data) {
+  if (recruiterQuery.isError) {
+    return (
+      <div className='max-w-lg space-y-4'>
+        <Alert variant='destructive'>
+          <AlertTitle>Could not load recruiter account</AlertTitle>
+          <AlertDescription>
+            {formatQueryError(
+              recruiterQuery.error,
+              'Something went wrong while loading your account.'
+            )}
+          </AlertDescription>
+        </Alert>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => void recruiterQuery.refetch()}
+        >
+          Try again
+        </Button>
+      </div>
+    )
+  }
+
+  if (recruiterQuery.isSuccess && !recruiterQuery.data) {
     return (
       <div className='max-w-md space-y-4'>
         <h2 className='text-lg font-medium'>Company details</h2>
@@ -195,9 +220,29 @@ export function RecruiterPortal() {
 
   return (
     <div className='space-y-6'>
-      {showJobsSkeleton ? (
+      {jobsQuery.isError ? (
+        <div className='space-y-4'>
+          <Alert variant='destructive'>
+            <AlertTitle>Could not load your jobs</AlertTitle>
+            <AlertDescription>
+              {formatQueryError(
+                jobsQuery.error,
+                'Something went wrong while loading listings.'
+              )}
+            </AlertDescription>
+          </Alert>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => void jobsQuery.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : null}
+      {!jobsQuery.isError && showJobsSkeleton ? (
         <RecruiterJobsTableSkeleton />
-      ) : showEmptyJobs ? (
+      ) : !jobsQuery.isError && showEmptyJobs ? (
         <Card className='border-dashed bg-muted/30'>
           <CardContent className='flex flex-col items-center gap-4 py-12 text-center'>
             <Briefcase

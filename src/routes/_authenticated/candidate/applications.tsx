@@ -123,8 +123,8 @@ function CandidateApplicationsPage() {
         {!beonelyAppsQuery.isLoading &&
           (beonelyAppsQuery.data ?? []).length === 0 && (
             <p className='text-sm text-muted-foreground'>
-              No Beonely applications yet. Apply from a job that shows the
-              &quot;On Beonely&quot; badge.
+              No Beonely applications yet. Apply from a recruiter-posted job
+              using your Beonely profile.
             </p>
           )}
       </section>

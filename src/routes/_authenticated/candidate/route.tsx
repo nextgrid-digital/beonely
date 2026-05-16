@@ -13,7 +13,10 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
+import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/_authenticated/candidate')({
   beforeLoad: () =>
@@ -49,6 +52,7 @@ function CandidateSectionLayout() {
   useEffect(() => {
     if (!user || profile?.role !== 'candidate') return
     if (pathname.startsWith('/candidate/profile')) return
+    if (completionQuery.isError) return
     if (completionQuery.isLoading || completionQuery.isFetching) return
     if (!completionQuery.isSuccess) return
     if (isJobSeekerProfileComplete(completionQuery.data)) return
@@ -61,6 +65,7 @@ function CandidateSectionLayout() {
     user,
     profile?.role,
     pathname,
+    completionQuery.isError,
     completionQuery.isLoading,
     completionQuery.isFetching,
     completionQuery.isSuccess,
@@ -68,5 +73,30 @@ function CandidateSectionLayout() {
     navigate,
   ])
 
-  return <Outlet />
+  return (
+    <>
+      {completionQuery.isError ? (
+        <div className='mx-auto max-w-5xl px-4 pt-4'>
+          <Alert variant='destructive'>
+            <AlertTitle>Could not verify profile completion</AlertTitle>
+            <AlertDescription>
+              {formatQueryError(
+                completionQuery.error,
+                'You can still use this section. Try again or open your profile.'
+              )}
+            </AlertDescription>
+          </Alert>
+          <Button
+            type='button'
+            variant='outline'
+            className='mt-3'
+            onClick={() => void completionQuery.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : null}
+      <Outlet />
+    </>
+  )
 }

@@ -1,14 +1,17 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
 import { useAuth } from '@/context/auth-provider'
+import { formatQueryError } from '@/lib/format-query-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute(
   '/_authenticated/recruiter/jobs/$jobId/edit'
@@ -63,6 +66,7 @@ function RecruiterJobEditRoute() {
   })
 
   useEffect(() => {
+    if (recruiterQuery.isError || jobQuery.isError) return
     if (!recruiterQuery.isSuccess || !jobQuery.isSuccess) return
     const recruiter = recruiterQuery.data
     const job = jobQuery.data
@@ -70,6 +74,8 @@ function RecruiterJobEditRoute() {
       void navigate({ to: '/recruiter', replace: true })
     }
   }, [
+    recruiterQuery.isError,
+    jobQuery.isError,
     recruiterQuery.isSuccess,
     recruiterQuery.data,
     jobQuery.isSuccess,
@@ -93,9 +99,42 @@ function RecruiterJobEditRoute() {
     return <Loader2 className='size-6 animate-spin text-muted-foreground' />
   }
 
+  if (recruiterQuery.isError || jobQuery.isError) {
+    const err = recruiterQuery.error ?? jobQuery.error
+    return (
+      <div className='max-w-lg space-y-4'>
+        <Alert variant='destructive'>
+          <AlertTitle>Could not load job</AlertTitle>
+          <AlertDescription>
+            {formatQueryError(err, 'Something went wrong while loading this listing.')}
+          </AlertDescription>
+        </Alert>
+        <div className='flex flex-wrap gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => {
+              void recruiterQuery.refetch()
+              void jobQuery.refetch()
+            }}
+          >
+            Try again
+          </Button>
+          <Button type='button' variant='secondary' asChild>
+            <Link to='/recruiter'>Back to My jobs</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   const recruiter = recruiterQuery.data
   const job = jobQuery.data
-  if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
+  if (
+    !recruiter ||
+    !job ||
+    job.recruiter_id !== recruiter.id
+  ) {
     return null
   }
 

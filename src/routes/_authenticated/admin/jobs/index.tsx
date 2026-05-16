@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { formatQueryError } from '@/lib/format-query-error'
 import { requireAdminBeforeLoad } from '@/lib/auth/route-guards'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { listingDurationToDays } from '@/lib/payments/plans'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
@@ -227,6 +229,27 @@ function AdminJobsPage() {
           Approve paid listings, toggle featured, reject spam.
         </p>
       </div>
+      {jobsQuery.isError ? (
+        <div className='space-y-4'>
+          <Alert variant='destructive'>
+            <AlertTitle>Could not load jobs</AlertTitle>
+            <AlertDescription>
+              {formatQueryError(
+                jobsQuery.error,
+                'Something went wrong while loading listings for moderation.'
+              )}
+            </AlertDescription>
+          </Alert>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => void jobsQuery.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : null}
+      {!jobsQuery.isError ? (
       <Table>
         <TableHeader>
           <TableRow>
@@ -294,6 +317,7 @@ function AdminJobsPage() {
           ))}
         </TableBody>
       </Table>
+      ) : null}
     </div>
   )
 }

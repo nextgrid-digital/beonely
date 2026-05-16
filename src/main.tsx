@@ -11,7 +11,6 @@ import { HelmetProvider } from 'react-helmet-async'
 import { Analytics } from '@vercel/analytics/react'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
-import { shouldNavigateTo500FromQueryError } from '@/lib/query-error-routing'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -56,7 +55,7 @@ const queryClient = new QueryClient({
     },
   },
   queryCache: new QueryCache({
-    onError: (error, query) => {
+    onError: (error) => {
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
@@ -67,15 +66,7 @@ const queryClient = new QueryClient({
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
         if (error.response?.status === 500) {
-          toast.error('Internal Server Error!')
-          if (
-            import.meta.env.PROD &&
-            shouldNavigateTo500FromQueryError(error, query.queryKey, {
-              currentPathname: router.history.location.pathname,
-            })
-          ) {
-            router.navigate({ to: '/500' })
-          }
+          toast.error('Something went wrong. Please try again.')
         }
         if (error.response?.status === 403) {
           // router.navigate("/forbidden", { replace: true });

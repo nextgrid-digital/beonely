@@ -55,16 +55,6 @@ export function PublicJobCard({ job }: { job: JobRow }) {
                   Featured
                 </Badge>
               )}
-              {job.source_kind === 'recruiter_posted' && (
-                <Badge variant='secondary' className='text-[10px] uppercase'>
-                  On Beonely
-                </Badge>
-              )}
-              {job.source_kind === 'linkedin_import' && (
-                <Badge variant='outline' className='text-[10px] uppercase'>
-                  LinkedIn
-                </Badge>
-              )}
             </div>
             <p className='text-sm text-muted-foreground'>
               {job.company_name} · {job.location || 'Location TBD'}
