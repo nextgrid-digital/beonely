@@ -1,5 +1,6 @@
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 
 type GeneralErrorProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -12,6 +13,20 @@ export function GeneralError({
 }: GeneralErrorProps) {
   const navigate = useNavigate()
   const { history } = useRouter()
+  const { profile, signOut } = useAuth()
+  const recruiterSession =
+    profile?.role === 'recruiter' || profile?.role === 'admin'
+  const homeTarget = recruiterSession ? '/recruiter' : '/'
+
+  const signInAgain = async () => {
+    try {
+      await signOut()
+    } catch {
+      // Continue to sign-in route even if sign-out fails.
+    }
+    void navigate({ to: '/sign-in', search: { redirect: homeTarget } })
+  }
+
   return (
     <div className={cn('h-svh w-full', className)}>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
@@ -27,7 +42,12 @@ export function GeneralError({
             <Button variant='outline' onClick={() => history.go(-1)}>
               Go Back
             </Button>
-            <Button onClick={() => navigate({ to: '/' })}>Back to Home</Button>
+            <Button onClick={() => navigate({ to: homeTarget })}>
+              {recruiterSession ? 'Back to Recruiter Home' : 'Back to Home'}
+            </Button>
+            <Button variant='secondary' onClick={() => void signInAgain()}>
+              Sign in again
+            </Button>
           </div>
         )}
       </div>

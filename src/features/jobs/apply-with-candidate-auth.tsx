@@ -62,6 +62,9 @@ function applyFlowErrorMessage(error: unknown): string {
   return msg
 }
 
+const recruiterApplyRedirectMessage =
+  'Recruiter accounts cannot apply with a Beonely profile. Redirecting to your recruiter dashboard.'
+
 async function fetchJobSeekerCompletionRow(userId: string) {
   const sb = getSupabaseBrowserClient()
   const { data, error } = await sb
@@ -175,9 +178,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
 
         if (authProfile?.role === 'recruiter' || authProfile?.role === 'admin') {
           if (beonely) {
-            toast.message(
-              'Switch to a candidate account to apply on Beonely for this role.'
-            )
+            toast.message(recruiterApplyRedirectMessage)
+            void navigate({ to: '/recruiter' })
             return
           }
           openExternalApply()
@@ -245,9 +247,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       if (!getSupabaseConfigured()) return
       if (profile?.role === 'recruiter' || profile?.role === 'admin') {
         if (beonely) {
-          toast.message(
-            'Switch to a candidate account to apply on Beonely for this role.'
-          )
+          toast.message(recruiterApplyRedirectMessage)
+          void navigate({ to: '/recruiter' })
           return
         }
         openExternalApply()

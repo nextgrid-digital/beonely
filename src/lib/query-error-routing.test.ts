@@ -69,4 +69,25 @@ describe('shouldNavigateTo500FromQueryError', () => {
       )
     ).toBe(true)
   })
+
+  it('suppresses repeated /500 navigations for the same error signature in one cycle', () => {
+    const err = axiosError(500, '/api/admin/jobs')
+    expect(
+      shouldNavigateTo500FromQueryError(err, ['admin-jobs'], { now: 1000 })
+    ).toBe(true)
+    expect(
+      shouldNavigateTo500FromQueryError(err, ['admin-jobs'], { now: 2000 })
+    ).toBe(false)
+    expect(
+      shouldNavigateTo500FromQueryError(err, ['admin-jobs'], { now: 5001 })
+    ).toBe(true)
+  })
+
+  it('never re-routes when already on /500', () => {
+    expect(
+      shouldNavigateTo500FromQueryError(axiosError(500, '/api/admin/jobs'), ['admin-jobs'], {
+        currentPathname: '/500',
+      })
+    ).toBe(false)
+  })
 })

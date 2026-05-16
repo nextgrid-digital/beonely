@@ -295,6 +295,39 @@ describe('ApplyWithCandidateAuth', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
+  it('redirects recruiter to dashboard for Beonely apply jobs', async () => {
+    useAuthMock.mockReturnValue({
+      user: candidateUser(),
+      session: {} as Session,
+      profile: {
+        id: 'p1',
+        email: 'r@d.com',
+        role: 'recruiter',
+        created_at: '',
+        updated_at: '',
+      },
+      loading: false,
+      configured: true,
+      refreshProfile: vi.fn(),
+      signOut: vi.fn(),
+    })
+
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth job={postedJob} />
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply with your Beonely profile/i })
+    )
+
+    await vi.waitFor(() =>
+      expect(toastMock.message).toHaveBeenCalledWith(
+        expect.stringContaining('Redirecting to your recruiter dashboard')
+      )
+    )
+    expect(navigate).toHaveBeenCalledWith({ to: '/recruiter' })
+    expect(insertApplication).not.toHaveBeenCalled()
+  })
+
   it('submits Beonely application when profile is complete', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),

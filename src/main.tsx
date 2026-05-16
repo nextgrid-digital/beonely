@@ -70,7 +70,9 @@ const queryClient = new QueryClient({
           toast.error('Internal Server Error!')
           if (
             import.meta.env.PROD &&
-            shouldNavigateTo500FromQueryError(error, query.queryKey)
+            shouldNavigateTo500FromQueryError(error, query.queryKey, {
+              currentPathname: router.history.location.pathname,
+            })
           ) {
             router.navigate({ to: '/500' })
           }

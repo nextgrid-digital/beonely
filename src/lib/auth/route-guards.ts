@@ -9,29 +9,49 @@ export type SessionPersona = 'candidate' | 'recruiter' | 'admin'
 
 /** Resolves signed-in user to app persona using `recruiters` row (matches AuthProvider). */
 export async function fetchSessionPersona(): Promise<SessionPersona | null> {
-  if (!getSupabaseConfigured()) return null
-  const sb = getSupabaseBrowserClient()
-  const {
-    data: { session },
-  } = await sb.auth.getSession()
-  if (!session?.user?.id) return null
-  const { data: rec } = await sb
-    .from('recruiters')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .maybeSingle()
-  if (!rec) {
-    if (isRecruiterRegistrationMetadata(session.user)) return 'recruiter'
-    return 'candidate'
+  try {
+    if (!getSupabaseConfigured()) return null
+    const sb = getSupabaseBrowserClient()
+    const {
+      data: { session },
+    } = await sb.auth.getSession()
+    if (!session?.user?.id) return null
+    const { data: rec } = await sb
+      .from('recruiters')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+    if (!rec) {
+      if (isRecruiterRegistrationMetadata(session.user)) return 'recruiter'
+      return 'candidate'
+    }
+    if (rec.role === 'admin') return 'admin'
+    return 'recruiter'
+  } catch {
+    return null
   }
-  if (rec.role === 'admin') return 'admin'
-  return 'recruiter'
 }
 
 function nonAdminHome(
   persona: SessionPersona
 ): '/candidate/profile' | '/recruiter' {
   return persona === 'recruiter' ? '/recruiter' : '/candidate/profile'
+}
+
+async function requireSessionOrRedirect(opts: { loginRedirectPath: string }) {
+  const sb = getSupabaseBrowserClient()
+  try {
+    const {
+      data: { session },
+    } = await sb.auth.getSession()
+    if (session) return session
+  } catch {
+    // Continue to sign-in redirect below.
+  }
+  throw redirect({
+    to: '/sign-in',
+    search: { redirect: opts.loginRedirectPath },
+  })
 }
 
 /** Use in `beforeLoad` for routes that require `recruiters.role = admin`. */
@@ -42,16 +62,7 @@ export async function requireAdminBeforeLoad(opts: {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  const sb = getSupabaseBrowserClient()
-  const {
-    data: { session },
-  } = await sb.auth.getSession()
-  if (!session) {
-    throw redirect({
-      to: '/sign-in',
-      search: { redirect: opts.loginRedirectPath },
-    })
-  }
+  await requireSessionOrRedirect(opts)
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
@@ -70,16 +81,7 @@ export async function requireRecruiterAccountBeforeLoad(opts: {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  const sb = getSupabaseBrowserClient()
-  const {
-    data: { session },
-  } = await sb.auth.getSession()
-  if (!session) {
-    throw redirect({
-      to: '/sign-in',
-      search: { redirect: opts.loginRedirectPath },
-    })
-  }
+  await requireSessionOrRedirect(opts)
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
@@ -98,16 +100,7 @@ export async function requireCandidateAccountBeforeLoad(opts: {
   if (!getSupabaseConfigured()) {
     throw redirect({ to: '/' })
   }
-  const sb = getSupabaseBrowserClient()
-  const {
-    data: { session },
-  } = await sb.auth.getSession()
-  if (!session) {
-    throw redirect({
-      to: '/sign-in',
-      search: { redirect: opts.loginRedirectPath },
-    })
-  }
+  await requireSessionOrRedirect(opts)
   const persona = await fetchSessionPersona()
   if (!persona) {
     throw redirect({
