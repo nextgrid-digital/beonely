@@ -13,7 +13,7 @@ import { ResetPasswordForm } from './components/reset-password-form'
 export function ResetPassword() {
   return (
     <AuthLayout>
-      <Card className='max-w-sm gap-4 sm:min-w-sm'>
+      <Card className='w-full gap-4'>
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>
             Set a new password
@@ -26,7 +26,7 @@ export function ResetPassword() {
           <ResetPasswordForm />
         </CardContent>
         <CardFooter>
-          <p className='mx-auto px-8 text-center text-sm text-balance text-muted-foreground'>
+          <p className='mx-auto px-2 text-center text-sm text-balance text-muted-foreground sm:px-8'>
             Remembered it?{' '}
             <Link
               to='/sign-in'

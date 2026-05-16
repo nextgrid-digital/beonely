@@ -119,7 +119,7 @@ export function PublishedJobsFiltersBar(props: {
             value={localQ}
             onChange={(e) => setLocalQ(e.target.value)}
             className={cn(
-              'h-9 border-border/80 bg-background/90 pl-8 text-sm shadow-none',
+              'h-11 border-border/80 bg-background/90 pl-8 text-sm shadow-none sm:h-9',
               'transition-[box-shadow,background-color,border-color] duration-200',
               'focus-visible:bg-background focus-visible:shadow-sm'
             )}
@@ -200,7 +200,7 @@ export function PublishedJobsFiltersBar(props: {
                   search: (p) => ({ ...p, location: v || undefined }),
                 })
               }}
-              className='h-9 border-border/80 bg-background/90 pl-7 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background'
+              className='h-11 border-border/80 bg-background/90 pl-7 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background sm:h-9'
             />
           </div>
         </div>
@@ -210,7 +210,7 @@ export function PublishedJobsFiltersBar(props: {
             type='button'
             variant='ghost'
             size='sm'
-            className='mb-0.5 h-8 shrink-0 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground'
+            className='mb-0.5 h-11 shrink-0 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8'
             onClick={resetFilters}
           >
             <SlidersHorizontal className='size-3.5' aria-hidden />
@@ -241,7 +241,7 @@ function FilterSelect(props: {
       >
         <SelectTrigger
           className={cn(
-            'h-9 border-border/80 bg-background/90 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-200',
+            'h-11 border-border/80 bg-background/90 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-200 sm:h-9',
             'hover:bg-muted/40 focus-visible:bg-background data-[state=open]:bg-background',
             props.triggerClass
           )}

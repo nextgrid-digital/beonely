@@ -300,7 +300,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         size='lg'
         disabled={disabled}
         aria-busy={checkingApplied || undefined}
-        className='inline-flex items-center gap-2 bg-white shadow-xs hover:bg-slate-50 dark:bg-background dark:hover:bg-muted'
+        className='min-h-11 w-full items-center gap-2 bg-white shadow-xs hover:bg-slate-50 sm:min-h-10 sm:w-auto dark:bg-background dark:hover:bg-muted'
         onClick={() => void handleApplyClick()}
         aria-label={applyButtonAriaLabel(job)}
       >

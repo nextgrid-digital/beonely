@@ -220,20 +220,8 @@ export function RecruiterPortal() {
           </CardContent>
         </Card>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
-                Applicants
-              </TableHead>
-              <TableHead>Approval</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead className='text-end'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <div className='space-y-3 md:hidden'>
             {jobs.map((job) => {
               const canPay =
                 job.approval_status === 'pending' &&
@@ -244,35 +232,40 @@ export function RecruiterPortal() {
                 (!job.listing_expires_at ||
                   new Date(job.listing_expires_at) > new Date())
               return (
-                <TableRow key={job.id}>
-                  <TableCell>
-                    <Button
-                      variant='link'
-                      className='h-auto p-0 font-medium'
-                      asChild
-                    >
-                      <Link
-                        to='/recruiter/jobs/$jobId/applicants'
-                        params={{ jobId: job.id }}
+                <Card key={job.id} className='border-border/80 shadow-none'>
+                  <CardContent className='space-y-4 p-4'>
+                    <div className='space-y-1'>
+                      <Button
+                        variant='link'
+                        className='h-auto p-0 text-left font-medium'
+                        asChild
                       >
-                        {job.job_title?.trim() || 'Untitled job'}
-                      </Link>
-                    </Button>
-                  </TableCell>
-                  <TableCell className='text-end tabular-nums text-muted-foreground'>
-                    {applicationCounts[job.id] ?? 0}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant='outline'>{job.approval_status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant='outline'>{job.payment_status}</Badge>
-                  </TableCell>
-                  <TableCell>{job.featured ? 'Yes' : 'No'}</TableCell>
-                  <TableCell className='text-end'>
-                    <div className='flex flex-wrap justify-end gap-2'>
+                        <Link
+                          to='/recruiter/jobs/$jobId/applicants'
+                          params={{ jobId: job.id }}
+                        >
+                          {job.job_title?.trim() || 'Untitled job'}
+                        </Link>
+                      </Button>
+                      <p className='text-xs text-muted-foreground'>
+                        {applicationCounts[job.id] ?? 0} applicants
+                      </p>
+                    </div>
+                    <div className='flex flex-wrap gap-2'>
+                      <Badge variant='outline'>{job.approval_status}</Badge>
+                      <Badge variant='outline'>{job.payment_status}</Badge>
+                      <Badge variant='outline'>
+                        {job.featured ? 'Featured' : 'Standard'}
+                      </Badge>
+                    </div>
+                    <div className='grid gap-2'>
                       {isLive ? (
-                        <Button variant='outline' size='sm' asChild>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          asChild
+                          className='min-h-11 justify-center'
+                        >
                           <Link
                             to='/jobs/$slug'
                             params={{ slug: job.job_slug }}
@@ -285,6 +278,7 @@ export function RecruiterPortal() {
                         <Button
                           variant='outline'
                           size='sm'
+                          className='min-h-11 justify-center'
                           disabled
                           title='Live after approval'
                         >
@@ -297,7 +291,12 @@ export function RecruiterPortal() {
                           accessToken={session?.access_token}
                         />
                       )}
-                      <Button variant='outline' size='sm' asChild>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        asChild
+                        className='min-h-11 justify-center'
+                      >
                         <Link
                           to='/recruiter/jobs/$jobId/edit'
                           params={{ jobId: job.id }}
@@ -312,12 +311,112 @@ export function RecruiterPortal() {
                         />
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </CardContent>
+                </Card>
               )
             })}
-          </TableBody>
-        </Table>
+          </div>
+          <div className='hidden overflow-x-auto md:block'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+                    Applicants
+                  </TableHead>
+                  <TableHead>Approval</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Featured</TableHead>
+                  <TableHead className='text-end'>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {jobs.map((job) => {
+                  const canPay =
+                    job.approval_status === 'pending' &&
+                    job.payment_status === 'unpaid'
+                  const isLive =
+                    job.approval_status === 'approved' &&
+                    job.payment_status === 'paid' &&
+                    (!job.listing_expires_at ||
+                      new Date(job.listing_expires_at) > new Date())
+                  return (
+                    <TableRow key={job.id}>
+                      <TableCell>
+                        <Button
+                          variant='link'
+                          className='h-auto p-0 font-medium'
+                          asChild
+                        >
+                          <Link
+                            to='/recruiter/jobs/$jobId/applicants'
+                            params={{ jobId: job.id }}
+                          >
+                            {job.job_title?.trim() || 'Untitled job'}
+                          </Link>
+                        </Button>
+                      </TableCell>
+                      <TableCell className='text-end tabular-nums text-muted-foreground'>
+                        {applicationCounts[job.id] ?? 0}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant='outline'>{job.approval_status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant='outline'>{job.payment_status}</Badge>
+                      </TableCell>
+                      <TableCell>{job.featured ? 'Yes' : 'No'}</TableCell>
+                      <TableCell className='text-end'>
+                        <div className='flex flex-wrap justify-end gap-2'>
+                          {isLive ? (
+                            <Button variant='outline' size='sm' asChild>
+                              <Link
+                                to='/jobs/$slug'
+                                params={{ slug: job.job_slug }}
+                                target='_blank'
+                              >
+                                View
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              disabled
+                              title='Live after approval'
+                            >
+                              View
+                            </Button>
+                          )}
+                          {isLive && (
+                            <FeaturedBoostButton
+                              job={job}
+                              accessToken={session?.access_token}
+                            />
+                          )}
+                          <Button variant='outline' size='sm' asChild>
+                            <Link
+                              to='/recruiter/jobs/$jobId/edit'
+                              params={{ jobId: job.id }}
+                            >
+                              Edit
+                            </Link>
+                          </Button>
+                          {canPay && (
+                            <PayJobButton
+                              job={job}
+                              accessToken={session?.access_token}
+                            />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   )
@@ -325,44 +424,62 @@ export function RecruiterPortal() {
 
 function RecruiterJobsTableSkeleton() {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Title</TableHead>
-          <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
-            Applicants
-          </TableHead>
-          <TableHead>Approval</TableHead>
-          <TableHead>Payment</TableHead>
-          <TableHead>Featured</TableHead>
-          <TableHead className='text-end'>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Array.from({ length: 5 }, (_, i) => (
-          <TableRow key={i}>
-            <TableCell>
-              <Skeleton className='h-5 w-44' />
-            </TableCell>
-            <TableCell className='text-end'>
-              <Skeleton className='ms-auto h-5 w-8' />
-            </TableCell>
-            <TableCell>
-              <Skeleton className='h-5 w-20' />
-            </TableCell>
-            <TableCell>
-              <Skeleton className='h-5 w-20' />
-            </TableCell>
-            <TableCell>
-              <Skeleton className='h-5 w-10' />
-            </TableCell>
-            <TableCell className='text-end'>
-              <Skeleton className='ms-auto h-8 w-24' />
-            </TableCell>
-          </TableRow>
+    <>
+      <div className='space-y-3 md:hidden'>
+        {Array.from({ length: 3 }, (_, i) => (
+          <Card key={`mobile-${i}`} className='border-border/80 shadow-none'>
+            <CardContent className='space-y-3 p-4'>
+              <Skeleton className='h-5 w-2/3' />
+              <div className='flex gap-2'>
+                <Skeleton className='h-5 w-20' />
+                <Skeleton className='h-5 w-20' />
+              </div>
+              <Skeleton className='h-11 w-full' />
+            </CardContent>
+          </Card>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+      <div className='hidden md:block'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+                Applicants
+              </TableHead>
+              <TableHead>Approval</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead>Featured</TableHead>
+              <TableHead className='text-end'>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }, (_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className='h-5 w-44' />
+                </TableCell>
+                <TableCell className='text-end'>
+                  <Skeleton className='ms-auto h-5 w-8' />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className='h-5 w-20' />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className='h-5 w-20' />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className='h-5 w-10' />
+                </TableCell>
+                <TableCell className='text-end'>
+                  <Skeleton className='ms-auto h-8 w-24' />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   )
 }
 
@@ -400,7 +517,12 @@ function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
 
   return (
     <>
-      <Button size='sm' variant='secondary' onClick={() => setPlanOpen(true)}>
+      <Button
+        size='sm'
+        variant='secondary'
+        className='min-h-11 md:min-h-8'
+        onClick={() => setPlanOpen(true)}
+      >
         Pay & submit
       </Button>
       <Dialog open={planOpen} onOpenChange={setPlanOpen}>
@@ -487,7 +609,12 @@ function FeaturedBoostButton(props: {
 
   return (
     <>
-      <Button size='sm' variant='default' onClick={() => setPlanOpen(true)}>
+      <Button
+        size='sm'
+        variant='default'
+        className='min-h-11 md:min-h-8'
+        onClick={() => setPlanOpen(true)}
+      >
         {props.job.featured ? 'Extend featured' : 'Upgrade to Featured'}
       </Button>
       <Dialog open={planOpen} onOpenChange={setPlanOpen}>

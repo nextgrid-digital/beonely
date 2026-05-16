@@ -333,6 +333,7 @@ export function RecruiterJobEditorPage(props: {
                   type='button'
                   variant='outline'
                   size='sm'
+                  className='min-h-11 sm:min-h-8'
                   disabled={logoBusy}
                   onClick={() => logoInputRef.current?.click()}
                 >
@@ -343,6 +344,7 @@ export function RecruiterJobEditorPage(props: {
                     type='button'
                     variant='ghost'
                     size='sm'
+                    className='min-h-11 sm:min-h-8'
                     onClick={clearLogo}
                   >
                     Remove logo
@@ -384,7 +386,7 @@ export function RecruiterJobEditorPage(props: {
               </FormItem>
             )}
           />
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid gap-2 sm:grid-cols-2'>
             <FormField
               control={form.control}
               name='employment_type'
@@ -441,7 +443,7 @@ export function RecruiterJobEditorPage(props: {
               )}
             />
           </div>
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid gap-2 sm:grid-cols-2'>
             <FormField
               control={form.control}
               name='experience_level'
@@ -499,11 +501,16 @@ export function RecruiterJobEditorPage(props: {
             <Button
               type='button'
               variant='ghost'
+              className='min-h-11 sm:min-h-9'
               onClick={() => void navigate({ to: '/recruiter' })}
             >
               Cancel
             </Button>
-            <Button type='submit' disabled={save.isPending}>
+            <Button
+              type='submit'
+              className='min-h-11 sm:min-h-9'
+              disabled={save.isPending}
+            >
               {submitLabel}
             </Button>
           </div>

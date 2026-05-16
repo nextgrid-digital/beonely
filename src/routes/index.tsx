@@ -100,7 +100,7 @@ function LandingPageContent() {
       <div className='flex flex-1 flex-col pt-14'>
         <main
           id='main-content'
-          className={`${PUBLIC_SITE_MAIN_COLUMN} flex flex-1 flex-col gap-16 py-12`}
+          className={`${PUBLIC_SITE_MAIN_COLUMN} flex flex-1 flex-col gap-12 py-8 sm:gap-14 sm:py-10 md:gap-16 md:py-12`}
         >
           {setup === 'supabase' && (
             <Alert variant='destructive'>
@@ -112,25 +112,30 @@ function LandingPageContent() {
               </AlertDescription>
             </Alert>
           )}
-          <section className='max-w-2xl space-y-6'>
+          <section className='max-w-2xl space-y-5 sm:space-y-6'>
             <p className='text-sm font-medium text-muted-foreground'>
               ServiceNow talent network
             </p>
-            <h1 className='text-4xl font-semibold tracking-tight md:text-5xl'>
+            <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl'>
               The hiring layer for the ServiceNow ecosystem.
             </h1>
-            <p className='text-lg text-muted-foreground'>
+            <p className='text-base text-muted-foreground sm:text-lg'>
               Focused roles for developers, architects, consultants, and admins.
               Paid listings for partners and enterprise teams—no generic noise.
             </p>
-            <div className='flex flex-wrap gap-3'>
-              <Button asChild size='lg'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap'>
+              <Button asChild size='lg' className='min-h-11 w-full sm:w-auto'>
                 <Link to='/' search={search} hash='open-roles'>
                   Browse jobs
                   <ArrowRight className='ms-1 size-4' />
                 </Link>
               </Button>
-              <Button asChild variant='outline' size='lg'>
+              <Button
+                asChild
+                variant='outline'
+                size='lg'
+                className='min-h-11 w-full sm:w-auto'
+              >
                 <Link to='/' search={search} hash='linkedin-roles'>
                   LinkedIn roles
                 </Link>
@@ -139,6 +144,7 @@ function LandingPageContent() {
                 type='button'
                 variant='outline'
                 size='lg'
+                className='min-h-11 w-full sm:w-auto'
                 onClick={requireAuthForPostJob}
               >
                 I&apos;m hiring
@@ -198,7 +204,7 @@ function LandingPageContent() {
             }}
           />
 
-          <section className='grid gap-6 md:grid-cols-3'>
+          <section className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3'>
             <div className='rounded-xl border bg-card p-6'>
               <Briefcase className='mb-3 size-8 text-primary' />
               <h2 className='font-medium'>Relevant only</h2>

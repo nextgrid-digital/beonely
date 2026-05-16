@@ -21,7 +21,7 @@ export function SignUp() {
 
   return (
     <AuthLayout>
-      <Card className='max-w-sm gap-4'>
+      <Card className='w-full gap-4'>
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>{title}</CardTitle>
           <CardDescription>
@@ -61,7 +61,7 @@ export function SignUp() {
           <SignUpForm intent={intent} />
         </CardContent>
         <CardFooter>
-          <p className='px-8 text-center text-sm text-muted-foreground'>
+          <p className='px-2 text-center text-sm text-muted-foreground sm:px-8'>
             By creating an account, you agree to our{' '}
             <a
               href='/terms'

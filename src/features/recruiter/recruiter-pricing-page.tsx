@@ -36,31 +36,33 @@ export function RecruiterPricingPage() {
         </p>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Plan</TableHead>
-            <TableHead className='text-end'>Price</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {PLANS.map((p) => (
-            <TableRow key={p}>
-              <TableCell>
-                <div className='flex flex-wrap items-center gap-2'>
-                  <span className='font-medium'>{PLAN_LABEL[p]}</span>
-                  {p.startsWith('featured') && (
-                    <Badge variant='secondary'>Boost</Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className='text-end tabular-nums'>
-                {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[p])}
-              </TableCell>
+      <div className='overflow-x-auto'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Plan</TableHead>
+              <TableHead className='text-end'>Price</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {PLANS.map((p) => (
+              <TableRow key={p}>
+                <TableCell>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span className='font-medium'>{PLAN_LABEL[p]}</span>
+                    {p.startsWith('featured') && (
+                      <Badge variant='secondary'>Boost</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className='text-end tabular-nums'>
+                  {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[p])}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <div className='rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground'>
         <p>

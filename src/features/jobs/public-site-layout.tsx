@@ -1,8 +1,11 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Menu, X } from 'lucide-react'
 import { Logo } from '@/assets/logo'
 import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
 import { PublicSiteAuthProvider } from '@/features/jobs/public-site-auth-provider'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 
 /** Shared with profile resume builder and jobs detail sticky subheaders. */
 export const PUBLIC_SITE_BREADCRUMB_LIST =
@@ -44,6 +47,8 @@ export function PublicSiteAuthShell({ children }: { children: ReactNode }) {
 }
 
 export function PublicSiteHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   return (
     <>
       <a
@@ -62,9 +67,73 @@ export function PublicSiteHeader() {
           >
             <Logo className='h-7 w-auto max-w-[10rem]' />
           </Link>
-          <nav className='flex items-center gap-4 text-sm'>
+          <nav className='hidden items-center gap-4 text-sm sm:flex'>
             <PublicSiteAccountNav />
           </nav>
+          <div className='sm:hidden'>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon'
+                  className='size-11'
+                  aria-label='Open navigation menu'
+                >
+                  <Menu className='size-5' aria-hidden />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side='right'
+                className='flex w-[min(92vw,22rem)] flex-col gap-0 p-0'
+              >
+                <div className='flex items-center justify-between border-b border-border px-4 py-3'>
+                  <span className='text-sm font-medium'>Menu</span>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='size-11'
+                    onClick={() => setMobileOpen(false)}
+                    aria-label='Close navigation menu'
+                  >
+                    <X className='size-5' aria-hidden />
+                  </Button>
+                </div>
+                <div className='grid gap-2 px-4 py-4'>
+                  <Button
+                    asChild
+                    variant='ghost'
+                    className='h-11 justify-start px-3 text-sm'
+                  >
+                    <Link
+                      to='/'
+                      hash='open-roles'
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Open roles
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant='ghost'
+                    className='h-11 justify-start px-3 text-sm'
+                  >
+                    <Link
+                      to='/'
+                      hash='linkedin-roles'
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Roles from LinkedIn
+                    </Link>
+                  </Button>
+                </div>
+                <div className='border-t border-border px-4 py-4'>
+                  <PublicSiteAccountNav />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
     </>

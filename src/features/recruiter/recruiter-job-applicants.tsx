@@ -155,7 +155,9 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
         </Button>
       </div>
       <div>
-        <h1 className='text-2xl font-semibold tracking-tight'>Applicants</h1>
+        <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>
+          Applicants
+        </h1>
         <p className='text-sm text-muted-foreground'>
           {job.job_title} · {job.company_name}
         </p>
@@ -171,105 +173,182 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
         </p>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>LinkedIn</TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>Applied</TableHead>
-            <TableHead>Links</TableHead>
-            <TableHead>Profile</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {(appsQuery.data ?? []).map((app) => (
-            <TableRow key={app.id}>
-              <TableCell className='font-medium'>{app.candidate_name}</TableCell>
-              <TableCell className='max-w-[10rem] truncate text-sm'>
-                {app.candidate_email}
-              </TableCell>
-              <TableCell className='text-sm'>
-                {app.candidate_phone ?? '—'}
-              </TableCell>
-              <TableCell className='max-w-[8rem] truncate text-sm'>
-                {app.linkedin_url ? (
-                  <a
-                    href={app.linkedin_url}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary underline-offset-4 hover:underline'
-                  >
-                    Profile
-                  </a>
-                ) : (
-                  '—'
-                )}
-              </TableCell>
-              <TableCell className='text-sm'>
-                {app.current_company ?? '—'}
-              </TableCell>
-              <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>
-                {new Date(app.created_at).toLocaleString()}
-              </TableCell>
-              <TableCell className='text-sm'>
-                <div className='flex flex-col gap-1'>
-                  {app.resume_url ? (
+      <div className='space-y-3 md:hidden'>
+        {(appsQuery.data ?? []).map((app) => (
+          <div
+            key={app.id}
+            className='rounded-lg border border-border/80 bg-card p-4'
+          >
+            <div className='flex flex-wrap items-start justify-between gap-2'>
+              <div>
+                <p className='font-medium'>{app.candidate_name}</p>
+                <p className='text-xs text-muted-foreground'>
+                  {new Date(app.created_at).toLocaleString()}
+                </p>
+              </div>
+              <Button
+                type='button'
+                variant='link'
+                className='h-auto min-h-11 px-0 text-sm'
+                onClick={() => setProfileSheetApp(app)}
+              >
+                View profile
+              </Button>
+            </div>
+            <div className='mt-3 space-y-1 text-sm'>
+              <p>{app.candidate_email}</p>
+              <p>{app.candidate_phone ?? 'Phone not provided'}</p>
+              <p>{app.current_company ?? 'Current company not provided'}</p>
+              {app.linkedin_url ? (
+                <a
+                  href={app.linkedin_url}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-primary underline-offset-4 hover:underline'
+                >
+                  LinkedIn profile
+                </a>
+              ) : null}
+              {app.resume_url ? (
+                <a
+                  href={app.resume_url}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='block text-primary underline-offset-4 hover:underline'
+                >
+                  Resume / Portfolio
+                </a>
+              ) : app.resume_storage_path ? (
+                <span className='text-muted-foreground'>Resume uploaded</span>
+              ) : null}
+            </div>
+            <div className='mt-3'>
+              <Select
+                value={app.status}
+                disabled={updateStatus.isPending}
+                onValueChange={(v) =>
+                  updateStatus.mutate({
+                    id: app.id,
+                    status: v as ApplicationStatus,
+                  })
+                }
+              >
+                <SelectTrigger className='h-11 w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className='hidden overflow-x-auto md:block'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>LinkedIn</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Applied</TableHead>
+              <TableHead>Links</TableHead>
+              <TableHead>Profile</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(appsQuery.data ?? []).map((app) => (
+              <TableRow key={app.id}>
+                <TableCell className='font-medium'>{app.candidate_name}</TableCell>
+                <TableCell className='max-w-[10rem] truncate text-sm'>
+                  {app.candidate_email}
+                </TableCell>
+                <TableCell className='text-sm'>
+                  {app.candidate_phone ?? '—'}
+                </TableCell>
+                <TableCell className='max-w-[8rem] truncate text-sm'>
+                  {app.linkedin_url ? (
                     <a
-                      href={app.resume_url}
+                      href={app.linkedin_url}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
                     >
-                      Portfolio
+                      Profile
                     </a>
-                  ) : null}
-                  {app.resume_storage_path ? (
-                    <span className='text-muted-foreground'>Resume uploaded</span>
-                  ) : null}
-                  {!app.resume_url && !app.resume_storage_path ? '—' : null}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button
-                  type='button'
-                  variant='link'
-                  className='h-auto px-0 text-sm'
-                  onClick={() => setProfileSheetApp(app)}
-                >
-                  View profile
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Select
-                  value={app.status}
-                  disabled={updateStatus.isPending}
-                  onValueChange={(v) =>
-                    updateStatus.mutate({
-                      id: app.id,
-                      status: v as ApplicationStatus,
-                    })
-                  }
-                >
-                  <SelectTrigger className='h-8 w-[9.5rem]'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
+                <TableCell className='text-sm'>
+                  {app.current_company ?? '—'}
+                </TableCell>
+                <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>
+                  {new Date(app.created_at).toLocaleString()}
+                </TableCell>
+                <TableCell className='text-sm'>
+                  <div className='flex flex-col gap-1'>
+                    {app.resume_url ? (
+                      <a
+                        href={app.resume_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='text-primary underline-offset-4 hover:underline'
+                      >
+                        Portfolio
+                      </a>
+                    ) : null}
+                    {app.resume_storage_path ? (
+                      <span className='text-muted-foreground'>Resume uploaded</span>
+                    ) : null}
+                    {!app.resume_url && !app.resume_storage_path ? '—' : null}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    type='button'
+                    variant='link'
+                    className='h-auto px-0 text-sm'
+                    onClick={() => setProfileSheetApp(app)}
+                  >
+                    View profile
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={app.status}
+                    disabled={updateStatus.isPending}
+                    onValueChange={(v) =>
+                      updateStatus.mutate({
+                        id: app.id,
+                        status: v as ApplicationStatus,
+                      })
+                    }
+                  >
+                    <SelectTrigger className='h-8 w-[9.5rem]'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {!appsQuery.isLoading && (appsQuery.data ?? []).length === 0 && (
         <p className='text-sm text-muted-foreground'>No applicants yet.</p>

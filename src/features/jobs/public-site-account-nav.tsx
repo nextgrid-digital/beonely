@@ -89,9 +89,14 @@ export function PublicSiteAccountNav() {
 
     return (
       <>
-        <div className='flex items-center gap-2'>
+        <div className='flex w-full items-center justify-start gap-2 sm:w-auto sm:justify-end'>
           {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
-            <Button size='sm' type='button' onClick={requireAuthForPostJob}>
+            <Button
+              size='sm'
+              type='button'
+              className='min-h-11 sm:min-h-9'
+              onClick={requireAuthForPostJob}
+            >
               Post a Job
             </Button>
           )}
@@ -101,7 +106,7 @@ export function PublicSiteAccountNav() {
                 type='button'
                 variant='outline'
                 size='sm'
-                className='w-fit gap-2 rounded-full pr-3 !pl-0'
+                className='min-h-11 w-fit gap-2 rounded-full pr-3 !pl-0 sm:min-h-9'
                 aria-label='User menu'
               >
                 <Avatar className='h-7 w-7'>
@@ -163,7 +168,7 @@ export function PublicSiteAccountNav() {
   }
 
   return (
-    <div className='flex items-center justify-end gap-x-3 text-sm'>
+    <div className='flex w-full items-center justify-start gap-x-3 text-sm sm:w-auto sm:justify-end'>
       <button
         type='button'
         className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
@@ -171,7 +176,12 @@ export function PublicSiteAccountNav() {
       >
         Sign in
       </button>
-      <Button size='sm' type='button' onClick={requireAuthForPostJob}>
+      <Button
+        size='sm'
+        type='button'
+        className='min-h-11 sm:min-h-9'
+        onClick={requireAuthForPostJob}
+      >
         Post a Job
       </Button>
     </div>

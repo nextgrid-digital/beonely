@@ -33,15 +33,14 @@ export function SignIn() {
 
   return (
     <AuthLayout>
-      <Card className='max-w-sm gap-4'>
+      <Card className='w-full gap-4'>
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>{title}</CardTitle>
           <CardDescription>
             {intent === undefined ? (
               <>
-                Enter your email and password below to log into{' '}
-                <br className='max-sm:hidden' />
-                your account. Don&apos;t have an account?{' '}
+                Enter your email and password below to log into your account.
+                Don&apos;t have an account?{' '}
                 <Link
                   to='/sign-up'
                   className='text-nowrap underline underline-offset-4 hover:text-primary'
@@ -75,7 +74,7 @@ export function SignIn() {
           <UserAuthForm redirectTo={redirect} />
         </CardContent>
         <CardFooter>
-          <p className='px-8 text-center text-sm text-muted-foreground'>
+          <p className='px-2 text-center text-sm text-muted-foreground sm:px-8'>
             By clicking sign in, you agree to our{' '}
             <a
               href='/terms'

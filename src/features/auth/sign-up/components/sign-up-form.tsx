@@ -347,7 +347,7 @@ export function SignUpForm({
             />
           </div>
         ) : null}
-        <Button className='mt-2' disabled={isLoading}>
+        <Button className='mt-2 min-h-11 w-full sm:min-h-10' disabled={isLoading}>
           {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}
           Create Account
         </Button>

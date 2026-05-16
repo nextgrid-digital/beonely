@@ -64,8 +64,8 @@ function JobDetailApplySection({ job }: { job: JobRow }) {
 
   if (user && loading) {
     return (
-      <div className='flex shrink-0 flex-col gap-2 sm:flex-row'>
-        <Skeleton className='h-10 w-36' aria-hidden />
+      <div className='flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row'>
+        <Skeleton className='h-11 w-full sm:h-10 sm:w-36' aria-hidden />
       </div>
     )
   }
@@ -77,9 +77,14 @@ function JobDetailApplySection({ job }: { job: JobRow }) {
       profile.recruiter_row_id === job.recruiter_id
 
     return (
-      <div className='flex max-w-[14rem] shrink-0 flex-col items-end gap-2 text-right'>
+      <div className='flex w-full shrink-0 flex-col gap-2 text-left sm:w-auto sm:max-w-[14rem] sm:items-end sm:text-right'>
         {ownsListing ? (
-          <Button asChild variant='outline' size='default'>
+          <Button
+            asChild
+            variant='outline'
+            size='default'
+            className='min-h-11 w-full sm:min-h-9 sm:w-auto'
+          >
             <Link
               to='/recruiter/jobs/$jobId/applicants'
               params={{ jobId: job.id }}
@@ -147,8 +152,12 @@ function JobDetailPage() {
             breadcrumb={<JobDetailBreadcrumb currentLabel='Job not found' />}
           />
           <div className='mx-auto max-w-3xl pt-6 pb-16'>
-            <h1 className='text-xl font-semibold'>Job not found</h1>
-            <Button asChild className='mt-4' variant='outline'>
+            <h1 className='text-lg font-semibold sm:text-xl'>Job not found</h1>
+            <Button
+              asChild
+              className='mt-4 min-h-11 w-full sm:min-h-9 sm:w-auto'
+              variant='outline'
+            >
               <Link to='/'>Back to jobs</Link>
             </Button>
           </div>
@@ -196,8 +205,8 @@ function JobDetailPage() {
               ) : null
             }
           />
-          <div className='mx-auto max-w-3xl space-y-8 pt-6 pb-16'>
-            <div className='flex flex-wrap items-start justify-between gap-4'>
+          <div className='mx-auto max-w-3xl space-y-6 pt-4 pb-12 sm:space-y-8 sm:pt-6 sm:pb-16'>
+            <div className='flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:justify-between'>
               <div className='flex min-w-0 flex-1 gap-4'>
                 <CompanyLogoAvatar
                   companyName={job.company_name}
@@ -206,7 +215,7 @@ function JobDetailPage() {
                 />
                 <div className='min-w-0 flex-1'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <h1 className='text-3xl font-semibold tracking-tight'>
+                  <h1 className='text-2xl font-semibold tracking-tight sm:text-3xl'>
                     {job.job_title}
                   </h1>
                   {job.featured && <Badge>Featured</Badge>}
@@ -216,7 +225,7 @@ function JobDetailPage() {
                 </Badge>
               )}
                 </div>
-                <p className='mt-2 text-lg text-muted-foreground'>
+                <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
                   {job.company_name}
                 </p>
                 <div className='mt-3 flex flex-wrap gap-2'>
@@ -232,7 +241,7 @@ function JobDetailPage() {
                 </div>
                 </div>
               </div>
-              <div className='flex shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:flex-row'>
+              <div className='flex w-full shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:w-auto sm:flex-row'>
                 <JobDetailApplySection job={job} />
               </div>
             </div>
