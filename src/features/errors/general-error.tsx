@@ -14,14 +14,18 @@ export function GeneralError({
   const navigate = useNavigate()
   const { history } = useRouter()
   const { profile, signOut } = useAuth()
-  const recruiterSession =
-    profile?.role === 'recruiter' || profile?.role === 'admin'
   const homeTarget =
     profile?.role === 'admin'
       ? '/admin'
-      : recruiterSession
+      : profile?.role === 'recruiter'
         ? '/recruiter'
         : '/'
+  const homeLabel =
+    profile?.role === 'admin'
+      ? 'Back to Admin'
+      : profile?.role === 'recruiter'
+        ? 'Back to Recruiter Home'
+        : 'Back to Home'
 
   const signInAgain = async () => {
     try {
@@ -48,7 +52,7 @@ export function GeneralError({
               Go Back
             </Button>
             <Button onClick={() => navigate({ to: homeTarget })}>
-              {recruiterSession ? 'Back to Recruiter Home' : 'Back to Home'}
+              {homeLabel}
             </Button>
             <Button variant='secondary' onClick={() => void signInAgain()}>
               Sign in again

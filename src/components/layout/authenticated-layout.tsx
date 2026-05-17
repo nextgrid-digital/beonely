@@ -1,10 +1,7 @@
 import { Outlet, useRouterState } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { SearchProvider } from '@/context/search-provider'
-import {
-  PublicSiteAuthShell,
-  PublicSiteHeader,
-} from '@/features/jobs/public-site-layout'
+import { PublicSiteHeader } from '@/features/jobs/public-site-layout'
 import { AdminAppShell } from '@/features/admin/admin-app-shell'
 import { StaffWorkspaceBanner } from '@/features/admin/staff-workspace-banner'
 
@@ -20,34 +17,30 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   if (isAdminRoute) {
     return (
       <SearchProvider>
-        <PublicSiteAuthShell>
-          <AdminAppShell />
-        </PublicSiteAuthShell>
+        <AdminAppShell />
       </SearchProvider>
     )
   }
 
   return (
     <SearchProvider>
-      <PublicSiteAuthShell>
+      <div
+        className={cn(
+          'flex min-h-svh w-full flex-col bg-background antialiased',
+          '@container/content',
+          'has-data-[layout=fixed]:h-svh'
+        )}
+      >
+        <PublicSiteHeader />
+        <StaffWorkspaceBanner />
         <div
-          className={cn(
-            'flex min-h-svh w-full flex-col bg-background antialiased',
-            '@container/content',
-            'has-data-[layout=fixed]:h-svh'
-          )}
+          id='main-content'
+          className='flex min-h-0 flex-1 flex-col pt-14'
+          tabIndex={-1}
         >
-          <PublicSiteHeader />
-          <StaffWorkspaceBanner />
-          <div
-            id='main-content'
-            className='flex min-h-0 flex-1 flex-col pt-14'
-            tabIndex={-1}
-          >
-            {children ?? <Outlet />}
-          </div>
+          {children ?? <Outlet />}
         </div>
-      </PublicSiteAuthShell>
+      </div>
     </SearchProvider>
   )
 }

@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button'
 import { PublicJobCard } from '@/features/jobs/public-job-card'
 import { PublicJobListSkeleton } from '@/features/jobs/public-job-list-skeleton'
 import {
-  PublicSiteAuthShell,
   PublicSiteFooter,
   PublicSiteHeader,
   PUBLIC_SITE_MAIN_COLUMN,
@@ -77,11 +76,7 @@ function publishedJobFiltersFromHomeSearch(
 }
 
 function LandingPage() {
-  return (
-    <PublicSiteAuthShell>
-      <LandingPageContent />
-    </PublicSiteAuthShell>
-  )
+  return <LandingPageContent />
 }
 
 function LandingPageContent() {

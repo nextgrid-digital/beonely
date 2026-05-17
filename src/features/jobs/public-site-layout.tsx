@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/assets/logo'
 import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
-import { PublicSiteAuthProvider } from '@/features/jobs/public-site-auth-provider'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { FooterNewsletterSubscribe } from '@/features/jobs/footer-newsletter-subscribe'
@@ -42,10 +41,6 @@ export const PUBLIC_SITE_MAX = 'max-w-5xl'
 
 /** Same outer column as landing `#main-content`: centered, full width up to max, horizontal padding. */
 export const PUBLIC_SITE_MAIN_COLUMN = `mx-auto w-full ${PUBLIC_SITE_MAX} px-4`
-
-export function PublicSiteAuthShell({ children }: { children: ReactNode }) {
-  return <PublicSiteAuthProvider>{children}</PublicSiteAuthProvider>
-}
 
 export function PublicSiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)

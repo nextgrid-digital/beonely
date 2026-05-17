@@ -37,6 +37,24 @@ describe('GeneralError', () => {
     })
   })
 
+  it('routes admin users back to admin home', async () => {
+    useAuthMock.mockReturnValue({
+      profile: {
+        id: 'p1',
+        email: 'admin@beonely.com',
+        role: 'admin',
+        created_at: '',
+        updated_at: '',
+        recruiter_row_id: 'r1',
+      },
+      signOut,
+    })
+
+    const screen = await render(<GeneralError />)
+    await userEvent.click(screen.getByRole('button', { name: /Back to Admin/i }))
+    expect(navigate).toHaveBeenCalledWith({ to: '/admin' })
+  })
+
   it('routes recruiter users back to recruiter home', async () => {
     useAuthMock.mockReturnValue({
       profile: {

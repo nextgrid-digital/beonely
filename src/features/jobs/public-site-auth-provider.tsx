@@ -39,10 +39,27 @@ const PublicSiteAuthContext = createContext<PublicSiteAuthContextValue | null>(
   null
 )
 
+const publicSiteAuthFallback: PublicSiteAuthContextValue = {
+  requireAuthForPostJob: () => {
+    const dest = '/recruiter/jobs/new'
+    window.location.assign(
+      `/sign-in?redirect=${encodeURIComponent(dest)}`
+    )
+  },
+  openCandidateAuthModal: () => {
+    window.location.assign('/sign-in')
+  },
+}
+
 export function usePublicSiteAuth(): PublicSiteAuthContextValue {
   const ctx = useContext(PublicSiteAuthContext)
   if (!ctx) {
-    throw new Error('usePublicSiteAuth must be used within PublicSiteAuthProvider')
+    if (import.meta.env.DEV) {
+      throw new Error(
+        'usePublicSiteAuth must be used within PublicSiteAuthProvider'
+      )
+    }
+    return publicSiteAuthFallback
   }
   return ctx
 }
