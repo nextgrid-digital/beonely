@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { requireStaffAdmin } from '../_lib/admin-auth.js'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
-import { sendCampaignBatch } from '../_lib/campaign-send.js'
-import { getAdminAllowlistFromServerEnv } from '../_lib/admin-access.js'
+import { requireStaffAdmin } from '../../_lib/admin-auth.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { sendCampaignBatch } from '../../_lib/campaign-send.js'
+import { getAdminAllowlistFromServerEnv } from '../../_lib/admin-access.js'
 
 const bodySchema = z.object({
   campaign_id: z.string().uuid(),
@@ -12,7 +12,7 @@ const bodySchema = z.object({
   test_send: z.boolean().optional(),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }

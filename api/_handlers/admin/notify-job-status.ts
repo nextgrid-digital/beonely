@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { requireStaffAdmin } from '../_lib/admin-auth.js'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
-import { dispatchTransactionalEmail } from '../_lib/dispatch-transactional-email.js'
+import { requireStaffAdmin } from '../../_lib/admin-auth.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { dispatchTransactionalEmail } from '../../_lib/dispatch-transactional-email.js'
 
 const bodySchema = z.object({
   job_id: z.string().uuid(),
@@ -11,7 +11,7 @@ const bodySchema = z.object({
   reason: z.string().optional().nullable(),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }

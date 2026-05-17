@@ -20,22 +20,12 @@
       "memory": 1024,
       "maxDuration": 60
     },
-    "api/admin/notify-job-status.ts": { "maxDuration": 60 },
-    "api/admin/campaigns.ts": { "maxDuration": 60 },
-    "api/admin/campaign-send.ts": { "maxDuration": 60 },
-    "api/admin/campaign-stats.ts": { "maxDuration": 60 },
-    "api/admin/email-previews.ts": { "maxDuration": 30 },
-    "api/admin/email/automations.ts": { "maxDuration": 30 },
-    "api/admin/email/test-send.ts": { "maxDuration": 60 },
-    "api/admin/email/analytics.ts": { "maxDuration": 30 },
-    "api/admin/email/campaign-recipients.ts": { "maxDuration": 30 },
-    "api/email/dispatch.ts": { "maxDuration": 60 },
     "api/notify-application.ts": { "maxDuration": 60 },
-    "api/subscribe.ts": { "maxDuration": 30 },
-    "api/unsubscribe.ts": { "maxDuration": 30 },
-    "api/marketing-consent.ts": { "maxDuration": 30 },
+    "api/marketing.ts": { "maxDuration": 30 },
     "api/resend-webhook.ts": { "maxDuration": 30 },
-    "api/cron/weekly-digest.ts": { "maxDuration": 60 }
+    "api/email/dispatch.ts": { "maxDuration": 60 },
+    "api/cron/weekly-digest.ts": { "maxDuration": 60 },
+    "api/admin/[[...segments]].ts": { "maxDuration": 60 }
   },
   "crons": [
     {
@@ -44,6 +34,18 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/subscribe",
+      "destination": "/api/marketing?route=subscribe"
+    },
+    {
+      "source": "/api/unsubscribe",
+      "destination": "/api/marketing?route=unsubscribe"
+    },
+    {
+      "source": "/api/marketing-consent",
+      "destination": "/api/marketing?route=marketing-consent"
+    },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

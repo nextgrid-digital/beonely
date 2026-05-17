@@ -1,15 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
-import { syncProfileMarketingOptIn } from './_lib/campaign-send.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { getUserFromBearer, tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { syncProfileMarketingOptIn } from '../../_lib/campaign-send.js'
 
 const bodySchema = z.object({
   marketing_opt_in: z.boolean(),
   audience: z.enum(['candidate', 'recruiter']),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }

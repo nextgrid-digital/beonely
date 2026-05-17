@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { tryGetServiceSupabase } from './_lib/supabase.js'
-import { unsubscribeByToken } from './_lib/marketing-consent.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { unsubscribeByToken } from '../../_lib/marketing-consent.js'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   const token =
     typeof req.query.token === 'string'
       ? req.query.token

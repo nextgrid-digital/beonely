@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { rateLimitOrThrow } from '../_lib/rate-limit.js'
-import { getUserFromBearer, tryGetServiceSupabase } from '../_lib/supabase.js'
-import { dispatchTransactionalEmail } from '../_lib/dispatch-transactional-email.js'
+import { readJsonObjectBody } from './_lib/request-json-body.js'
+import { rateLimitOrThrow } from './_lib/rate-limit.js'
+import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
+import { dispatchTransactionalEmail } from './_lib/dispatch-transactional-email.js'
 
 const bodySchema = z.object({
   job_id: z.string().uuid(),

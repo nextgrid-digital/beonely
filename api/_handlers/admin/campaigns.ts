@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { requireStaffAdmin } from '../_lib/admin-auth.js'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
+import { requireStaffAdmin } from '../../_lib/admin-auth.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
 const createSchema = z.object({
   subject: z.string().min(1),
@@ -22,7 +22,7 @@ const updateSchema = createSchema.partial().extend({
   id: z.string().uuid(),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   const admin = await requireStaffAdmin(req, res)
   if (!admin) return
 

@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireStaffAdmin } from '../_lib/admin-auth.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
-import { resolveCampaignAudience } from '../_lib/resolve-campaign-audience.js'
-import type { CampaignAudience } from '../_lib/resolve-campaign-audience.js'
+import { requireStaffAdmin } from '../../_lib/admin-auth.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { resolveCampaignAudience } from '../../_lib/resolve-campaign-audience.js'
+import type { CampaignAudience } from '../../_lib/resolve-campaign-audience.js'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }

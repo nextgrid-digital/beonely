@@ -20,7 +20,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   payment_received: 'Payment received',
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   const admin = await requireStaffAdmin(req, res)
   if (!admin) return
 

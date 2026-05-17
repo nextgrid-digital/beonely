@@ -1,14 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { readJsonObjectBody } from '../_lib/request-json-body.js'
-import { rateLimitOrThrow } from '../_lib/rate-limit.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
 const bodySchema = z.object({
   email: z.string().email(),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }

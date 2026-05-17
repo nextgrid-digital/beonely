@@ -26,7 +26,7 @@ const bodySchema = z.object({
   payload: z.record(z.string(), z.unknown()).optional(),
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }
