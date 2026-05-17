@@ -30,43 +30,39 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install
-      - name: Scrape LinkedIn jobs JSON
+      - name: Run daily scrape + ingest + stale cleanup
         run: |
           set -euo pipefail
           export SCRAPE_LINKEDIN_SUMMARY_FILE="$RUNNER_TEMP/scrape-summary.json"
-          pnpm scrape:linkedin 2>&1 | tee scrape.log
-          node -e '
-            const fs = require("node:fs");
-            const summaryPath = process.env.SCRAPE_LINKEDIN_SUMMARY_FILE;
-            if (!summaryPath || !fs.existsSync(summaryPath)) {
-              console.error("SCRAPE summary file not found");
-              process.exit(1);
-            }
-            const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
-            const envPath = process.env.GITHUB_ENV;
-            fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.jobsWritten ?? 0}\n`);
-            fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.filteredOut ?? 0}\n`);
-            fs.appendFileSync(envPath, `SCRAPE_DEDUPED=${summary.deduped ?? 0}\n`);
-            fs.appendFileSync(envPath, `SCRAPE_FAILED=${summary.failed ?? 0}\n`);
-          '
-      - name: Ingest LinkedIn jobs into Supabase
-        run: |
-          set -euo pipefail
           export INGEST_SUMMARY_FILE="$RUNNER_TEMP/ingest-summary.json"
-          pnpm ingest:jobs 2>&1 | tee ingest.log
+          export JOBS_SYNC_SUMMARY_FILE="$RUNNER_TEMP/jobs-sync-summary.json"
+          pnpm sync:jobs 2>&1 | tee jobs-sync.log
           node -e '
             const fs = require("node:fs");
-            const summaryPath = process.env.INGEST_SUMMARY_FILE;
+            const summaryPath = process.env.JOBS_SYNC_SUMMARY_FILE;
             if (!summaryPath || !fs.existsSync(summaryPath)) {
-              console.error("INGEST summary file not found");
+              console.error("JOBS sync summary file not found");
               process.exit(1);
             }
             const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
             const envPath = process.env.GITHUB_ENV;
-            fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.inserted ?? 0}\n`);
-            fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.updated ?? 0}\n`);
-            fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.skipped ?? 0}\n`);
-            fs.appendFileSync(envPath, `INGEST_FAILED=${summary.failed ?? 0}\n`);
+            fs.appendFileSync(envPath, `SYNC_STATUS=${summary.status ?? "FAILED"}\n`);
+            fs.appendFileSync(envPath, `SCRAPED_COUNT=${summary.scrape?.jobsWritten ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FILTERED=${summary.scrape?.filteredOut ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_DEDUPED=${summary.scrape?.deduped ?? 0}\n`);
+            fs.appendFileSync(envPath, `SCRAPE_FAILED=${summary.scrape?.failed ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_INSERTED=${summary.ingest?.inserted ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_UPDATED=${summary.ingest?.updated ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.ingest?.skipped ?? 0}\n`);
+            fs.appendFileSync(envPath, `INGEST_FAILED=${summary.ingest?.failed ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_CANDIDATES=${summary.stale?.candidates ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_CHECKED=${summary.stale?.checked ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_EXPIRED=${summary.stale?.expired ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_SKIPPED=${summary.stale?.skipped ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_CHECK_ERRORS=${summary.stale?.checkErrors ?? 0}\n`);
+            fs.appendFileSync(envPath, `STALE_UPDATE_ERRORS=${summary.stale?.updateErrors ?? 0}\n`);
+            const errorCount = Array.isArray(summary.errors) ? summary.errors.length : 0;
+            fs.appendFileSync(envPath, `SYNC_ERROR_COUNT=${errorCount}\n`);
           '
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -76,7 +72,8 @@ jobs:
         if: always()
         run: |
           {
-            echo "## LinkedIn scrape + ingest summary"
+            echo "## LinkedIn daily sync summary"
+            echo "- Status: ${SYNC_STATUS:-FAILED}"
             echo "- Scraped valid jobs: ${SCRAPED_COUNT:-0}"
             echo "- Scrape filtered out: ${SCRAPE_FILTERED:-0}"
             echo "- Scrape deduped: ${SCRAPE_DEDUPED:-0}"
@@ -85,4 +82,11 @@ jobs:
             echo "- Ingest updated: ${INGEST_UPDATED:-0}"
             echo "- Ingest skipped duplicates: ${INGEST_SKIPPED:-0}"
             echo "- Ingest failed: ${INGEST_FAILED:-0}"
+            echo "- Stale candidates: ${STALE_CANDIDATES:-0}"
+            echo "- Stale checked: ${STALE_CHECKED:-0}"
+            echo "- Stale expired (removed from feed): ${STALE_EXPIRED:-0}"
+            echo "- Stale skipped (no close signal): ${STALE_SKIPPED:-0}"
+            echo "- Stale check errors: ${STALE_CHECK_ERRORS:-0}"
+            echo "- Stale update errors: ${STALE_UPDATE_ERRORS:-0}"
+            echo "- Sync errors: ${SYNC_ERROR_COUNT:-0}"
           } >> "$GITHUB_STEP_SUMMARY"

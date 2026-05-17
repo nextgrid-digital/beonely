@@ -27,7 +27,8 @@
     "test:responsive": "playwright test -c playwright.responsive.config.ts",
     "test:browser:install": "playwright install chromium --with-deps",
     "scrape:linkedin": "tsx scripts/scrape-linkedin-jobs.ts",
-    "ingest:jobs": "tsx scripts/ingest-jobs.ts"
+    "ingest:jobs": "tsx scripts/ingest-jobs.ts",
+    "sync:jobs": "tsx scripts/sync-jobs-daily.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
