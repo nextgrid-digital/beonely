@@ -62,12 +62,14 @@ import { Route as AuthenticatedAdminCampaignsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedRecruiterJobsNewRouteImport } from './routes/_authenticated/recruiter/jobs/new'
 import { Route as AuthenticatedAdminSettingsEmailRouteImport } from './routes/_authenticated/admin/settings/email'
 import { Route as AuthenticatedAdminEmailTestRouteImport } from './routes/_authenticated/admin/email/test'
-import { Route as AuthenticatedAdminEmailTemplatesRouteImport } from './routes/_authenticated/admin/email/templates'
 import { Route as AuthenticatedAdminEmailAutomationsRouteImport } from './routes/_authenticated/admin/email/automations'
 import { Route as AuthenticatedAdminEmailAnalyticsRouteImport } from './routes/_authenticated/admin/email/analytics'
+import { Route as AuthenticatedAdminEmailTemplatesIndexRouteImport } from './routes/_authenticated/admin/email/templates/index'
 import { Route as AuthenticatedAdminEmailCampaignsIndexRouteImport } from './routes/_authenticated/admin/email/campaigns/index'
 import { Route as AuthenticatedRecruiterJobsJobIdEditRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/edit'
 import { Route as AuthenticatedRecruiterJobsJobIdApplicantsRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/applicants'
+import { Route as AuthenticatedAdminEmailTemplatesTemplateIdRouteImport } from './routes/_authenticated/admin/email/templates/$templateId'
+import { Route as AuthenticatedAdminEmailCampaignsNewRouteImport } from './routes/_authenticated/admin/email/campaigns/new'
 import { Route as AuthenticatedAdminEmailCampaignsCampaignIdRouteImport } from './routes/_authenticated/admin/email/campaigns/$campaignId'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
@@ -359,12 +361,6 @@ const AuthenticatedAdminEmailTestRoute =
     path: '/email/test',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminEmailTemplatesRoute =
-  AuthenticatedAdminEmailTemplatesRouteImport.update({
-    id: '/email/templates',
-    path: '/email/templates',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
 const AuthenticatedAdminEmailAutomationsRoute =
   AuthenticatedAdminEmailAutomationsRouteImport.update({
     id: '/email/automations',
@@ -375,6 +371,12 @@ const AuthenticatedAdminEmailAnalyticsRoute =
   AuthenticatedAdminEmailAnalyticsRouteImport.update({
     id: '/email/analytics',
     path: '/email/analytics',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminEmailTemplatesIndexRoute =
+  AuthenticatedAdminEmailTemplatesIndexRouteImport.update({
+    id: '/email/templates/',
+    path: '/email/templates/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminEmailCampaignsIndexRoute =
@@ -394,6 +396,18 @@ const AuthenticatedRecruiterJobsJobIdApplicantsRoute =
     id: '/jobs/$jobId/applicants',
     path: '/jobs/$jobId/applicants',
     getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+  } as any)
+const AuthenticatedAdminEmailTemplatesTemplateIdRoute =
+  AuthenticatedAdminEmailTemplatesTemplateIdRouteImport.update({
+    id: '/email/templates/$templateId',
+    path: '/email/templates/$templateId',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminEmailCampaignsNewRoute =
+  AuthenticatedAdminEmailCampaignsNewRouteImport.update({
+    id: '/email/campaigns/new',
+    path: '/email/campaigns/new',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminEmailCampaignsCampaignIdRoute =
   AuthenticatedAdminEmailCampaignsCampaignIdRouteImport.update({
@@ -447,7 +461,6 @@ export interface FileRoutesByFullPath {
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
-  '/admin/email/templates': typeof AuthenticatedAdminEmailTemplatesRoute
   '/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
   '/admin/settings/email': typeof AuthenticatedAdminSettingsEmailRoute
   '/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
@@ -459,9 +472,12 @@ export interface FileRoutesByFullPath {
   '/admin/revenue/': typeof AuthenticatedAdminRevenueIndexRoute
   '/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
   '/admin/email/campaigns/$campaignId': typeof AuthenticatedAdminEmailCampaignsCampaignIdRoute
+  '/admin/email/campaigns/new': typeof AuthenticatedAdminEmailCampaignsNewRoute
+  '/admin/email/templates/$templateId': typeof AuthenticatedAdminEmailTemplatesTemplateIdRoute
   '/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
   '/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
   '/admin/email/campaigns/': typeof AuthenticatedAdminEmailCampaignsIndexRoute
+  '/admin/email/templates/': typeof AuthenticatedAdminEmailTemplatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -503,7 +519,6 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
-  '/admin/email/templates': typeof AuthenticatedAdminEmailTemplatesRoute
   '/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
   '/admin/settings/email': typeof AuthenticatedAdminSettingsEmailRoute
   '/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
@@ -515,9 +530,12 @@ export interface FileRoutesByTo {
   '/admin/revenue': typeof AuthenticatedAdminRevenueIndexRoute
   '/recruiter/pricing': typeof AuthenticatedRecruiterPricingIndexRoute
   '/admin/email/campaigns/$campaignId': typeof AuthenticatedAdminEmailCampaignsCampaignIdRoute
+  '/admin/email/campaigns/new': typeof AuthenticatedAdminEmailCampaignsNewRoute
+  '/admin/email/templates/$templateId': typeof AuthenticatedAdminEmailTemplatesTemplateIdRoute
   '/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
   '/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
   '/admin/email/campaigns': typeof AuthenticatedAdminEmailCampaignsIndexRoute
+  '/admin/email/templates': typeof AuthenticatedAdminEmailTemplatesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -566,7 +584,6 @@ export interface FileRoutesById {
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/_authenticated/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
-  '/_authenticated/admin/email/templates': typeof AuthenticatedAdminEmailTemplatesRoute
   '/_authenticated/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
   '/_authenticated/admin/settings/email': typeof AuthenticatedAdminSettingsEmailRoute
   '/_authenticated/recruiter/jobs/new': typeof AuthenticatedRecruiterJobsNewRoute
@@ -578,9 +595,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/revenue/': typeof AuthenticatedAdminRevenueIndexRoute
   '/_authenticated/recruiter/pricing/': typeof AuthenticatedRecruiterPricingIndexRoute
   '/_authenticated/admin/email/campaigns/$campaignId': typeof AuthenticatedAdminEmailCampaignsCampaignIdRoute
+  '/_authenticated/admin/email/campaigns/new': typeof AuthenticatedAdminEmailCampaignsNewRoute
+  '/_authenticated/admin/email/templates/$templateId': typeof AuthenticatedAdminEmailTemplatesTemplateIdRoute
   '/_authenticated/recruiter/jobs/$jobId/applicants': typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
   '/_authenticated/recruiter/jobs/$jobId/edit': typeof AuthenticatedRecruiterJobsJobIdEditRoute
   '/_authenticated/admin/email/campaigns/': typeof AuthenticatedAdminEmailCampaignsIndexRoute
+  '/_authenticated/admin/email/templates/': typeof AuthenticatedAdminEmailTemplatesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -629,7 +649,6 @@ export interface FileRouteTypes {
     | '/users/'
     | '/admin/email/analytics'
     | '/admin/email/automations'
-    | '/admin/email/templates'
     | '/admin/email/test'
     | '/admin/settings/email'
     | '/recruiter/jobs/new'
@@ -641,9 +660,12 @@ export interface FileRouteTypes {
     | '/admin/revenue/'
     | '/recruiter/pricing/'
     | '/admin/email/campaigns/$campaignId'
+    | '/admin/email/campaigns/new'
+    | '/admin/email/templates/$templateId'
     | '/recruiter/jobs/$jobId/applicants'
     | '/recruiter/jobs/$jobId/edit'
     | '/admin/email/campaigns/'
+    | '/admin/email/templates/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -685,7 +707,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/admin/email/analytics'
     | '/admin/email/automations'
-    | '/admin/email/templates'
     | '/admin/email/test'
     | '/admin/settings/email'
     | '/recruiter/jobs/new'
@@ -697,9 +718,12 @@ export interface FileRouteTypes {
     | '/admin/revenue'
     | '/recruiter/pricing'
     | '/admin/email/campaigns/$campaignId'
+    | '/admin/email/campaigns/new'
+    | '/admin/email/templates/$templateId'
     | '/recruiter/jobs/$jobId/applicants'
     | '/recruiter/jobs/$jobId/edit'
     | '/admin/email/campaigns'
+    | '/admin/email/templates'
   id:
     | '__root__'
     | '/'
@@ -747,7 +771,6 @@ export interface FileRouteTypes {
     | '/_authenticated/users/'
     | '/_authenticated/admin/email/analytics'
     | '/_authenticated/admin/email/automations'
-    | '/_authenticated/admin/email/templates'
     | '/_authenticated/admin/email/test'
     | '/_authenticated/admin/settings/email'
     | '/_authenticated/recruiter/jobs/new'
@@ -759,9 +782,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/revenue/'
     | '/_authenticated/recruiter/pricing/'
     | '/_authenticated/admin/email/campaigns/$campaignId'
+    | '/_authenticated/admin/email/campaigns/new'
+    | '/_authenticated/admin/email/templates/$templateId'
     | '/_authenticated/recruiter/jobs/$jobId/applicants'
     | '/_authenticated/recruiter/jobs/$jobId/edit'
     | '/_authenticated/admin/email/campaigns/'
+    | '/_authenticated/admin/email/templates/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1160,13 +1186,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailTestRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/email/templates': {
-      id: '/_authenticated/admin/email/templates'
-      path: '/email/templates'
-      fullPath: '/admin/email/templates'
-      preLoaderRoute: typeof AuthenticatedAdminEmailTemplatesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
     '/_authenticated/admin/email/automations': {
       id: '/_authenticated/admin/email/automations'
       path: '/email/automations'
@@ -1179,6 +1198,13 @@ declare module '@tanstack/react-router' {
       path: '/email/analytics'
       fullPath: '/admin/email/analytics'
       preLoaderRoute: typeof AuthenticatedAdminEmailAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/email/templates/': {
+      id: '/_authenticated/admin/email/templates/'
+      path: '/email/templates'
+      fullPath: '/admin/email/templates/'
+      preLoaderRoute: typeof AuthenticatedAdminEmailTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/email/campaigns/': {
@@ -1202,6 +1228,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdApplicantsRouteImport
       parentRoute: typeof AuthenticatedRecruiterRouteRoute
     }
+    '/_authenticated/admin/email/templates/$templateId': {
+      id: '/_authenticated/admin/email/templates/$templateId'
+      path: '/email/templates/$templateId'
+      fullPath: '/admin/email/templates/$templateId'
+      preLoaderRoute: typeof AuthenticatedAdminEmailTemplatesTemplateIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/email/campaigns/new': {
+      id: '/_authenticated/admin/email/campaigns/new'
+      path: '/email/campaigns/new'
+      fullPath: '/admin/email/campaigns/new'
+      preLoaderRoute: typeof AuthenticatedAdminEmailCampaignsNewRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/email/campaigns/$campaignId': {
       id: '/_authenticated/admin/email/campaigns/$campaignId'
       path: '/email/campaigns/$campaignId'
@@ -1216,7 +1256,6 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminEmailAnalyticsRoute: typeof AuthenticatedAdminEmailAnalyticsRoute
   AuthenticatedAdminEmailAutomationsRoute: typeof AuthenticatedAdminEmailAutomationsRoute
-  AuthenticatedAdminEmailTemplatesRoute: typeof AuthenticatedAdminEmailTemplatesRoute
   AuthenticatedAdminEmailTestRoute: typeof AuthenticatedAdminEmailTestRoute
   AuthenticatedAdminSettingsEmailRoute: typeof AuthenticatedAdminSettingsEmailRoute
   AuthenticatedAdminCampaignsIndexRoute: typeof AuthenticatedAdminCampaignsIndexRoute
@@ -1226,7 +1265,10 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminRecruitersIndexRoute: typeof AuthenticatedAdminRecruitersIndexRoute
   AuthenticatedAdminRevenueIndexRoute: typeof AuthenticatedAdminRevenueIndexRoute
   AuthenticatedAdminEmailCampaignsCampaignIdRoute: typeof AuthenticatedAdminEmailCampaignsCampaignIdRoute
+  AuthenticatedAdminEmailCampaignsNewRoute: typeof AuthenticatedAdminEmailCampaignsNewRoute
+  AuthenticatedAdminEmailTemplatesTemplateIdRoute: typeof AuthenticatedAdminEmailTemplatesTemplateIdRoute
   AuthenticatedAdminEmailCampaignsIndexRoute: typeof AuthenticatedAdminEmailCampaignsIndexRoute
+  AuthenticatedAdminEmailTemplatesIndexRoute: typeof AuthenticatedAdminEmailTemplatesIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
@@ -1236,8 +1278,6 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminEmailAnalyticsRoute,
     AuthenticatedAdminEmailAutomationsRoute:
       AuthenticatedAdminEmailAutomationsRoute,
-    AuthenticatedAdminEmailTemplatesRoute:
-      AuthenticatedAdminEmailTemplatesRoute,
     AuthenticatedAdminEmailTestRoute: AuthenticatedAdminEmailTestRoute,
     AuthenticatedAdminSettingsEmailRoute: AuthenticatedAdminSettingsEmailRoute,
     AuthenticatedAdminCampaignsIndexRoute:
@@ -1251,8 +1291,14 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminRevenueIndexRoute: AuthenticatedAdminRevenueIndexRoute,
     AuthenticatedAdminEmailCampaignsCampaignIdRoute:
       AuthenticatedAdminEmailCampaignsCampaignIdRoute,
+    AuthenticatedAdminEmailCampaignsNewRoute:
+      AuthenticatedAdminEmailCampaignsNewRoute,
+    AuthenticatedAdminEmailTemplatesTemplateIdRoute:
+      AuthenticatedAdminEmailTemplatesTemplateIdRoute,
     AuthenticatedAdminEmailCampaignsIndexRoute:
       AuthenticatedAdminEmailCampaignsIndexRoute,
+    AuthenticatedAdminEmailTemplatesIndexRoute:
+      AuthenticatedAdminEmailTemplatesIndexRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =

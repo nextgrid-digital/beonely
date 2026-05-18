@@ -8,6 +8,7 @@ const createSchema = z.object({
   subject: z.string().min(1),
   preview_text: z.string().optional().nullable(),
   body: z.string().min(1),
+  template_id: z.string().uuid().optional().nullable(),
   audience: z.enum([
     'candidates',
     'recruiters',
@@ -66,6 +67,7 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
         preview_text: parsed.data.preview_text ?? null,
         body: parsed.data.body,
         audience,
+        template_id: parsed.data.template_id ?? null,
         status: 'draft',
         created_by: admin.id,
       })

@@ -166,6 +166,7 @@ export type Database = {
           sent_at: string | null
           status: Database['public']['Enums']['campaign_status']
           subject: string
+          template_id: string | null
           updated_at: string
         }
         Insert: {
@@ -178,6 +179,7 @@ export type Database = {
           sent_at?: string | null
           status?: Database['public']['Enums']['campaign_status']
           subject: string
+          template_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -190,6 +192,66 @@ export type Database = {
           sent_at?: string | null
           status?: Database['public']['Enums']['campaign_status']
           subject?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_campaigns_template_id_fkey'
+            columns: ['template_id']
+            isOneToOne: false
+            referencedRelation: 'email_templates'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          audience: Database['public']['Enums']['email_template_audience'] | null
+          body_html: string
+          category: Database['public']['Enums']['email_template_category']
+          created_at: string
+          created_by: string | null
+          id: string
+          is_system: boolean
+          name: string
+          preview_text: string | null
+          shell: Database['public']['Enums']['email_template_shell']
+          slug: string
+          subject: string
+          trigger_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience?: Database['public']['Enums']['email_template_audience'] | null
+          body_html: string
+          category: Database['public']['Enums']['email_template_category']
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          preview_text?: string | null
+          shell: Database['public']['Enums']['email_template_shell']
+          slug: string
+          subject: string
+          trigger_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience?: Database['public']['Enums']['email_template_audience'] | null
+          body_html?: string
+          category?: Database['public']['Enums']['email_template_category']
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          preview_text?: string | null
+          shell?: Database['public']['Enums']['email_template_shell']
+          slug?: string
+          subject?: string
+          trigger_key?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -669,6 +731,9 @@ export type Database = {
       recruiter_role: 'recruiter' | 'admin'
       resume_source: 'none' | 'linkedin_import' | 'manual_admin' | 'user_edit'
       work_mode: 'remote' | 'hybrid' | 'onsite'
+      email_template_category: 'transactional' | 'marketing'
+      email_template_audience: 'candidates' | 'recruiters' | 'newsletter'
+      email_template_shell: 'transactional' | 'marketing'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -828,6 +893,9 @@ export const Constants = {
       recruiter_role: ['recruiter', 'admin'],
       resume_source: ['none', 'linkedin_import', 'manual_admin', 'user_edit'],
       work_mode: ['remote', 'hybrid', 'onsite'],
+      email_template_category: ['transactional', 'marketing'],
+      email_template_audience: ['candidates', 'recruiters', 'newsletter'],
+      email_template_shell: ['transactional', 'marketing'],
     },
   },
 } as const

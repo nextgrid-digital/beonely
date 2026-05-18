@@ -3,6 +3,10 @@ import { handle as handleEmailAutomations } from '../../_handlers/admin/email-au
 import { handle as handleEmailTestSend } from '../../_handlers/admin/email-test-send.js'
 import { handle as handleEmailAnalytics } from '../../_handlers/admin/email-analytics.js'
 import { handle as handleEmailCampaignRecipients } from '../../_handlers/admin/email-campaign-recipients.js'
+import {
+  handle as handleEmailTemplates,
+  handleDuplicate as handleEmailTemplatesDuplicate,
+} from '../../_handlers/admin/email-templates.js'
 
 type EmailAdminRouteHandler = (
   req: VercelRequest,
@@ -14,6 +18,8 @@ const ROUTES: Record<string, EmailAdminRouteHandler> = {
   'test-send': handleEmailTestSend,
   analytics: handleEmailAnalytics,
   'campaign-recipients': handleEmailCampaignRecipients,
+  templates: handleEmailTemplates,
+  'templates/duplicate': handleEmailTemplatesDuplicate,
 }
 
 const EMAIL_ADMIN_PREFIX = '/api/admin/email'
@@ -39,6 +45,12 @@ export function routeKeyFromRequest(req: VercelRequest): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const key = routeKeyFromRequest(req)
+  if (key === 'templates/duplicate') {
+    return handleEmailTemplatesDuplicate(req, res)
+  }
+  if (key.startsWith('templates/')) {
+    return handleEmailTemplates(req, res)
+  }
   const routeHandler = ROUTES[key]
   if (!routeHandler) {
     return res.status(404).json({ error: 'not_found' })

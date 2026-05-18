@@ -4,6 +4,11 @@ import type { Database } from '@/lib/supabase/database.types'
 export type EmailCampaignRow =
   Database['public']['Tables']['email_campaigns']['Row']
 
+export type EmailTemplateRow =
+  Database['public']['Tables']['email_templates']['Row']
+
+type TemplateAudience = Database['public']['Enums']['email_template_audience']
+
 type CampaignAudience = Database['public']['Enums']['campaign_audience']
 
 export type AutomationRule = {
@@ -37,6 +42,135 @@ export async function fetchAdminCampaigns(
   return json.campaigns ?? []
 }
 
+export async function fetchEmailTemplates(
+  accessToken: string
+): Promise<EmailTemplateRow[]> {
+  const res = await fetch('/api/admin/email/templates', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  const json = (await res.json()) as {
+    templates?: EmailTemplateRow[]
+    error?: string
+  }
+  if (!res.ok) throw new Error(json.error ?? 'fetch_failed')
+  return json.templates ?? []
+}
+
+export async function fetchEmailTemplate(
+  accessToken: string,
+  templateId: string
+): Promise<EmailTemplateRow> {
+  const res = await fetch(`/api/admin/email/templates/${templateId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  const json = (await res.json()) as {
+    template?: EmailTemplateRow
+    error?: string
+  }
+  if (!res.ok) throw new Error(json.error ?? 'fetch_failed')
+  if (!json.template) throw new Error('not_found')
+  return json.template
+}
+
+export async function createEmailTemplate(
+  accessToken: string,
+  input: {
+    name: string
+    audience: TemplateAudience
+    subject: string
+    preview_text?: string | null
+    body_html: string
+  }
+): Promise<EmailTemplateRow> {
+  const res = await apiPost<{ template: EmailTemplateRow }>(
+    '/api/admin/email/templates',
+    input,
+    accessToken
+  )
+  return res.template
+}
+
+export async function updateEmailTemplate(
+  accessToken: string,
+  templateId: string,
+  input: {
+    name?: string
+    subject?: string
+    preview_text?: string | null
+    body_html?: string
+  }
+): Promise<EmailTemplateRow> {
+  const res = await fetch(`/api/admin/email/templates/${templateId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(input),
+  })
+  const json = (await res.json()) as {
+    template?: EmailTemplateRow
+    error?: string
+  }
+  if (!res.ok) throw new Error(json.error ?? 'update_failed')
+  if (!json.template) throw new Error('not_found')
+  return json.template
+}
+
+export async function deleteEmailTemplate(
+  accessToken: string,
+  templateId: string
+): Promise<void> {
+  const res = await fetch(`/api/admin/email/templates/${templateId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) {
+    const json = (await res.json()) as { error?: string }
+    throw new Error(json.error ?? 'delete_failed')
+  }
+}
+
+export async function duplicateEmailTemplate(
+  accessToken: string,
+  sourceId: string
+): Promise<EmailTemplateRow> {
+  const res = await apiPost<{ template: EmailTemplateRow }>(
+    '/api/admin/email/templates/duplicate',
+    { source_id: sourceId },
+    accessToken
+  )
+  return res.template
+}
+
+export async function updateAdminCampaign(
+  accessToken: string,
+  input: {
+    id: string
+    subject?: string
+    preview_text?: string | null
+    body?: string
+    audience?: CampaignAudience
+    template_id?: string | null
+  }
+): Promise<EmailCampaignRow> {
+  const res = await fetch('/api/admin/campaigns', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(input),
+  })
+  const json = (await res.json()) as {
+    campaign?: EmailCampaignRow
+    error?: string
+  }
+  if (!res.ok) throw new Error(json.error ?? 'update_failed')
+  if (!json.campaign) throw new Error('not_found')
+  return json.campaign
+}
+
 export async function createAdminCampaign(
   accessToken: string,
   input: {
@@ -44,6 +178,7 @@ export async function createAdminCampaign(
     preview_text?: string | null
     body: string
     audience: CampaignAudience
+    template_id?: string | null
   }
 ): Promise<EmailCampaignRow> {
   const res = await apiPost<{ campaign: EmailCampaignRow }>(

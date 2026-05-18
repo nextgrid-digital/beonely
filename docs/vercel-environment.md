@@ -60,6 +60,10 @@ Signup and password-reset mail is sent by **Supabase Auth** (Authentication → 
 
 Reuse the same Resend API key on Vercel; redeploy after adding or changing env vars.
 
+### Email templates (admin)
+
+Marketing and transactional template previews live in **`email_templates`** (migration `supabase/migrations/20260520120000_email_templates.sql`). Apply with `supabase db push` on the linked project. Staff manage templates under **Admin → Email → Templates**; campaigns use the wizard at **Admin → Email → Campaigns → New campaign**. Template CRUD is staff-only via `/api/admin/email/templates` (service role).
+
 ## Smoke test after deploy
 
 1. Open your **production** site URL (use Preview only if its env vars match what you need).
