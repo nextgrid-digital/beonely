@@ -12,6 +12,13 @@ export function validateCandidateAvatarFile(file: File): string | null {
   return validateImageFile(file)
 }
 
+/** Appends a cache-busting query param so browser/img tags reload after upsert to the same path. */
+export function cacheBustAvatarPublicUrl(publicUrl: string, versionMs?: number): string {
+  const v = versionMs ?? Date.now()
+  const sep = publicUrl.includes('?') ? '&' : '?'
+  return `${publicUrl}${sep}v=${v}`
+}
+
 /**
  * Uploads a profile image to public Storage at `{userId}/avatar.jpg` and returns its public URL.
  * Intended for browser use (canvas / createImageBitmap).
@@ -44,5 +51,5 @@ export async function uploadCandidateAvatar(
   const { data } = sb.storage.from(CANDIDATE_AVATAR_BUCKET).getPublicUrl(path)
   if (!data.publicUrl)
     throw new Error('Could not resolve public URL for avatar')
-  return data.publicUrl
+  return cacheBustAvatarPublicUrl(data.publicUrl)
 }

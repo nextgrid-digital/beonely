@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -47,6 +48,9 @@ function ProfileHeaderAvatar({
   name: string
 }) {
   const [broken, setBroken] = useState(false)
+  useEffect(() => {
+    setBroken(false)
+  }, [avatarUrl])
   return (
     <img
       alt={name}
@@ -439,8 +443,10 @@ function ReadCvContentSection({
 
 export type ReadCvResumePreviewProps = {
   data: ResumeStructuredV1
-  /** Shown below the circular header avatar (e.g. profile editor upload). */
+  /** Overlay content on the header avatar in edit mode (e.g. "Upload"). */
   headerAvatarAction?: ReactNode
+  /** `id` of the hidden file input; enables clicking the full avatar overlay to pick a file. */
+  headerAvatarInputId?: string
   mode?: 'view' | 'edit'
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
   /** Used when adding a contact row in edit mode. */
@@ -453,6 +459,7 @@ export type ReadCvResumePreviewProps = {
 export function ReadCvResumePreview({
   data,
   headerAvatarAction,
+  headerAvatarInputId,
   mode = 'view',
   onDraftChange,
   userEmail = '',
@@ -482,10 +489,13 @@ export function ReadCvResumePreview({
               avatarUrl={general.avatar}
               name={general.name}
             />
-            {headerAvatarAction ? (
-              <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/50 opacity-0 transition-opacity group-focus-within/avatar:pointer-events-auto group-focus-within/avatar:opacity-100 group-hover/avatar:pointer-events-auto group-hover/avatar:opacity-100 motion-reduce:transition-none'>
-                <div className='pointer-events-auto'>{headerAvatarAction}</div>
-              </div>
+            {headerAvatarAction && headerAvatarInputId ? (
+              <label
+                htmlFor={headerAvatarInputId}
+                className='absolute inset-0 flex cursor-pointer items-center justify-center bg-slate-900/50 opacity-0 transition-opacity group-focus-within/avatar:opacity-100 group-hover/avatar:opacity-100 motion-reduce:transition-none'
+              >
+                {headerAvatarAction}
+              </label>
             ) : null}
           </div>
         </div>

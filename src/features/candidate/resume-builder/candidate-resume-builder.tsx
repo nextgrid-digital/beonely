@@ -2,7 +2,7 @@
  * Candidate profile completion editor (read.cv-style preview).
  * Sign-up supplies LinkedIn + phone on `job_seeker_profiles`; this UI collects the rest.
  */
-import { useRef, useState, type ChangeEventHandler } from 'react'
+import { useId, useState, type ChangeEventHandler } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, Loader2 } from 'lucide-react'
@@ -12,12 +12,11 @@ import {
   prefillResumeFromProfile,
   shouldPrefillResumeFromAccount,
 } from '@/lib/candidate/resume-prefill'
+import { persistCandidateProfileDraft } from '@/lib/candidate/persist-candidate-profile-draft'
 import {
   parseResumeStructured,
   type ResumeStructuredV1,
 } from '@/lib/candidate/resume-structured-schema'
-import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
-import { sanitizeResumeStructuredRichFields } from '@/lib/candidate/sanitize-resume-html'
 import {
   uploadCandidateAvatar,
   validateCandidateAvatarFile,
@@ -54,7 +53,7 @@ export function CandidateResumeBuilder({
   accountProfile,
 }: CandidateResumeBuilderProps) {
   const qc = useQueryClient()
-  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputId = useId()
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<ResumeStructuredV1>(() => {
@@ -66,57 +65,25 @@ export function CandidateResumeBuilder({
     return parsed
   })
 
+  const invalidateProfileQueries = () => {
+    void qc.invalidateQueries({ queryKey: ['job-seeker-profile', userId] })
+    void qc.invalidateQueries({
+      queryKey: ['job-seeker-profile-completion', userId],
+    })
+  }
+
   const saveResume = useMutation({
     mutationFn: async () => {
       const sb = getSupabaseBrowserClient()
-      const preserve =
-        profileRow != null
-          ? {
-              linkedin_url: profileRow.linkedin_url ?? null,
-              phone: profileRow.phone ?? null,
-            }
-          : null
-      const sanitized = sanitizeResumeStructuredRichFields(draft)
-      const derived = deriveProfileColumnsFromResume(sanitized, preserve)
-      const email = userEmail.trim()
-      if (!email) throw new Error('missing_email')
-
-      const resumePayload = {
-        resume_structured: sanitized,
-        resume_source: 'user_edit' as const,
-        full_name: derived.full_name,
-        portfolio_url: derived.portfolio_url,
-        linkedin_url: derived.linkedin_url.trim() || null,
-        phone: derived.phone.trim() || null,
-      }
-
-      if (profileRow?.id) {
-        const { error } = await sb
-          .from('job_seeker_profiles')
-          .update({
-            ...resumePayload,
-            notification_opt_in: profileRow.notification_opt_in ?? true,
-          })
-          .eq('id', profileRow.id)
-        if (error) throw error
-      } else {
-        const now = new Date().toISOString()
-        const { error } = await sb.from('job_seeker_profiles').insert({
-          user_id: userId,
-          email,
-          ...resumePayload,
-          notification_opt_in: true,
-          marketing_opt_in: true,
-          marketing_opt_in_at: now,
-        })
-        if (error) throw error
-      }
+      await persistCandidateProfileDraft(sb, {
+        draft,
+        userId,
+        userEmail,
+        profileRow,
+      })
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['job-seeker-profile', userId] })
-      void qc.invalidateQueries({
-        queryKey: ['job-seeker-profile-completion', userId],
-      })
+      invalidateProfileQueries()
       setEditing(false)
       toast.success('Profile saved')
     },
@@ -148,8 +115,27 @@ export function CandidateResumeBuilder({
     try {
       const sb = getSupabaseBrowserClient()
       const url = await uploadCandidateAvatar(sb, userId, file)
-      setDraft((d) => ({ ...d, general: { ...d.general, avatar: url } }))
-      toast.success('Photo uploaded. Save your profile to keep it.')
+      const nextDraft: ResumeStructuredV1 = {
+        ...draft,
+        general: { ...draft.general, avatar: url },
+      }
+      setDraft(nextDraft)
+      try {
+        await persistCandidateProfileDraft(sb, {
+          draft: nextDraft,
+          userId,
+          userEmail,
+          profileRow,
+        })
+        invalidateProfileQueries()
+        toast.success('Profile photo updated')
+      } catch (persistErr) {
+        toast.error(
+          persistErr instanceof Error
+            ? persistErr.message
+            : 'Photo uploaded but could not save to your profile'
+        )
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not upload photo')
     } finally {
@@ -157,30 +143,27 @@ export function CandidateResumeBuilder({
     }
   }
 
-  const profilePhotoUploadButton = (
-    <Button
-      type='button'
-      variant='secondary'
-      size='sm'
-      className='border-0 bg-white/95 px-2 py-1 text-[10px] font-medium text-slate-900 shadow-sm hover:bg-white sm:text-xs'
-      disabled={avatarBusy || !getSupabaseConfigured()}
-      aria-label='Upload profile picture. JPEG, PNG, or WebP. Maximum 5 megabytes.'
-      onClick={() => avatarInputRef.current?.click()}
+  const profilePhotoUploadLabel = (
+    <span
+      className='inline-flex items-center justify-center rounded-md border-0 bg-white/95 px-2 py-1 text-[10px] font-medium text-slate-900 shadow-sm sm:text-xs'
+      aria-hidden={avatarBusy}
     >
       {avatarBusy ? (
         <Loader2 className='mx-auto size-4 animate-spin' aria-hidden />
       ) : null}
       {avatarBusy ? 'Uploading…' : 'Upload'}
-    </Button>
+    </span>
   )
 
   return (
     <div className='w-full pt-2'>
       <input
-        ref={avatarInputRef}
+        id={avatarInputId}
         type='file'
         accept='image/jpeg,image/png,image/webp'
         className='sr-only'
+        disabled={avatarBusy || !getSupabaseConfigured()}
+        aria-label='Upload profile picture. JPEG, PNG, or WebP. Maximum 5 megabytes.'
         onChange={onAvatarFileChange}
       />
       <PublicSiteStickySubheader
@@ -229,7 +212,8 @@ export function CandidateResumeBuilder({
           mode={editing ? 'edit' : 'view'}
           onDraftChange={editing ? setDraft : undefined}
           userEmail={userEmail}
-          headerAvatarAction={profilePhotoUploadButton}
+          headerAvatarInputId={editing ? avatarInputId : undefined}
+          headerAvatarAction={editing ? profilePhotoUploadLabel : undefined}
         />
       </div>
     </div>
