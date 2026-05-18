@@ -1,4 +1,3 @@
-import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, type RenderResult } from 'vitest-browser-react'
 import { type Locator, userEvent } from 'vitest/browser'
@@ -36,6 +35,8 @@ const supabaseMocks = vi.hoisted(() => {
 })
 
 const navigate = vi.fn()
+const toastError = vi.hoisted(() => vi.fn())
+const toastSuccess = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/supabase/client', () => ({
   getSupabaseConfigured: () => true,
@@ -52,8 +53,8 @@ vi.mock('@tanstack/react-router', async (orig) => {
 
 vi.mock('sonner', () => ({
   toast: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: toastSuccess,
+    error: toastError,
   },
 }))
 
@@ -338,9 +339,7 @@ describe('SignUpForm candidate intent', () => {
     await userEvent.click(ui.getByRole('button', { name: /^Create Account$/i }))
 
     await vi.waitFor(() =>
-      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
-        'User already registered'
-      )
+      expect(toastError).toHaveBeenCalledWith('User already registered')
     )
     expect(navigate).not.toHaveBeenCalled()
   })
