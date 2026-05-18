@@ -95,7 +95,7 @@ export function PublishedJobsFiltersBar(props: {
     <section
       aria-labelledby='job-filters-heading'
       className={cn(
-        'sticky z-40 -mx-4 bg-background/95 px-4 py-2 backdrop-blur',
+        'sticky z-40 -mx-4 w-full max-w-full min-w-0 overflow-x-clip bg-background/95 px-4 py-2 backdrop-blur',
         'supports-[backdrop-filter]:bg-background/85',
         STICKY_BELOW_HEADER
       )}
@@ -104,7 +104,7 @@ export function PublishedJobsFiltersBar(props: {
         Find your next role — search and filters
       </h3>
 
-      <div className='flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0'>
+      <div className='flex w-full max-w-full min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0'>
         <div className='relative max-w-[min(100%,20rem)] min-w-[12rem] shrink-0 sm:max-w-none sm:min-w-0 sm:flex-1'>
           <label htmlFor='published-jobs-q' className='sr-only'>
             Search by title or company

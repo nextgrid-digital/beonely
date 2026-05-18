@@ -40,7 +40,7 @@ export function PublicSiteStickySubheader({
 export const PUBLIC_SITE_MAX = 'max-w-5xl'
 
 /** Same outer column as landing `#main-content`: centered, full width up to max, horizontal padding. */
-export const PUBLIC_SITE_MAIN_COLUMN = `mx-auto w-full ${PUBLIC_SITE_MAX} px-4`
+export const PUBLIC_SITE_MAIN_COLUMN = `mx-auto w-full min-w-0 ${PUBLIC_SITE_MAX} px-4`
 
 export function PublicSiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)

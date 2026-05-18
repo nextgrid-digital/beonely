@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import {
+  Link,
   createFileRoute,
   isRedirect,
   redirect,
@@ -93,12 +94,12 @@ function LandingPageContent() {
   const filtersActive = hasActivePublishedJobFilters(search)
 
   return (
-    <div className='flex min-h-svh flex-col bg-background'>
+    <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
       <PublicSiteHeader />
-      <div className='flex flex-1 flex-col pt-14'>
+      <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <main
           id='main-content'
-          className={`${PUBLIC_SITE_MAIN_COLUMN} flex flex-1 flex-col gap-12 py-8 sm:gap-14 sm:py-10 md:gap-16 md:py-12`}
+          className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-w-0 flex-1 flex-col gap-12 overflow-x-clip py-8 sm:gap-14 sm:py-10 md:gap-16 md:py-12`}
         >
           {setup === 'supabase' && (
             <Alert variant='destructive'>
@@ -142,8 +143,20 @@ function LandingPageContent() {
             {!jobsQuery.isLoading && homeJobs.length === 0 && (
               <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
                 <p className='text-sm text-muted-foreground'>
-                  No jobs match these filters yet. Post a listing or check back
-                  soon.
+                  {filtersActive ? (
+                    'No jobs match these filters yet.'
+                  ) : (
+                    <>
+                      No recruiter has posted a job yet. If you are a recruiter,{' '}
+                      <Link
+                        to='/hire/sign-up'
+                        className='font-medium text-foreground underline underline-offset-4 hover:text-foreground/90 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                      >
+                        sign up as a recruiter
+                      </Link>{' '}
+                      and post the role you are hiring for.
+                    </>
+                  )}
                 </p>
                 {filtersActive && (
                   <Button

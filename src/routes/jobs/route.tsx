@@ -10,9 +10,9 @@ export const Route = createFileRoute('/jobs')({
 
 function JobsShell() {
   return (
-    <div className='flex min-h-svh flex-col bg-background'>
+    <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
       <PublicSiteHeader />
-      <div className='flex flex-1 flex-col pt-14'>
+      <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <Outlet />
       </div>
       <PublicSiteFooter />

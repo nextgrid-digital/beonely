@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchScrapedJobs } from '@/lib/jobs/fetch-scraped-jobs'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { PublicJobListSkeleton } from '@/features/jobs/public-job-list-skeleton'
 import { ScrapedJobCard } from '@/features/scraped-jobs/scraped-job-card'
 
@@ -24,17 +25,9 @@ export function ScrapedJobsSection({
     <section
       id='linkedin-roles'
       className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'
-      aria-labelledby='linkedin-roles-heading'
+      aria-label='LinkedIn roles'
     >
-      <div className='space-y-1'>
-        <h2 id='linkedin-roles-heading' className='text-xl font-semibold'>
-          Roles from LinkedIn
-        </h2>
-        <p className='text-sm text-muted-foreground'>
-          Aggregated ServiceNow listings sourced from LinkedIn. Apply on
-          LinkedIn (opens in a new tab).
-        </p>
-      </div>
+      <Separator className='my-2' />
 
       {scrapedQuery.isLoading && <PublicJobListSkeleton count={3} />}
       {scrapedQuery.isError && (
