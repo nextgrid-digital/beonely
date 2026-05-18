@@ -29,7 +29,8 @@ export async function fileToResizedJpeg(
     ctx.drawImage(bmp, 0, 0, w, h)
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
-        (b) => (b ? resolve(b) : reject(new Error('Could not encode image'))),
+        (b: Blob | null) =>
+          b ? resolve(b) : reject(new Error('Could not encode image')),
         'image/jpeg',
         JPEG_QUALITY
       )
