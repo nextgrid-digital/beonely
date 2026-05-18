@@ -53,13 +53,16 @@ describe('api/admin/[...segments] router', () => {
     expect(res.statusCode).toBe(401)
   })
 
-  it('dispatches nested email/automations route', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+})
+
+describe('api/admin/email/[...segments] router', () => {
+  it('dispatches email/automations route', async () => {
+    const { default: handler } = await import('./admin/email/[...segments].js')
     const res = mockRes()
     await handler(
       {
         method: 'PATCH',
-        query: { segments: ['email', 'automations'] },
+        query: { segments: 'automations' },
         headers: {},
       } as unknown as VercelRequest,
       res
@@ -67,16 +70,16 @@ describe('api/admin/[...segments] router', () => {
     expect(res.statusCode).toBe(401)
   })
 
-  it('resolves route key from req.url when query.segments is absent', async () => {
+  it('resolves test-send from req.url when query.segments is absent', async () => {
     const { routeKeyFromRequest, default: handler } = await import(
-      './admin/[...segments].js'
+      './admin/email/[...segments].js'
     )
     expect(
       routeKeyFromRequest({
         url: '/api/admin/email/test-send',
         query: {},
       } as VercelRequest)
-    ).toBe('email/test-send')
+    ).toBe('test-send')
 
     const res = mockRes()
     await handler(
