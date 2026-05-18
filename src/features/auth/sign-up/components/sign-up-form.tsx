@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { MarketingOptInCheckbox } from '@/components/marketing-opt-in-checkbox'
 import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 
@@ -86,7 +85,6 @@ async function persistCandidateJobSeekerRow(opts: {
   email: string
   linkedin_url: string
   phone: string
-  marketing_opt_in: boolean
 }): Promise<{ created: boolean }> {
   const sb = getSupabaseBrowserClient()
   const { data: existing, error: selErr } = await sb
@@ -102,8 +100,8 @@ async function persistCandidateJobSeekerRow(opts: {
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit' as const,
     notification_opt_in: true,
-    marketing_opt_in: opts.marketing_opt_in,
-    marketing_opt_in_at: opts.marketing_opt_in ? new Date().toISOString() : null,
+    marketing_opt_in: true,
+    marketing_opt_in_at: new Date().toISOString(),
   }
   if (existing?.id) {
     const { error } = await sb
@@ -136,7 +134,6 @@ export function SignUpForm({
   ...props
 }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const navigate = useNavigate()
   const schema = useMemo(() => buildSignUpFormSchema(intent), [intent])
@@ -213,7 +210,6 @@ export function SignUpForm({
             email,
             linkedin_url: candidateMeta.linkedin_url,
             phone: candidateMeta.phone,
-            marketing_opt_in: marketingOptIn,
           })
           const accessToken = signUpData.session?.access_token
           if (created && accessToken) {
@@ -228,7 +224,7 @@ export function SignUpForm({
               dedupe_key: `candidate_signup:${uid}`,
             }).catch(() => undefined)
           }
-          if (accessToken && marketingOptIn) {
+          if (accessToken) {
             await updateMarketingConsent({
               marketing_opt_in: true,
               audience: 'candidate',
@@ -239,6 +235,18 @@ export function SignUpForm({
           toast.error(
             'Account created but profile could not be saved. Update your profile in settings.'
           )
+        }
+      }
+
+      if (intent === 'recruiter' && hasSession && signUpData.session?.access_token) {
+        try {
+          await updateMarketingConsent({
+            marketing_opt_in: true,
+            audience: 'recruiter',
+            accessToken: signUpData.session.access_token,
+          })
+        } catch {
+          // Non-blocking; recruiter row may not exist yet
         }
       }
 
@@ -375,13 +383,6 @@ export function SignUpForm({
               onExpire={() => setTurnstileToken(null)}
             />
           </div>
-        ) : null}
-        {intent === 'candidate' || intent === 'recruiter' ? (
-          <MarketingOptInCheckbox
-            checked={marketingOptIn}
-            onCheckedChange={setMarketingOptIn}
-            id='signup-marketing-opt-in'
-          />
         ) : null}
         <Button className='mt-2 min-h-11 w-full sm:min-h-10' disabled={isLoading}>
           {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}

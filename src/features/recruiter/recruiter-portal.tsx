@@ -45,7 +45,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { RecruiterMarketingPreferences } from '@/features/recruiter/recruiter-marketing-preferences'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 
 const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
@@ -117,12 +117,15 @@ export function RecruiterPortal() {
         (u.user_metadata?.full_name as string | undefined)?.trim() ||
         u.email?.split('@')[0] ||
         company_name
+      const now = new Date().toISOString()
       const { error } = await sb.from('recruiters').insert({
         user_id: u.id,
         company_name,
         email: u.email ?? '',
         name: displayName,
         role: 'recruiter',
+        marketing_opt_in: true,
+        marketing_opt_in_at: now,
       })
       if (error) throw error
     },
@@ -136,6 +139,11 @@ export function RecruiterPortal() {
           trigger_key: 'recruiter_signup',
           payload: { company_name },
           dedupe_key: `recruiter_signup:${user.id}`,
+        }).catch(() => undefined)
+        void updateMarketingConsent({
+          marketing_opt_in: true,
+          audience: 'recruiter',
+          accessToken: token,
         }).catch(() => undefined)
       }
     },
@@ -231,9 +239,6 @@ export function RecruiterPortal() {
 
   return (
     <div className='space-y-6'>
-      <div className='max-w-xl'>
-        <RecruiterMarketingPreferences recruiter={recruiter} />
-      </div>
       {jobsQuery.isError ? (
         <div className='space-y-4'>
           <Alert variant='destructive'>

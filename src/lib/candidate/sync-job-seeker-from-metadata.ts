@@ -56,6 +56,7 @@ export async function syncJobSeekerFromUserMetadata(
     return
   }
 
+  const now = new Date().toISOString()
   const { error: iErr } = await sb.from('job_seeker_profiles').insert({
     user_id: user.id,
     email,
@@ -64,6 +65,8 @@ export async function syncJobSeekerFromUserMetadata(
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit',
     notification_opt_in: true,
+    marketing_opt_in: true,
+    marketing_opt_in_at: now,
   })
   if (iErr) throw iErr
 }
