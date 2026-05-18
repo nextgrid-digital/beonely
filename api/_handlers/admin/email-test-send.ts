@@ -94,7 +94,7 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
       sent: false,
       skipped: true,
       reason: 'resend_not_configured',
-      hint: 'Set RESEND_API_KEY and RESEND_FROM_EMAIL on the API (Vercel env or .env.local for pnpm dev:local).',
+      hint: 'Set RESEND_API_KEY and RESEND_FROM_EMAIL on the Vercel API (Production env or .env.local for pnpm dev:local). Supabase Auth SMTP is separate.',
       logId: result.logId,
       log_error: result.log_error,
     })

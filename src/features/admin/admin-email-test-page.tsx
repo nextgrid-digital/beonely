@@ -45,7 +45,7 @@ export function AdminEmailTestPage() {
       if (data.reason === 'resend_not_configured') {
         toast.warning(
           data.hint ??
-            'Resend is not configured on the API. Set RESEND_API_KEY and RESEND_FROM_EMAIL, then use pnpm dev:local.'
+            'App emails need RESEND_API_KEY and RESEND_FROM_EMAIL on the Vercel API (separate from Supabase Auth mail). Use pnpm dev:local locally.'
         )
         return
       }
@@ -69,8 +69,8 @@ export function AdminEmailTestPage() {
       <div>
         <h1 className='text-2xl font-semibold tracking-tight'>Test send</h1>
         <p className='text-sm text-muted-foreground'>
-          Send a sample transactional email to any inbox. Requires Resend env on
-          the API.
+          Send a sample transactional email via the Vercel API (Resend). This is
+          separate from Supabase Auth signup and password-reset mail.
         </p>
       </div>
       <div className='space-y-4 rounded-lg border border-border p-4'>

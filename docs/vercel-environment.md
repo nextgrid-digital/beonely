@@ -47,7 +47,18 @@ On Vercel, [`api/create-order.ts`](../api/create-order.ts) and [`api/verify-paym
 
 **Rate limits:** API routes use a no-op limiter so the serverless bundle stays small on Vercel. Optional `UPSTASH_REDIS_*` env vars from earlier setups are ignored by the app; use Vercel WAF or Edge Middleware if you need IP throttling.
 
-**Email:** `RESEND_API_KEY` + `RESEND_FROM_EMAIL` when using transactional email from the payment path ([`api/_lib/resend.ts`](../api/_lib/resend.ts)).
+**Email:** `RESEND_API_KEY` + `RESEND_FROM_EMAIL` for app transactional email ([`api/_lib/resend.ts`](../api/_lib/resend.ts)) — admin test send, payment receipts, job/application notifications, campaigns. Example from address: `Beonely <team@beonely.in>`.
+
+### Resend already in Supabase?
+
+Signup and password-reset mail is sent by **Supabase Auth** (Authentication → Emails, or custom SMTP in the Supabase dashboard). That is **separate** from the Vercel `/api/*` Resend integration:
+
+| Path | Where to configure | Used for |
+|------|-------------------|----------|
+| Supabase Auth | Supabase dashboard | Sign-up, password reset, email confirmation |
+| Vercel API | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` on the Vercel project (and `.env.local` for `pnpm dev:local`) | Admin test send, receipts, moderation/application emails, marketing |
+
+Reuse the same Resend API key on Vercel; redeploy after adding or changing env vars.
 
 ## Smoke test after deploy
 
