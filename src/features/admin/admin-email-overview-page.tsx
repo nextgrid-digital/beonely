@@ -15,19 +15,19 @@ export function AdminEmailOverviewPage() {
   const token = session?.access_token
 
   const statsQuery = useQuery({
-    queryKey: ['admin-campaign-stats'],
+    queryKey: ['admin-campaign-stats', token],
     enabled: Boolean(token),
     queryFn: () => fetchCampaignStats(token!),
   })
 
   const analyticsQuery = useQuery({
-    queryKey: ['admin-email-analytics-summary'],
+    queryKey: ['admin-email-analytics-summary', token],
     enabled: Boolean(token),
     queryFn: () => fetchEmailAnalytics(token!),
   })
 
   const automationsQuery = useQuery({
-    queryKey: ['admin-email-automations'],
+    queryKey: ['admin-email-automations', token],
     enabled: Boolean(token),
     queryFn: () => fetchAutomations(token!),
   })

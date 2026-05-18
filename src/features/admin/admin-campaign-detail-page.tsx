@@ -19,7 +19,7 @@ export function AdminCampaignDetailPage({ campaignId }: { campaignId: string }) 
   const token = session?.access_token
 
   const query = useQuery({
-    queryKey: ['admin-campaign-detail', campaignId],
+    queryKey: ['admin-campaign-detail', token, campaignId],
     enabled: Boolean(token),
     queryFn: () => fetchCampaignDetail(token!, campaignId),
   })

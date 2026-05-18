@@ -42,7 +42,7 @@ export function ResetPasswordForm({
   const [isLoading, setIsLoading] = useState(false)
   const [sessionState, setSessionState] = useState<
     'checking' | 'ready' | 'missing' | 'nocheck'
-  >('checking')
+  >(() => (getSupabaseConfigured() ? 'checking' : 'nocheck'))
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +51,6 @@ export function ResetPasswordForm({
 
   useEffect(() => {
     if (!getSupabaseConfigured()) {
-      setSessionState('nocheck')
       return
     }
     const sb = getSupabaseBrowserClient()

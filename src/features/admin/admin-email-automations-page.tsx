@@ -21,7 +21,7 @@ export function AdminEmailAutomationsPage() {
   const previews = getTransactionalEmailPreviews()
 
   const query = useQuery({
-    queryKey: ['admin-email-automations'],
+    queryKey: ['admin-email-automations', token],
     enabled: Boolean(token),
     queryFn: () => fetchAutomations(token!),
   })

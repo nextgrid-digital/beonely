@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -48,9 +47,6 @@ function ProfileHeaderAvatar({
   name: string
 }) {
   const [broken, setBroken] = useState(false)
-  useEffect(() => {
-    setBroken(false)
-  }, [avatarUrl])
   return (
     <img
       alt={name}

@@ -115,7 +115,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           .maybeSingle()
         if (error) throw error
         return Boolean(data)
-      } catch (error) {
+      } catch (_error) {
         toast.error(
           'Could not verify your application status right now. You can still continue.'
         )
@@ -292,7 +292,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
     }
   }, [
     user,
-    profile?.role,
+    profile,
     navigate,
     openExternalApply,
     job.job_slug,

@@ -1,8 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
-import { resolveCampaignAudience } from '../../_lib/resolve-campaign-audience.js'
-import type { CampaignAudience } from '../../_lib/resolve-campaign-audience.js'
+import {
+  resolveCampaignAudience,
+  type CampaignAudience,
+} from '../../_lib/resolve-campaign-audience.js'
 
 export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

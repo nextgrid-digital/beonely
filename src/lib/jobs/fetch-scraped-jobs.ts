@@ -3,10 +3,10 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
-import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import {
   applyPublishedJobFilters,
   filterNonExpiredJobs,
+  type PublishedJobsFilters,
 } from '@/lib/jobs/published-jobs-query'
 
 /** LinkedIn-import listings: approved, paid, active, newest first. */

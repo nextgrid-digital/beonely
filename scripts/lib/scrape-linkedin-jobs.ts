@@ -229,7 +229,7 @@ export function extractLinkedInJobId(input: string): string | null {
   if (!trimmed) return null
   if (/^\d{5,}$/.test(trimmed)) return trimmed
 
-  let decoded = trimmed
+  let decoded: string
   try {
     decoded = decodeURIComponent(trimmed)
   } catch {

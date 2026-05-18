@@ -17,7 +17,7 @@ export function AdminEmailAnalyticsPage() {
   const token = session?.access_token
 
   const query = useQuery({
-    queryKey: ['admin-email-analytics'],
+    queryKey: ['admin-email-analytics', token],
     enabled: Boolean(token),
     queryFn: () => fetchEmailAnalytics(token!),
   })

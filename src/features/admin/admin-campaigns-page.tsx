@@ -53,13 +53,13 @@ export function AdminCampaignsPage() {
   const [testEmail, setTestEmail] = useState('')
 
   const statsQuery = useQuery({
-    queryKey: ['admin-campaign-stats'],
+    queryKey: ['admin-campaign-stats', token],
     enabled: Boolean(token),
     queryFn: () => fetchCampaignStats(token!),
   })
 
   const campaignsQuery = useQuery({
-    queryKey: ['admin-campaigns'],
+    queryKey: ['admin-campaigns', token],
     enabled: Boolean(token),
     queryFn: () => fetchAdminCampaigns(token!),
   })

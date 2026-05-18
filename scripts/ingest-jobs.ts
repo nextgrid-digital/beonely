@@ -113,7 +113,7 @@ async function main() {
   })
 
   const recruiterId = process.env.INGEST_RECRUITER_ID?.trim()
-  let recruiter: { id: string; email: string; name: string } | null = null
+  let recruiter: { id: string; email: string; name: string }
 
   if (recruiterId) {
     const { data, error: recErr } = await sb

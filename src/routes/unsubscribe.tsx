@@ -1,7 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { useEffect, useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { PublicSiteFooter, PublicSiteHeader } from '@/features/jobs/public-site-layout'
 
 const searchSchema = z.object({
@@ -15,23 +14,31 @@ export const Route = createFileRoute('/unsubscribe')({
 
 function UnsubscribePage() {
   const { token } = Route.useSearch()
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>(
-    'idle'
-  )
+  const trimmedToken = token?.trim() ?? ''
+  const hasToken = trimmedToken.length > 0
 
-  useEffect(() => {
-    if (!token?.trim()) {
-      setStatus('error')
-      return
-    }
-    setStatus('loading')
-    void fetch(`/api/unsubscribe?token=${encodeURIComponent(token)}`)
-      .then((res) => {
-        if (res.ok) setStatus('ok')
-        else setStatus('error')
-      })
-      .catch(() => setStatus('error'))
-  }, [token])
+  const unsubscribeQuery = useQuery({
+    queryKey: ['unsubscribe', trimmedToken],
+    enabled: hasToken,
+    retry: false,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/unsubscribe?token=${encodeURIComponent(trimmedToken)}`
+      )
+      if (!res.ok) throw new Error('unsubscribe_failed')
+      return true
+    },
+  })
+
+  const status = !hasToken
+    ? 'error'
+    : unsubscribeQuery.isPending
+      ? 'loading'
+      : unsubscribeQuery.isSuccess
+        ? 'ok'
+        : unsubscribeQuery.isError
+          ? 'error'
+          : 'idle'
 
   return (
     <div className='flex min-h-svh flex-col'>
@@ -55,7 +62,10 @@ function UnsubscribePage() {
             This link is invalid or expired.
           </p>
         ) : null}
-        <Link to='/' className='mt-6 text-sm font-medium text-primary underline-offset-4 hover:underline'>
+        <Link
+          to='/'
+          className='mt-6 text-sm font-medium text-primary underline-offset-4 hover:underline'
+        >
           Back to Beonely
         </Link>
       </main>
