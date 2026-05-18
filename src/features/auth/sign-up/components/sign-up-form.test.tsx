@@ -259,6 +259,10 @@ describe('SignUpForm with onSuccess', () => {
 describe('SignUpForm candidate intent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    signUp.mockResolvedValue({
+      data: { user: { email: '' }, session: null },
+      error: null,
+    })
     supabaseMocks.maybeSingle.mockResolvedValue({ data: null, error: null })
     supabaseMocks.insert.mockResolvedValue({ error: null })
   })
@@ -314,6 +318,13 @@ describe('SignUpForm candidate intent', () => {
       expect(supabaseMocks.from).toHaveBeenCalledWith('job_seeker_profiles')
     )
     await vi.waitFor(() => expect(supabaseMocks.insert).toHaveBeenCalled())
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        to: '/sign-in',
+        replace: true,
+        search: { intent: 'candidate' },
+      })
+    )
   })
 
   it('shows toast and does not navigate when signUp returns an error', async () => {
