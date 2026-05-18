@@ -1,7 +1,9 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { LogOut } from 'lucide-react'
 import { Logo, LogoMark } from '@/assets/logo'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
+import { Button } from '@/components/ui/button'
 import {
   Sidebar,
   SidebarContent,
@@ -18,19 +20,17 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { AdminWorkspaceSwitcher } from '@/features/admin/admin-workspace-switcher'
 import {
   adminEmailNav,
   adminOperationsNav,
   type AdminNavItem,
 } from '@/features/admin/admin-nav'
-import { cn } from '@/lib/utils'
+import { AdminWorkspaceSwitcher } from '@/features/admin/admin-workspace-switcher'
 
 function NavSection({
   label,
@@ -91,7 +91,7 @@ function AdminAppShellLayout() {
               <TooltipTrigger asChild>
                 <Link
                   to='/admin'
-                  className='flex size-8 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                  className='flex size-8 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                 >
                   <LogoMark />
                 </Link>
@@ -103,7 +103,7 @@ function AdminAppShellLayout() {
           ) : (
             <Link
               to='/admin'
-              className='flex items-center gap-2 rounded-md px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+              className='flex items-center gap-2 rounded-md px-1 py-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
             >
               <Logo className='h-6 w-auto max-w-[7rem]' />
             </Link>

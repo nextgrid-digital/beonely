@@ -42,9 +42,7 @@ const PublicSiteAuthContext = createContext<PublicSiteAuthContextValue | null>(
 const publicSiteAuthFallback: PublicSiteAuthContextValue = {
   requireAuthForPostJob: () => {
     const dest = '/recruiter/jobs/new'
-    window.location.assign(
-      `/sign-in?redirect=${encodeURIComponent(dest)}`
-    )
+    window.location.assign(`/sign-in?redirect=${encodeURIComponent(dest)}`)
   },
   openCandidateAuthModal: () => {
     window.location.assign('/sign-in')

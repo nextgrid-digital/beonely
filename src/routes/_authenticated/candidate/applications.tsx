@@ -6,8 +6,8 @@ import {
 } from '@/lib/supabase/client'
 import type { JobRow, Tables } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
-import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 import { Badge } from '@/components/ui/badge'
+import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 
 export const Route = createFileRoute('/_authenticated/candidate/applications')({
   component: CandidateApplicationsPage,

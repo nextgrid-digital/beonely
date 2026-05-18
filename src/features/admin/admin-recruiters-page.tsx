@@ -56,7 +56,9 @@ export function AdminRecruitersPage() {
           <TableBody>
             {query.data.map((row) => (
               <TableRow key={row.id}>
-                <TableCell className='font-medium'>{row.company_name}</TableCell>
+                <TableCell className='font-medium'>
+                  {row.company_name}
+                </TableCell>
                 <TableCell>{row.email}</TableCell>
                 <TableCell>
                   <Badge variant='secondary' className='capitalize'>

@@ -13,7 +13,10 @@ export function validateCandidateAvatarFile(file: File): string | null {
 }
 
 /** Appends a cache-busting query param so browser/img tags reload after upsert to the same path. */
-export function cacheBustAvatarPublicUrl(publicUrl: string, versionMs?: number): string {
+export function cacheBustAvatarPublicUrl(
+  publicUrl: string,
+  versionMs?: number
+): string {
   const v = versionMs ?? Date.now()
   const sep = publicUrl.includes('?') ? '&' : '?'
   return `${publicUrl}${sep}v=${v}`

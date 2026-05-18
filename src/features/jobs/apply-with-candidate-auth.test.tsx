@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { Session, User } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
-import type { ProfileRow } from '@/lib/supabase/database.types'
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
+import type { ProfileRow } from '@/lib/supabase/database.types'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 
 const navigate = vi.fn()
@@ -76,9 +76,7 @@ vi.mock('@/lib/supabase/client', () => ({
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            maybeSingle: vi
-              .fn()
-              .mockResolvedValue({ data: null, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
           })),
         })),
       }
@@ -374,7 +372,9 @@ describe('ApplyWithCandidateAuth', () => {
       refreshProfile: vi.fn(),
       signOut: vi.fn(),
     })
-    maybeSingleProfile.mockRejectedValueOnce(new Error('Temporary backend error'))
+    maybeSingleProfile.mockRejectedValueOnce(
+      new Error('Temporary backend error')
+    )
 
     const screen = await renderWithQuery(
       <ApplyWithCandidateAuth job={linkedInJob} />

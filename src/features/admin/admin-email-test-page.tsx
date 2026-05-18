@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-provider'
 import { testSendEmail } from '@/lib/email/admin-email-api'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,7 +50,9 @@ export function AdminEmailTestPage() {
         return
       }
       if (data.reason === 'automation_disabled') {
-        toast.warning('That automation is turned off in Admin → Email → Automations.')
+        toast.warning(
+          'That automation is turned off in Admin → Email → Automations.'
+        )
         return
       }
       toast.message('Send skipped', {
@@ -101,9 +103,7 @@ export function AdminEmailTestPage() {
           disabled={!email.trim() || send.isPending}
           onClick={() => send.mutate()}
         >
-          {send.isPending ? (
-            <Loader2 className='size-4 animate-spin' />
-          ) : null}
+          {send.isPending ? <Loader2 className='size-4 animate-spin' /> : null}
           Send test
         </Button>
       </div>

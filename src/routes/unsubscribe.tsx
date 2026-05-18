@@ -1,7 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { PublicSiteFooter, PublicSiteHeader } from '@/features/jobs/public-site-layout'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  PublicSiteFooter,
+  PublicSiteHeader,
+} from '@/features/jobs/public-site-layout'
 
 const searchSchema = z.object({
   token: z.string().optional(),

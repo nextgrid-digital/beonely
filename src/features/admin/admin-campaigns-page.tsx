@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-provider'
-import type { Database } from '@/lib/supabase/database.types'
 import {
   createAdminCampaign,
   fetchAdminCampaigns,
   fetchCampaignStats,
   sendAdminCampaign,
 } from '@/lib/email/admin-email-api'
+import type { Database } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -31,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
 
 type CampaignAudience = Database['public']['Enums']['campaign_audience']
 

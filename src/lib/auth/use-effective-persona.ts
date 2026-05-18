@@ -1,6 +1,6 @@
-import { useAuth } from '@/context/auth-provider'
-import { useAdminWorkspace } from '@/context/admin-workspace-provider'
 import type { ProfileRow } from '@/lib/supabase/database.types'
+import { useAdminWorkspace } from '@/context/admin-workspace-provider'
+import { useAuth } from '@/context/auth-provider'
 
 export type EffectivePersona = ProfileRow['role']
 

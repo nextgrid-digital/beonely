@@ -162,7 +162,10 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
-        <Button className='mt-2 min-h-11 w-full sm:min-h-10' disabled={isLoading}>
+        <Button
+          className='mt-2 min-h-11 w-full sm:min-h-10'
+          disabled={isLoading}
+        >
           {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
           Sign in
         </Button>

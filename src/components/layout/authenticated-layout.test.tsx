@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 
 vi.mock('@/features/jobs/public-site-layout', () => ({
   PublicSiteHeader: () => null,
@@ -51,8 +52,6 @@ vi.mock('@/context/admin-workspace-provider', () => ({
 vi.mock('@/features/admin/admin-app-shell', () => ({
   AdminAppShell: () => <div data-testid='admin-shell'>Admin</div>,
 }))
-
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 
 describe('AuthenticatedLayout', () => {
   it('renders admin shell on /admin without PublicSiteAuthProvider throw', async () => {

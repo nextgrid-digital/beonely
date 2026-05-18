@@ -1,13 +1,13 @@
 import {
-  getSupabaseBrowserClient,
-  getSupabaseConfigured,
-} from '@/lib/supabase/client'
-import type { JobRow } from '@/lib/supabase/database.types'
-import {
   applyPublishedJobFilters,
   filterNonExpiredJobs,
   type PublishedJobsFilters,
 } from '@/lib/jobs/published-jobs-query'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import type { JobRow } from '@/lib/supabase/database.types'
 
 /** LinkedIn-import listings: approved, paid, active, newest first. */
 export async function fetchScrapedJobs(

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/context/auth-provider'
 import { fetchEmailAnalytics } from '@/lib/email/admin-email-api'
+import { useAuth } from '@/context/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {

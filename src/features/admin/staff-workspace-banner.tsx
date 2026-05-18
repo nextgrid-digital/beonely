@@ -2,8 +2,8 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { Shield } from 'lucide-react'
 import { ADMIN_WORKSPACE_LABELS } from '@/lib/auth/admin-workspace'
 import { useAdminWorkspace } from '@/context/admin-workspace-provider'
-import { AdminWorkspaceSwitcher } from '@/features/admin/admin-workspace-switcher'
 import { Button } from '@/components/ui/button'
+import { AdminWorkspaceSwitcher } from '@/features/admin/admin-workspace-switcher'
 
 export function StaffWorkspaceBanner() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })

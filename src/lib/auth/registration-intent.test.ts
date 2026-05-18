@@ -40,8 +40,6 @@ describe('isRecruiterRegistrationMetadata', () => {
         user_metadata: { registration_intent: 'candidate' },
       })
     ).toBe(false)
-    expect(
-      isRecruiterRegistrationMetadata({ user_metadata: {} })
-    ).toBe(false)
+    expect(isRecruiterRegistrationMetadata({ user_metadata: {} })).toBe(false)
   })
 })

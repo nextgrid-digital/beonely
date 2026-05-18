@@ -7,16 +7,14 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import type { Enums, JobRow, RecruiterRow, Tables } from '@/lib/supabase/database.types'
+import type {
+  Enums,
+  JobRow,
+  RecruiterRow,
+  Tables,
+} from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
 import {
   Select,
   SelectContent,
@@ -24,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import {
   Table,
   TableBody,
@@ -48,8 +53,9 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [profileSheetApp, setProfileSheetApp] =
-    useState<ApplicationRow | null>(null)
+  const [profileSheetApp, setProfileSheetApp] = useState<ApplicationRow | null>(
+    null
+  )
 
   const recruiterQuery = useQuery({
     queryKey: ['recruiter', user?.id],
@@ -95,10 +101,10 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
     queryKey: ['job-applicants', jobId],
     enabled: Boolean(
       getSupabaseConfigured() &&
-        jobId &&
-        job &&
-        recruiter &&
-        job.recruiter_id === recruiter.id
+      jobId &&
+      job &&
+      recruiter &&
+      job.recruiter_id === recruiter.id
     ),
     queryFn: async () => {
       const sb = getSupabaseBrowserClient()
@@ -266,7 +272,9 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
           <TableBody>
             {(appsQuery.data ?? []).map((app) => (
               <TableRow key={app.id}>
-                <TableCell className='font-medium'>{app.candidate_name}</TableCell>
+                <TableCell className='font-medium'>
+                  {app.candidate_name}
+                </TableCell>
                 <TableCell className='max-w-[10rem] truncate text-sm'>
                   {app.candidate_email}
                 </TableCell>
@@ -290,7 +298,7 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
                 <TableCell className='text-sm'>
                   {app.current_company ?? '—'}
                 </TableCell>
-                <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>
+                <TableCell className='text-xs whitespace-nowrap text-muted-foreground'>
                   {new Date(app.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell className='text-sm'>
@@ -306,7 +314,9 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
                       </a>
                     ) : null}
                     {app.resume_storage_path ? (
-                      <span className='text-muted-foreground'>Resume uploaded</span>
+                      <span className='text-muted-foreground'>
+                        Resume uploaded
+                      </span>
                     ) : null}
                     {!app.resume_url && !app.resume_storage_path ? '—' : null}
                   </div>
@@ -367,8 +377,7 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
           <SheetHeader className='shrink-0 border-b border-border pb-4'>
             <SheetTitle>Candidate profile</SheetTitle>
             <SheetDescription>
-              Snapshot from when they applied. Contact details are in the
-              table.
+              Snapshot from when they applied. Contact details are in the table.
             </SheetDescription>
           </SheetHeader>
           <div className='min-h-0 flex-1 overflow-y-auto py-4'>

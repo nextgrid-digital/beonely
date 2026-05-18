@@ -31,8 +31,8 @@ export function ScrapedJobsSection({
           Roles from LinkedIn
         </h2>
         <p className='text-sm text-muted-foreground'>
-          Aggregated ServiceNow listings sourced from LinkedIn. Apply on LinkedIn
-          (opens in a new tab).
+          Aggregated ServiceNow listings sourced from LinkedIn. Apply on
+          LinkedIn (opens in a new tab).
         </p>
       </div>
 

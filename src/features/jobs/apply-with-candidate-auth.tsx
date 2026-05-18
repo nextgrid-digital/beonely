@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { ExternalLink, Loader2, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
+import { apiPost } from '@/lib/api-client'
 import {
   signInCardDescription,
   signInCardTitle,
@@ -17,7 +18,6 @@ import {
   showLinkedInBrand,
 } from '@/lib/jobs/apply-target'
 import { submitBeonelyApplication } from '@/lib/jobs/submit-beonely-application'
-import { apiPost } from '@/lib/api-client'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -45,12 +45,7 @@ function LinkedInLogoMark({ className }: { className?: string }) {
 
 export type ApplyJob = Pick<
   JobRow,
-  | 'id'
-  | 'recruiter_id'
-  | 'apply_url'
-  | 'source_kind'
-  | 'job_slug'
-  | 'job_title'
+  'id' | 'recruiter_id' | 'apply_url' | 'source_kind' | 'job_slug' | 'job_title'
 >
 
 function applyFlowErrorMessage(error: unknown): string {
@@ -102,7 +97,10 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
   const beonelyAppliedQuery = useQuery({
     queryKey: ['beonely-application', user?.id, job.id],
     enabled: Boolean(
-      user && getSupabaseConfigured() && beonely && profile?.role === 'candidate'
+      user &&
+      getSupabaseConfigured() &&
+      beonely &&
+      profile?.role === 'candidate'
     ),
     queryFn: async () => {
       try {
@@ -126,51 +124,51 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
 
   const { mutate: applyBeonelyMutate, isPending: applyBeonelyPending } =
     useMutation({
-    mutationFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data: authUserRes } = await sb.auth.getUser()
-      const authUser = authUserRes.user
-      if (!authUser) throw new Error('Not signed in')
-      await syncJobSeekerFromUserMetadata(sb, authUser)
-      const row = await fetchJobSeekerSnapshotRow(authUser.id)
-      if (!row) throw new Error('Complete your profile first')
-      const { error } = await submitBeonelyApplication({
-        sb,
-        job,
-        authUser,
-        jobSeekerRow: {
-          email: row.email,
-          full_name: row.full_name,
-          phone: row.phone,
-          linkedin_url: row.linkedin_url,
-          portfolio_url: row.portfolio_url,
-          resume_structured: row.resume_structured,
-          resume_storage_path: row.resume_storage_path,
-        },
-      })
-      if (error) throw new Error(error)
-      const token = session?.access_token
-      if (token) {
-        try {
-          await apiPost('/api/notify-application', { job_id: job.id }, token)
-        } catch {
-          /* application saved; email is best-effort */
+      mutationFn: async () => {
+        const sb = getSupabaseBrowserClient()
+        const { data: authUserRes } = await sb.auth.getUser()
+        const authUser = authUserRes.user
+        if (!authUser) throw new Error('Not signed in')
+        await syncJobSeekerFromUserMetadata(sb, authUser)
+        const row = await fetchJobSeekerSnapshotRow(authUser.id)
+        if (!row) throw new Error('Complete your profile first')
+        const { error } = await submitBeonelyApplication({
+          sb,
+          job,
+          authUser,
+          jobSeekerRow: {
+            email: row.email,
+            full_name: row.full_name,
+            phone: row.phone,
+            linkedin_url: row.linkedin_url,
+            portfolio_url: row.portfolio_url,
+            resume_structured: row.resume_structured,
+            resume_storage_path: row.resume_storage_path,
+          },
+        })
+        if (error) throw new Error(error)
+        const token = session?.access_token
+        if (token) {
+          try {
+            await apiPost('/api/notify-application', { job_id: job.id }, token)
+          } catch {
+            /* application saved; email is best-effort */
+          }
         }
-      }
-    },
-    onSuccess: () => {
-      toast.success('Application sent to the employer')
-      void qc.invalidateQueries({
-        queryKey: ['beonely-application', user?.id, job.id],
-      })
-      void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
-      void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
-      void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
-    },
-    onError: (e: Error) => {
-      toast.error(e.message || 'Could not submit application')
-    },
-  })
+      },
+      onSuccess: () => {
+        toast.success('Application sent to the employer')
+        void qc.invalidateQueries({
+          queryKey: ['beonely-application', user?.id, job.id],
+        })
+        void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+        void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+        void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
+      },
+      onError: (e: Error) => {
+        toast.error(e.message || 'Could not submit application')
+      },
+    })
 
   const openExternalApply = useCallback(() => {
     window.open(job.apply_url, '_blank', 'noopener,noreferrer')
@@ -185,7 +183,10 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         const authUser = authUserRes.user
         if (!authUser) return
 
-        if (authProfile?.role === 'recruiter' || authProfile?.role === 'admin') {
+        if (
+          authProfile?.role === 'recruiter' ||
+          authProfile?.role === 'admin'
+        ) {
           if (beonely) {
             toast.message(recruiterApplyRedirectMessage)
             void navigate({ to: '/recruiter' })
@@ -232,7 +233,11 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           const token = session?.access_token
           if (token) {
             try {
-              await apiPost('/api/notify-application', { job_id: job.id }, token)
+              await apiPost(
+                '/api/notify-application',
+                { job_id: job.id },
+                token
+              )
             } catch {
               /* best-effort */
             }
@@ -251,7 +256,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         toast.error(applyFlowErrorMessage(error))
       }
     },
-    [beonely, job, navigate, openExternalApply, qc]
+    [beonely, job, navigate, openExternalApply, qc, session]
   )
 
   const handleApplyClick = useCallback(async () => {
@@ -329,10 +334,7 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         ) : beonely ? (
           <>
             {checkingApplied ? (
-              <Loader2
-                className='size-5 shrink-0 animate-spin'
-                aria-hidden
-              />
+              <Loader2 className='size-5 shrink-0 animate-spin' aria-hidden />
             ) : (
               <UserRound className='size-5 shrink-0' aria-hidden />
             )}

@@ -13,6 +13,8 @@ import {
   candidatePhoneSchema,
 } from '@/lib/candidate/profile-completion'
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
+import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -29,8 +31,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
-import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 
 type CandidateSignUpFields = {
   linkedin_url: string
@@ -217,9 +217,11 @@ export function SignUpForm({
               trigger_key: 'candidate_signup',
               payload: {
                 name:
-                  (signUpData.user?.user_metadata?.full_name as
-                    | string
-                    | undefined)?.trim() || email.split('@')[0],
+                  (
+                    signUpData.user?.user_metadata?.full_name as
+                      | string
+                      | undefined
+                  )?.trim() || email.split('@')[0],
               },
               dedupe_key: `candidate_signup:${uid}`,
             }).catch(() => undefined)
@@ -238,7 +240,11 @@ export function SignUpForm({
         }
       }
 
-      if (intent === 'recruiter' && hasSession && signUpData.session?.access_token) {
+      if (
+        intent === 'recruiter' &&
+        hasSession &&
+        signUpData.session?.access_token
+      ) {
         try {
           await updateMarketingConsent({
             marketing_opt_in: true,
@@ -384,7 +390,10 @@ export function SignUpForm({
             />
           </div>
         ) : null}
-        <Button className='mt-2 min-h-11 w-full sm:min-h-10' disabled={isLoading}>
+        <Button
+          className='mt-2 min-h-11 w-full sm:min-h-10'
+          disabled={isLoading}
+        >
           {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}
           Create Account
         </Button>

@@ -39,7 +39,10 @@ export function useAdminDashboardStats() {
         recruitersRes,
         candidatesRes,
       ] = await Promise.all([
-        sb.from('payments').select('amount, currency, status').eq('status', 'paid'),
+        sb
+          .from('payments')
+          .select('amount, currency, status')
+          .eq('status', 'paid'),
         sb
           .from('payments')
           .select('amount, currency, status, created_at')

@@ -7,12 +7,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { persistCandidateProfileDraft } from '@/lib/candidate/persist-candidate-profile-draft'
 import {
   type AccountResumePrefill,
   prefillResumeFromProfile,
   shouldPrefillResumeFromAccount,
 } from '@/lib/candidate/resume-prefill'
-import { persistCandidateProfileDraft } from '@/lib/candidate/persist-candidate-profile-draft'
 import {
   parseResumeStructured,
   type ResumeStructuredV1,

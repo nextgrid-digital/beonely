@@ -6,6 +6,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Loader2, Plus, Briefcase } from 'lucide-react'
 import { toast } from 'sonner'
+import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
+import { formatQueryError } from '@/lib/format-query-error'
 import { PLAN_LABEL, type PaymentPlan } from '@/lib/payments/plans'
 import { startRazorpayJobCheckout } from '@/lib/payments/razorpay-job-checkout'
 import {
@@ -13,9 +16,7 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
-import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
-import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -44,8 +46,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 
 const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
@@ -264,12 +264,11 @@ export function RecruiterPortal() {
       ) : !jobsQuery.isError && showEmptyJobs ? (
         <Card className='border-dashed bg-muted/30'>
           <CardContent className='flex flex-col items-center gap-4 py-12 text-center'>
-            <Briefcase
-              className='size-12 text-muted-foreground'
-              aria-hidden
-            />
+            <Briefcase className='size-12 text-muted-foreground' aria-hidden />
             <div className='space-y-1'>
-              <p className='text-base font-medium text-foreground'>No jobs yet</p>
+              <p className='text-base font-medium text-foreground'>
+                No jobs yet
+              </p>
               <p className='text-sm text-muted-foreground'>
                 Create a draft listing, then pay with Razorpay and wait for
                 moderation before it appears on public job search.
@@ -385,7 +384,7 @@ export function RecruiterPortal() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+                  <TableHead className='w-[1%] text-end whitespace-nowrap tabular-nums'>
                     Applicants
                   </TableHead>
                   <TableHead>Approval</TableHead>
@@ -420,7 +419,7 @@ export function RecruiterPortal() {
                           </Link>
                         </Button>
                       </TableCell>
-                      <TableCell className='text-end tabular-nums text-muted-foreground'>
+                      <TableCell className='text-end text-muted-foreground tabular-nums'>
                         {applicationCounts[job.id] ?? 0}
                       </TableCell>
                       <TableCell>
@@ -508,7 +507,7 @@ function RecruiterJobsTableSkeleton() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead className='w-[1%] whitespace-nowrap text-end tabular-nums'>
+              <TableHead className='w-[1%] text-end whitespace-nowrap tabular-nums'>
                 Applicants
               </TableHead>
               <TableHead>Approval</TableHead>
@@ -611,10 +610,7 @@ function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
             ))}
           </div>
           <DialogFooter>
-            <Button
-              disabled={paying}
-              onClick={() => void startPay()}
-            >
+            <Button disabled={paying} onClick={() => void startPay()}>
               {paying ? (
                 <>
                   <Loader2 className='size-4 animate-spin' aria-hidden />
@@ -707,10 +703,7 @@ function FeaturedBoostButton(props: {
             ))}
           </div>
           <DialogFooter>
-            <Button
-              disabled={paying}
-              onClick={() => void startPay()}
-            >
+            <Button disabled={paying} onClick={() => void startPay()}>
               {paying ? (
                 <>
                   <Loader2 className='size-4 animate-spin' aria-hidden />

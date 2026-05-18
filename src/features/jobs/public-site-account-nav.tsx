@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react'
@@ -24,7 +25,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import { usePublicSiteAuth } from '@/features/jobs/public-site-auth-provider'
-import { useState } from 'react'
 
 function candidateAvatarFromResumeRow(
   row: { resume_structured: unknown } | null | undefined

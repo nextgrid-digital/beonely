@@ -7,11 +7,11 @@ import {
   useState,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
+import { isRecruiterRegistrationMetadata } from '@/lib/auth/registration-intent'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import { isRecruiterRegistrationMetadata } from '@/lib/auth/registration-intent'
 import type { ProfileRow } from '@/lib/supabase/database.types'
 
 type AuthContextValue = {

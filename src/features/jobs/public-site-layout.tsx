@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/assets/logo'
-import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { FooterNewsletterSubscribe } from '@/features/jobs/footer-newsletter-subscribe'
+import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
 
 /** Shared with profile resume builder and jobs detail sticky subheaders. */
 export const PUBLIC_SITE_BREADCRUMB_LIST =

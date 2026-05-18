@@ -1,15 +1,15 @@
 import {
-  getSupabaseBrowserClient,
-  getSupabaseConfigured,
-} from '@/lib/supabase/client'
-import type { JobRow } from '@/lib/supabase/database.types'
-import { sortPublishedJobsForFeed } from '@/lib/jobs/sort-published-jobs'
-import {
   applyPublishedJobFilters,
   filterNonExpiredJobs,
   publishedJobsFilterSchema,
   type PublishedJobsFilters,
 } from '@/lib/jobs/published-jobs-query'
+import { sortPublishedJobsForFeed } from '@/lib/jobs/sort-published-jobs'
+import {
+  getSupabaseBrowserClient,
+  getSupabaseConfigured,
+} from '@/lib/supabase/client'
+import type { JobRow } from '@/lib/supabase/database.types'
 
 export { publishedJobsFilterSchema, type PublishedJobsFilters }
 

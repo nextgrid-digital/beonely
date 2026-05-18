@@ -47,8 +47,7 @@ export function StaffSignIn() {
       return
     }
 
-    const dest =
-      redirect && redirect.startsWith('/') ? redirect : '/admin'
+    const dest = redirect && redirect.startsWith('/') ? redirect : '/admin'
     void navigate({ to: dest, replace: true })
   }
 
@@ -58,7 +57,9 @@ export function StaffSignIn() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>Staff sign in</CardTitle>
+          <CardTitle className='text-lg tracking-tight'>
+            Staff sign in
+          </CardTitle>
           <CardDescription>
             Internal use only. Your email must be on the staff allowlist and
             your account must have admin access in Beonely.

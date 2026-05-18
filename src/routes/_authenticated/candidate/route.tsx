@@ -7,15 +7,15 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { requireCandidateAccountBeforeLoad } from '@/lib/auth/route-guards'
+import { useEffectivePersona } from '@/lib/auth/use-effective-persona'
 import { isJobSeekerProfileComplete } from '@/lib/candidate/profile-completion'
 import { syncJobSeekerFromUserMetadata } from '@/lib/candidate/sync-job-seeker-from-metadata'
+import { formatQueryError } from '@/lib/format-query-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import { formatQueryError } from '@/lib/format-query-error'
 import { useAuth } from '@/context/auth-provider'
-import { useEffectivePersona } from '@/lib/auth/use-effective-persona'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 

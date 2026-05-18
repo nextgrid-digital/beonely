@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
 import {
   getAdminWorkspace,
   setAdminWorkspace,
@@ -15,7 +16,6 @@ import {
 } from '@/lib/auth/admin-workspace'
 import { ensureAdminCandidateProfile } from '@/lib/auth/ensure-admin-candidate-profile'
 import { useAuth } from '@/context/auth-provider'
-import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
 
 type AdminWorkspaceContextValue = {
   workspace: AdminWorkspace

@@ -26,9 +26,9 @@ describe('recruiterSubnavActiveKey', () => {
   it('defaults to my-jobs for listings, applicants, and job editor', () => {
     expect(recruiterSubnavActiveKey('/recruiter')).toBe('my-jobs')
     expect(recruiterSubnavActiveKey('/recruiter/')).toBe('my-jobs')
-    expect(
-      recruiterSubnavActiveKey('/recruiter/jobs/abc/applicants')
-    ).toBe('my-jobs')
+    expect(recruiterSubnavActiveKey('/recruiter/jobs/abc/applicants')).toBe(
+      'my-jobs'
+    )
     expect(recruiterSubnavActiveKey('/recruiter/jobs/new')).toBe('my-jobs')
     expect(
       recruiterSubnavActiveKey(
@@ -54,13 +54,13 @@ describe('recruiterBreadcrumbSegments', () => {
   })
 
   it('lists applicants trail', () => {
-    expect(
-      recruiterBreadcrumbSegments('/recruiter/jobs/x/applicants')
-    ).toEqual([
-      { label: 'Recruiter', to: '/recruiter' },
-      { label: 'My jobs', to: '/recruiter' },
-      { label: 'Applicants' },
-    ])
+    expect(recruiterBreadcrumbSegments('/recruiter/jobs/x/applicants')).toEqual(
+      [
+        { label: 'Recruiter', to: '/recruiter' },
+        { label: 'My jobs', to: '/recruiter' },
+        { label: 'Applicants' },
+      ]
+    )
   })
 
   it('lists new listing trail', () => {

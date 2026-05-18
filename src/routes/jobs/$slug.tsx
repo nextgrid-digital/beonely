@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
+import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -13,10 +14,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
+import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
 import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
 import { JobDescriptionRichTextRead } from '@/features/jobs/job-description-rich-text-field'
-import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
-import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
@@ -214,26 +214,26 @@ function JobDetailPage() {
                   className='size-14'
                 />
                 <div className='min-w-0 flex-1'>
-                <div className='flex flex-wrap items-center gap-2'>
-                  <h1 className='text-2xl font-semibold tracking-tight sm:text-3xl'>
-                    {job.job_title}
-                  </h1>
-                  {job.featured && <Badge>Featured</Badge>}
-                </div>
-                <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
-                  {job.company_name}
-                </p>
-                <div className='mt-3 flex flex-wrap gap-2'>
-                  {job.location && (
-                    <Badge variant='outline'>{job.location}</Badge>
-                  )}
-                  {job.employment_type && (
-                    <Badge variant='outline'>{job.employment_type}</Badge>
-                  )}
-                  {job.work_mode && (
-                    <Badge variant='outline'>{job.work_mode}</Badge>
-                  )}
-                </div>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <h1 className='text-2xl font-semibold tracking-tight sm:text-3xl'>
+                      {job.job_title}
+                    </h1>
+                    {job.featured && <Badge>Featured</Badge>}
+                  </div>
+                  <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
+                    {job.company_name}
+                  </p>
+                  <div className='mt-3 flex flex-wrap gap-2'>
+                    {job.location && (
+                      <Badge variant='outline'>{job.location}</Badge>
+                    )}
+                    {job.employment_type && (
+                      <Badge variant='outline'>{job.employment_type}</Badge>
+                    )}
+                    {job.work_mode && (
+                      <Badge variant='outline'>{job.work_mode}</Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className='flex w-full shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:w-auto sm:flex-row'>

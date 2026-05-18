@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-provider'
 import { fetchAutomations, patchAutomation } from '@/lib/email/admin-email-api'
 import { getTransactionalEmailPreviews } from '@/lib/email/transactional-email-previews'
+import { useAuth } from '@/context/auth-provider'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import {
   Table,
@@ -12,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export function AdminEmailAutomationsPage() {
   const { session } = useAuth()

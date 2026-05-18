@@ -21,9 +21,9 @@ describe('shouldBypassGlobal500Redirect', () => {
   })
 
   it('does not bypass unrelated roots', () => {
-    expect(
-      shouldBypassGlobal500Redirect(['admin-jobs'], '/rest/v1/jobs')
-    ).toBe(false)
+    expect(shouldBypassGlobal500Redirect(['admin-jobs'], '/rest/v1/jobs')).toBe(
+      false
+    )
   })
 })
 

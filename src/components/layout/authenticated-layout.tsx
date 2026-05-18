@@ -1,9 +1,9 @@
 import { Outlet, useRouterState } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { SearchProvider } from '@/context/search-provider'
-import { PublicSiteHeader } from '@/features/jobs/public-site-layout'
 import { AdminAppShell } from '@/features/admin/admin-app-shell'
 import { StaffWorkspaceBanner } from '@/features/admin/staff-workspace-banner'
+import { PublicSiteHeader } from '@/features/jobs/public-site-layout'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -11,8 +11,7 @@ type AuthenticatedLayoutProps = {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isAdminRoute =
-    pathname === '/admin' || pathname.startsWith('/admin/')
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
 
   if (isAdminRoute) {
     return (

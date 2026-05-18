@@ -34,3 +34,5 @@ dist-ssr
 .vitest-attachments/
 .vercel
 .env*.local
+
+.tanstack/

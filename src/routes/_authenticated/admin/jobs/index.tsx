@@ -1,15 +1,21 @@
 import { useMemo, useState } from 'react'
+import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { MoreHorizontal } from 'lucide-react'
-import { z } from 'zod'
 import { toast } from 'sonner'
+import { notifyJobStatus } from '@/lib/email/admin-email-api'
 import { formatQueryError } from '@/lib/format-query-error'
-import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  plainTextFromJobDescription,
+  sanitizeJobDescriptionHtml,
+} from '@/lib/jobs/sanitize-job-description-html'
 import { listingDurationToDays } from '@/lib/payments/plans'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-provider'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,8 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -37,13 +42,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
 import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
-import {
-  plainTextFromJobDescription,
-  sanitizeJobDescriptionHtml,
-} from '@/lib/jobs/sanitize-job-description-html'
-import { useAuth } from '@/context/auth-provider'
-import { notifyJobStatus } from '@/lib/email/admin-email-api'
 
 const adminJobsSearchSchema = z.object({
   queue: z
@@ -126,7 +126,9 @@ function AdminJobsPage() {
             accessToken,
           })
         } catch {
-          toast.message('Listing rejected; notification email may not have sent.')
+          toast.message(
+            'Listing rejected; notification email may not have sent.'
+          )
         }
       }
       setRejectTarget(null)
@@ -168,7 +170,9 @@ function AdminJobsPage() {
             accessToken,
           })
         } catch {
-          toast.message('Listing approved; notification email may not have sent.')
+          toast.message(
+            'Listing approved; notification email may not have sent.'
+          )
         }
       }
       void qc.invalidateQueries({ queryKey: ['admin-jobs'] })
@@ -254,7 +258,7 @@ function AdminJobsPage() {
     'sticky z-10 bg-background group-hover:bg-muted/50 group-data-[state=selected]:bg-muted'
 
   return (
-    <div className='min-w-0 max-w-full space-y-4 py-6'>
+    <div className='max-w-full min-w-0 space-y-4 py-6'>
       <Dialog
         open={editingJob !== null}
         onOpenChange={(open) => {
@@ -366,7 +370,9 @@ function AdminJobsPage() {
         </DialogContent>
       </Dialog>
       <div>
-        <h1 className='text-2xl font-semibold tracking-tight'>Job moderation</h1>
+        <h1 className='text-2xl font-semibold tracking-tight'>
+          Job moderation
+        </h1>
         <p className='text-sm text-muted-foreground'>
           Approve paid listings, toggle featured, reject spam.
         </p>
@@ -411,135 +417,125 @@ function AdminJobsPage() {
       {!jobsQuery.isError ? (
         <div className='min-w-0 overflow-x-auto'>
           <Table className='min-w-[56rem]'>
-        <TableHeader>
-          <TableRow>
-            <TableHead
-              className={cn(
-                stickyHead,
-                'start-0 min-w-[10rem] max-w-[14rem]'
-              )}
-            >
-              Title
-            </TableHead>
-            <TableHead className='min-w-[7rem]'>Company</TableHead>
-            <TableHead className='hidden min-w-[8rem] sm:table-cell'>
-              Plan
-            </TableHead>
-            <TableHead>Approval</TableHead>
-            <TableHead>Payment</TableHead>
-            <TableHead className='hidden min-w-[7rem] lg:table-cell'>
-              Source
-            </TableHead>
-            <TableHead className='hidden md:table-cell'>Created</TableHead>
-            <TableHead
-              className={cn(
-                stickyHead,
-                'end-0 w-12 text-end'
-              )}
-            >
-              <span className='sr-only'>Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredJobs.map((job) => (
-            <TableRow key={job.id} className='group'>
-              <TableCell
-                className={cn(
-                  stickyCell,
-                  'start-0 max-w-[14rem] font-medium whitespace-normal'
-                )}
-              >
-                <Link
-                  to='/jobs/$slug'
-                  params={{ slug: job.job_slug }}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='line-clamp-2 hover:underline'
-                  title={job.job_title}
+            <TableHeader>
+              <TableRow>
+                <TableHead
+                  className={cn(
+                    stickyHead,
+                    'start-0 max-w-[14rem] min-w-[10rem]'
+                  )}
                 >
-                  {job.job_title}
-                </Link>
-              </TableCell>
-              <TableCell className='max-w-[10rem] truncate'>
-                {job.company_name}
-              </TableCell>
-              <TableCell className='hidden text-sm capitalize sm:table-cell'>
-                {job.listing_tier} · {job.listing_duration}
-              </TableCell>
-              <TableCell>
-                <Badge variant='outline'>{job.approval_status}</Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant='outline'>{job.payment_status}</Badge>
-              </TableCell>
-              <TableCell className='hidden lg:table-cell'>
-                {job.source_kind}
-              </TableCell>
-              <TableCell className='hidden text-sm text-muted-foreground tabular-nums md:table-cell'>
-                {new Date(job.created_at).toLocaleDateString()}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  stickyCell,
-                  'end-0 text-end'
-                )}
-              >
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type='button'
-                      size='icon'
-                      variant='outline'
-                      className='size-8'
-                      aria-label={`Actions for ${job.job_title}`}
+                  Title
+                </TableHead>
+                <TableHead className='min-w-[7rem]'>Company</TableHead>
+                <TableHead className='hidden min-w-[8rem] sm:table-cell'>
+                  Plan
+                </TableHead>
+                <TableHead>Approval</TableHead>
+                <TableHead>Payment</TableHead>
+                <TableHead className='hidden min-w-[7rem] lg:table-cell'>
+                  Source
+                </TableHead>
+                <TableHead className='hidden md:table-cell'>Created</TableHead>
+                <TableHead className={cn(stickyHead, 'end-0 w-12 text-end')}>
+                  <span className='sr-only'>Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredJobs.map((job) => (
+                <TableRow key={job.id} className='group'>
+                  <TableCell
+                    className={cn(
+                      stickyCell,
+                      'start-0 max-w-[14rem] font-medium whitespace-normal'
+                    )}
+                  >
+                    <Link
+                      to='/jobs/$slug'
+                      params={{ slug: job.job_slug }}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='line-clamp-2 hover:underline'
+                      title={job.job_title}
                     >
-                      <MoreHorizontal className='size-4' aria-hidden />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end' className='w-48'>
-                    <DropdownMenuItem
-                      onClick={() => openEditDescription(job)}
-                    >
-                      Edit description
-                    </DropdownMenuItem>
-                    {job.approval_status === 'pending' &&
-                      (job.payment_status === 'paid' ||
-                        job.source_kind === 'linkedin_import') && (
-                        <DropdownMenuItem
-                          onClick={() => approveListing.mutate(job)}
+                      {job.job_title}
+                    </Link>
+                  </TableCell>
+                  <TableCell className='max-w-[10rem] truncate'>
+                    {job.company_name}
+                  </TableCell>
+                  <TableCell className='hidden text-sm capitalize sm:table-cell'>
+                    {job.listing_tier} · {job.listing_duration}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant='outline'>{job.approval_status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant='outline'>{job.payment_status}</Badge>
+                  </TableCell>
+                  <TableCell className='hidden lg:table-cell'>
+                    {job.source_kind}
+                  </TableCell>
+                  <TableCell className='hidden text-sm text-muted-foreground tabular-nums md:table-cell'>
+                    {new Date(job.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className={cn(stickyCell, 'end-0 text-end')}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type='button'
+                          size='icon'
+                          variant='outline'
+                          className='size-8'
+                          aria-label={`Actions for ${job.job_title}`}
                         >
-                          Approve listing
-                        </DropdownMenuItem>
-                      )}
-                    {job.approval_status !== 'rejected' ? (
-                      <DropdownMenuItem
-                        className='text-destructive focus:text-destructive'
-                        onClick={() => {
-                          setRejectTarget(job)
-                          setRejectReason('')
-                        }}
-                      >
-                        Reject listing
-                      </DropdownMenuItem>
-                    ) : null}
-                    {job.approval_status === 'approved' &&
-                    job.payment_status === 'paid' ? (
-                      <>
-                        <DropdownMenuSeparator />
+                          <MoreHorizontal className='size-4' aria-hidden />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' className='w-48'>
                         <DropdownMenuItem
-                          onClick={() => toggleFeatured.mutate(job)}
+                          onClick={() => openEditDescription(job)}
                         >
-                          {job.featured ? 'Unfeature' : 'Feature'} listing
+                          Edit description
                         </DropdownMenuItem>
-                      </>
-                    ) : null}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
+                        {job.approval_status === 'pending' &&
+                          (job.payment_status === 'paid' ||
+                            job.source_kind === 'linkedin_import') && (
+                            <DropdownMenuItem
+                              onClick={() => approveListing.mutate(job)}
+                            >
+                              Approve listing
+                            </DropdownMenuItem>
+                          )}
+                        {job.approval_status !== 'rejected' ? (
+                          <DropdownMenuItem
+                            className='text-destructive focus:text-destructive'
+                            onClick={() => {
+                              setRejectTarget(job)
+                              setRejectReason('')
+                            }}
+                          >
+                            Reject listing
+                          </DropdownMenuItem>
+                        ) : null}
+                        {job.approval_status === 'approved' &&
+                        job.payment_status === 'paid' ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => toggleFeatured.mutate(job)}
+                            >
+                              {job.featured ? 'Unfeature' : 'Feature'} listing
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
           </Table>
         </div>
       ) : null}

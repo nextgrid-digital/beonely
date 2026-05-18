@@ -5,6 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import {
+  plainTextFromJobDescription,
+  sanitizeJobDescriptionHtml,
+} from '@/lib/jobs/sanitize-job-description-html'
 import { buildJobSlug } from '@/lib/jobs/slug'
 import {
   uploadJobCompanyLogo,
@@ -36,10 +40,6 @@ import {
 } from '@/components/ui/select'
 import { companyInitials } from '@/features/jobs/company-logo-avatar'
 import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
-import {
-  plainTextFromJobDescription,
-  sanitizeJobDescriptionHtml,
-} from '@/lib/jobs/sanitize-job-description-html'
 
 export const jobEditorSchema = z.object({
   title: z.string().min(2),
@@ -393,10 +393,7 @@ export function RecruiterJobEditorPage(props: {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -419,10 +416,7 @@ export function RecruiterJobEditorPage(props: {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -450,10 +444,7 @@ export function RecruiterJobEditorPage(props: {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Experience</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -477,10 +468,7 @@ export function RecruiterJobEditorPage(props: {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Work mode</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />

@@ -8,7 +8,7 @@ type LogoProps = ImgHTMLAttributes<HTMLImageElement> & {
   title?: string
 }
 
-export function Logo ({
+export function Logo({
   className,
   title = 'Beonely',
   alt,
@@ -31,7 +31,7 @@ export function Logo ({
 }
 
 /** Circular Beonely mark (sidebar icon mode, favicon-style). */
-export function LogoMark ({
+export function LogoMark({
   className,
   title = 'Beonely',
   alt,

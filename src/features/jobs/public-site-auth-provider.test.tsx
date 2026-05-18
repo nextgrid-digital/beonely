@@ -39,7 +39,9 @@ describe('usePublicSiteAuth', () => {
         <HookProbe />
       </PublicSiteAuthProvider>
     )
-    await expect.element(screen.getByRole('button', { name: /Post job probe/i })).toBeInTheDocument()
+    await expect
+      .element(screen.getByRole('button', { name: /Post job probe/i }))
+      .toBeInTheDocument()
   })
 
   it('returns production fallback without provider instead of throwing', async () => {

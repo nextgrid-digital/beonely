@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import type { JobRow } from '@/lib/supabase/database.types'
-import { useAuth } from '@/context/auth-provider'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
+import type { JobRow } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
-import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
+import { useAuth } from '@/context/auth-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
 
 /** Single-line-ish plain text for card excerpt (HTML descriptions are flattened first). */
 function excerptPlain(text: string): string {

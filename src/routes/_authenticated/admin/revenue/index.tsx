@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useAdminRevenue } from '@/features/admin/hooks/use-admin-revenue'
 import { useAdminDashboardStats } from '@/features/admin/hooks/use-admin-dashboard-stats'
+import { useAdminRevenue } from '@/features/admin/hooks/use-admin-revenue'
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat('en-IN', {
@@ -89,7 +89,7 @@ function AdminRevenuePage() {
           <TableBody>
             {revenue.data.map((row) => (
               <TableRow key={row.id}>
-                <TableCell className='whitespace-nowrap text-sm tabular-nums'>
+                <TableCell className='text-sm whitespace-nowrap tabular-nums'>
                   {new Date(row.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
@@ -98,7 +98,9 @@ function AdminRevenuePage() {
                     {row.company_name}
                   </div>
                 </TableCell>
-                <TableCell className='text-sm'>{row.job_title ?? '—'}</TableCell>
+                <TableCell className='text-sm'>
+                  {row.job_title ?? '—'}
+                </TableCell>
                 <TableCell className='tabular-nums'>
                   {formatInrFromPaise(row.amount)}
                 </TableCell>

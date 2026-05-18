@@ -1,13 +1,13 @@
-import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/context/auth-provider'
+import { Link } from '@tanstack/react-router'
 import {
   fetchAutomations,
   fetchCampaignStats,
   fetchEmailAnalytics,
 } from '@/lib/email/admin-email-api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function AdminEmailOverviewPage() {
@@ -44,7 +44,8 @@ export function AdminEmailOverviewPage() {
       <div>
         <h1 className='text-2xl font-semibold tracking-tight'>Email</h1>
         <p className='text-sm text-muted-foreground'>
-          Transactional automations, marketing campaigns, and delivery analytics.
+          Transactional automations, marketing campaigns, and delivery
+          analytics.
         </p>
       </div>
 

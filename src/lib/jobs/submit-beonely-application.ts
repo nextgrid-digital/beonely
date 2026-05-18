@@ -1,6 +1,6 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
-import type { Database, JobRow } from '@/lib/supabase/database.types'
 import { resumeStructuredEnvelopeSchema } from '@/lib/candidate/resume-structured-schema'
+import type { Database, JobRow } from '@/lib/supabase/database.types'
 
 type SB = SupabaseClient<Database>
 
@@ -52,8 +52,7 @@ export async function submitBeonelyApplication(
     return { error: 'This job does not accept Beonely applications.' }
   }
 
-  const email =
-    jobSeekerRow.email?.trim() || authUser.email?.trim() || ''
+  const email = jobSeekerRow.email?.trim() || authUser.email?.trim() || ''
   const name =
     jobSeekerRow.full_name?.trim() ||
     (authUser.user_metadata?.full_name as string | undefined)?.trim() ||

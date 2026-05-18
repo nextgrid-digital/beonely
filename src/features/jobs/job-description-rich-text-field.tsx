@@ -26,7 +26,7 @@ const JOB_EDITOR_BODY =
   'antialiased whitespace-pre-wrap text-left break-words text-sm text-foreground leading-relaxed [font-variation-settings:normal]'
 
 const JOB_EDITOR_CONTENT_CLASS = cn(
-  'min-h-[12rem] max-h-[min(32rem,50vh)] overflow-y-auto',
+  'max-h-[min(32rem,50vh)] min-h-[12rem] overflow-y-auto',
   JOB_EDITOR_BODY,
   '[&_p]:my-0 [&_p]:block [&_p+_p]:mt-3',
   '[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground',
@@ -37,7 +37,7 @@ const JOB_EDITOR_CONTENT_CLASS = cn(
 )
 
 const JOB_READ_CLASS = cn(
-  'min-w-0 max-w-none text-sm leading-relaxed text-foreground',
+  'max-w-none min-w-0 text-sm leading-relaxed text-foreground',
   '[&_p]:my-0 [&_p+_p]:mt-3',
   '[&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight',
   '[&_h3]:mt-4 [&_h3]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold',

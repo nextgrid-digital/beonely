@@ -1,12 +1,12 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
-import { StaffSignIn } from '@/features/auth/staff-sign-in'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
+import { fetchSessionPersona } from '@/lib/auth/route-guards'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
-import { fetchSessionPersona } from '@/lib/auth/route-guards'
+import { StaffSignIn } from '@/features/auth/staff-sign-in'
 
 const staffSignInSearchSchema = z.object({
   redirect: z.string().optional(),

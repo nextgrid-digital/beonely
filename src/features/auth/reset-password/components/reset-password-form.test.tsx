@@ -5,7 +5,9 @@ import { ResetPasswordForm } from './reset-password-form'
 
 const navigate = vi.fn()
 
-const updateUser = vi.fn().mockResolvedValue({ data: { user: {} }, error: null })
+const updateUser = vi
+  .fn()
+  .mockResolvedValue({ data: { user: {} }, error: null })
 const signOut = vi.fn().mockResolvedValue(undefined)
 
 const mocks = vi.hoisted(() => ({

@@ -1,17 +1,17 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
-import { useAuth } from '@/context/auth-provider'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
 import { formatQueryError } from '@/lib/format-query-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
 
 export const Route = createFileRoute(
   '/_authenticated/recruiter/jobs/$jobId/edit'
@@ -106,7 +106,10 @@ function RecruiterJobEditRoute() {
         <Alert variant='destructive'>
           <AlertTitle>Could not load job</AlertTitle>
           <AlertDescription>
-            {formatQueryError(err, 'Something went wrong while loading this listing.')}
+            {formatQueryError(
+              err,
+              'Something went wrong while loading this listing.'
+            )}
           </AlertDescription>
         </Alert>
         <div className='flex flex-wrap gap-2'>
@@ -130,11 +133,7 @@ function RecruiterJobEditRoute() {
 
   const recruiter = recruiterQuery.data
   const job = jobQuery.data
-  if (
-    !recruiter ||
-    !job ||
-    job.recruiter_id !== recruiter.id
-  ) {
+  if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
     return null
   }
 

@@ -7,9 +7,9 @@ import {
 
 describe('parseAdminAllowlist', () => {
   it('parses comma-separated emails trimmed and lowercased', () => {
-    expect(parseAdminAllowlist('  Ops@Company.com , admin@beonely.com ')).toEqual(
-      ['ops@company.com', 'admin@beonely.com']
-    )
+    expect(
+      parseAdminAllowlist('  Ops@Company.com , admin@beonely.com ')
+    ).toEqual(['ops@company.com', 'admin@beonely.com'])
   })
 
   it('returns empty array for blank input', () => {

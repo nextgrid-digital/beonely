@@ -6,6 +6,12 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import {
+  ADMIN_WORKSPACE_LABELS,
+  type AdminWorkspace,
+} from '@/lib/auth/admin-workspace'
+import { cn } from '@/lib/utils'
+import { useAdminWorkspace } from '@/context/admin-workspace-provider'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -17,12 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  ADMIN_WORKSPACE_LABELS,
-  type AdminWorkspace,
-} from '@/lib/auth/admin-workspace'
-import { useAdminWorkspace } from '@/context/admin-workspace-provider'
-import { cn } from '@/lib/utils'
 
 const WORKSPACES: AdminWorkspace[] = [
   'admin',
@@ -67,7 +67,7 @@ export function AdminWorkspaceSwitcher({
         // Radix clones ItemText into [data-slot=select-value]; hide it (sr-only loses to *:flex rules on SelectTrigger).
         '[&_[data-slot=select-value]]:hidden',
         sidebarIconMode &&
-          'gap-2 border-sidebar-border bg-sidebar-accent/30 shadow-none hover:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:min-w-0! group-data-[collapsible=icon]:p-2! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>svg:last-child]:hidden group-data-[collapsible=icon]:[&_[data-slot=workspace-label]]:sr-only'
+          'gap-2 border-sidebar-border bg-sidebar-accent/30 shadow-none group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:min-w-0! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent group-data-[collapsible=icon]:[&_[data-slot=workspace-label]]:sr-only group-data-[collapsible=icon]:[&>svg:last-child]:hidden'
       )}
       aria-label={`Switch workspace (${triggerLabel})`}
     >
@@ -119,8 +119,13 @@ export function AdminWorkspaceSwitcher({
                   : `${ADMIN_WORKSPACE_LABELS[w].label} — ${ADMIN_WORKSPACE_LABELS[w].description}`
               }
             >
-              <Icon className='size-4 shrink-0 text-muted-foreground' aria-hidden />
-              <span className='font-medium'>{ADMIN_WORKSPACE_LABELS[w].label}</span>
+              <Icon
+                className='size-4 shrink-0 text-muted-foreground'
+                aria-hidden
+              />
+              <span className='font-medium'>
+                {ADMIN_WORKSPACE_LABELS[w].label}
+              </span>
               {!compact ? (
                 <span className='text-muted-foreground'>
                   — {ADMIN_WORKSPACE_LABELS[w].description}

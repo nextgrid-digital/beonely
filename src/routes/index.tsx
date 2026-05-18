@@ -12,7 +12,6 @@ import {
   publishedJobsFilterSchema,
 } from '@/lib/jobs/fetch-published-jobs'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
-import { ScrapedJobsSection } from '@/features/scraped-jobs'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -31,6 +30,7 @@ import {
   clearPublishedJobSearchPreserveSetup,
   hasActivePublishedJobFilters,
 } from '@/features/jobs/published-jobs-filters'
+import { ScrapedJobsSection } from '@/features/scraped-jobs'
 
 const homeSearchSchema = publishedJobsFilterSchema.merge(
   z.object({

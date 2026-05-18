@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { describe, expect, it, vi } from 'vitest'
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
 import { submitBeonelyApplication } from '@/lib/jobs/submit-beonely-application'
 import type { Database, JobRow } from '@/lib/supabase/database.types'

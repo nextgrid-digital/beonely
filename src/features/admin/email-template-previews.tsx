@@ -9,7 +9,9 @@ export function EmailTemplatePreviews() {
       {previews.map((sample) => (
         <section key={sample.id} className='space-y-2'>
           <h2 className='text-sm font-medium'>{sample.label}</h2>
-          <p className='text-xs text-muted-foreground'>Subject: {sample.subject}</p>
+          <p className='text-xs text-muted-foreground'>
+            Subject: {sample.subject}
+          </p>
           <iframe
             title={sample.label}
             srcDoc={sample.html}

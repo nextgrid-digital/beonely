@@ -44,10 +44,7 @@ export function recruiterBreadcrumbSegments(
     ]
   }
   if (p === '/recruiter/pricing') {
-    return [
-      { label: 'Recruiter', to: '/recruiter' },
-      { label: 'Pricing' },
-    ]
+    return [{ label: 'Recruiter', to: '/recruiter' }, { label: 'Pricing' }]
   }
   return [{ label: 'Recruiter', to: '/recruiter' }, { label: 'My jobs' }]
 }

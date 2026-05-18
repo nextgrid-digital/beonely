@@ -1,16 +1,16 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
-import { useAuth } from '@/context/auth-provider'
 import { formatQueryError } from '@/lib/format-query-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { RecruiterRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
 
 export const Route = createFileRoute('/_authenticated/recruiter/jobs/new')({
   component: RecruiterJobNewRoute,
@@ -73,7 +73,10 @@ function RecruiterJobNewRoute() {
     return (
       <p className='text-sm text-muted-foreground'>
         Complete your recruiter profile from{' '}
-        <Link to='/recruiter' className='font-medium text-primary underline-offset-4 hover:underline'>
+        <Link
+          to='/recruiter'
+          className='font-medium text-primary underline-offset-4 hover:underline'
+        >
           My jobs
         </Link>{' '}
         first.

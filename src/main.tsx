@@ -7,16 +7,16 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { HelmetProvider } from 'react-helmet-async'
 import { Analytics } from '@vercel/analytics/react'
+import { HelmetProvider } from 'react-helmet-async'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import { AuthProvider } from '@/context/auth-provider'
 import { AdminWorkspaceProvider } from '@/context/admin-workspace-provider'
+import { AuthProvider } from '@/context/auth-provider'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -102,14 +102,14 @@ if (!rootElement.innerHTML) {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <AdminWorkspaceProvider>
-            <ThemeProvider>
-              <FontProvider>
-                <DirectionProvider>
-                  <RouterProvider router={router} />
-                  <Analytics />
-                </DirectionProvider>
-              </FontProvider>
-            </ThemeProvider>
+              <ThemeProvider>
+                <FontProvider>
+                  <DirectionProvider>
+                    <RouterProvider router={router} />
+                    <Analytics />
+                  </DirectionProvider>
+                </FontProvider>
+              </ThemeProvider>
             </AdminWorkspaceProvider>
           </AuthProvider>
         </QueryClientProvider>

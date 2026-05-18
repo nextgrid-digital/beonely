@@ -1,7 +1,7 @@
-import type { ProfileRow } from '@/lib/supabase/database.types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
+import type { ProfileRow } from '@/lib/supabase/database.types'
 import { GeneralError } from '@/features/errors/general-error'
 
 const navigate = vi.hoisted(() => vi.fn())
@@ -51,7 +51,9 @@ describe('GeneralError', () => {
     })
 
     const screen = await render(<GeneralError />)
-    await userEvent.click(screen.getByRole('button', { name: /Back to Admin/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /Back to Admin/i })
+    )
     expect(navigate).toHaveBeenCalledWith({ to: '/admin' })
   })
 
@@ -95,7 +97,9 @@ describe('GeneralError', () => {
     })
 
     const screen = await render(<GeneralError />)
-    await userEvent.click(screen.getByRole('button', { name: /Sign in again/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /Sign in again/i })
+    )
 
     expect(signOut).toHaveBeenCalled()
     expect(navigate).toHaveBeenCalledWith({

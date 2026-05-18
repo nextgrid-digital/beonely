@@ -1,9 +1,10 @@
-import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/context/auth-provider'
+import { Link } from '@tanstack/react-router'
 import { fetchCampaignDetail } from '@/lib/email/admin-email-api'
+import { useAuth } from '@/context/auth-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -12,9 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 
-export function AdminCampaignDetailPage({ campaignId }: { campaignId: string }) {
+export function AdminCampaignDetailPage({
+  campaignId,
+}: {
+  campaignId: string
+}) {
   const { session } = useAuth()
   const token = session?.access_token
 

@@ -71,10 +71,14 @@ export async function sendAdminCampaign(
   next_cursor: number | null
 }> {
   if (input.test_email) {
-    return apiPost('/api/admin/email/test-send', {
-      campaign_id: input.campaign_id,
-      to: input.test_email,
-    }, accessToken)
+    return apiPost(
+      '/api/admin/email/test-send',
+      {
+        campaign_id: input.campaign_id,
+        to: input.test_email,
+      },
+      accessToken
+    )
   }
   return apiPost('/api/admin/campaign-send', input, accessToken)
 }
