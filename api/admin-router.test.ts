@@ -27,9 +27,9 @@ function mockRes() {
   }
 }
 
-describe('api/admin/[[...segments]] router', () => {
+describe('api/admin/[...segments] router', () => {
   it('returns 404 for unknown admin routes', async () => {
-    const { default: handler } = await import('./admin/[[...segments]].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       { method: 'GET', query: { segments: ['unknown-route'] } } as unknown as VercelRequest,
@@ -40,7 +40,7 @@ describe('api/admin/[[...segments]] router', () => {
   })
 
   it('dispatches campaigns route and enforces staff auth', async () => {
-    const { default: handler } = await import('./admin/[[...segments]].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
@@ -54,12 +54,36 @@ describe('api/admin/[[...segments]] router', () => {
   })
 
   it('dispatches nested email/automations route', async () => {
-    const { default: handler } = await import('./admin/[[...segments]].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
         method: 'PATCH',
         query: { segments: ['email', 'automations'] },
+        headers: {},
+      } as unknown as VercelRequest,
+      res
+    )
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('resolves route key from req.url when query.segments is absent', async () => {
+    const { routeKeyFromRequest, default: handler } = await import(
+      './admin/[...segments].js'
+    )
+    expect(
+      routeKeyFromRequest({
+        url: '/api/admin/email/test-send',
+        query: {},
+      } as VercelRequest)
+    ).toBe('email/test-send')
+
+    const res = mockRes()
+    await handler(
+      {
+        method: 'POST',
+        url: '/api/admin/email/test-send',
+        query: {},
         headers: {},
       } as unknown as VercelRequest,
       res

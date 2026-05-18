@@ -26,16 +26,31 @@ const ROUTES: Record<string, AdminRouteHandler> = {
   'email/campaign-recipients': handleEmailCampaignRecipients,
 }
 
+const ADMIN_API_PREFIX = '/api/admin'
+
 function routeKeyFromSegments(
   segments: string | string[] | undefined
 ): string {
   if (segments == null) return ''
   if (Array.isArray(segments)) return segments.map(String).join('/')
-  return String(segments)
+  const value = String(segments)
+  if (value.startsWith('[')) return ''
+  return value
+}
+
+/** Pathname after /api/admin/ — reliable when query.segments is missing on Vercel. */
+export function routeKeyFromRequest(req: VercelRequest): string {
+  const fromQuery = routeKeyFromSegments(req.query.segments)
+  if (fromQuery) return fromQuery
+
+  const pathname = (req.url ?? '').split('?')[0]
+  if (!pathname.startsWith(ADMIN_API_PREFIX)) return ''
+  const rest = pathname.slice(ADMIN_API_PREFIX.length).replace(/^\//, '')
+  return rest
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const key = routeKeyFromSegments(req.query.segments)
+  const key = routeKeyFromRequest(req)
   const routeHandler = ROUTES[key]
   if (!routeHandler) {
     return res.status(404).json({ error: 'not_found' })

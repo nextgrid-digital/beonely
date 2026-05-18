@@ -25,7 +25,7 @@
     "api/resend-webhook.ts": { "maxDuration": 30 },
     "api/email/dispatch.ts": { "maxDuration": 60 },
     "api/cron/weekly-digest.ts": { "maxDuration": 60 },
-    "api/admin/[[...segments]].ts": { "maxDuration": 60 }
+    "api/admin/[...segments].ts": { "maxDuration": 60 }
   },
   "crons": [
     {
