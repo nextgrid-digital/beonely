@@ -37,6 +37,14 @@
     "api/admin/[...segments].ts": { "maxDuration": 60 },
     "api/admin/email/[...segments].ts": { "maxDuration": 60 }
   },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.beonely.in" }],
+      "destination": "https://beonely.in/:path*",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/weekly-digest",

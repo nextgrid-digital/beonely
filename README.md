@@ -14,7 +14,7 @@ ServiceNow-focused job board and recruiter admin. Built on the shadcn-admin Vite
 
 If the deployed site shows **Supabase is not configured**, an empty jobs list, or auth works locally but not on Vercel:
 
-1. In the Vercel project, ensure Supabase client env is available for **Production**: either **`VITE_SUPABASE_URL`** + **`VITE_SUPABASE_ANON_KEY`**, or the **Supabase+Vercel integration** defaults **`SUPABASE_URL`** + **`SUPABASE_ANON_KEY`** (the build maps those for the browser). Also set **`VITE_PUBLIC_SITE_URL`** (canonical URL, e.g. `https://beonely.vercel.app`) under **Settings** → **Environment Variables** with **Production** enabled.
+1. In the Vercel project, ensure Supabase client env is available for **Production**: either **`VITE_SUPABASE_URL`** + **`VITE_SUPABASE_ANON_KEY`**, or the **Supabase+Vercel integration** defaults **`SUPABASE_URL`** + **`SUPABASE_ANON_KEY`** (the build maps those for the browser). Also set **`VITE_PUBLIC_SITE_URL`** to **`https://beonely.in`** (canonical apex; see [docs/custom-domain-beonely-in.md](docs/custom-domain-beonely-in.md)) under **Settings** → **Environment Variables** with **Production** enabled.
 2. **Redeploy** so `pnpm build` runs again (`VITE_*` values are baked in at build time).
 3. Confirm the Supabase project URL matches your local `.env` if you expect the same data.
 4. **External testers:** If email links send people to a **Vercel login**, turn off **Deployment Protection** for the URL you share (or only share production). See [docs/vercel-environment.md](docs/vercel-environment.md#external-testers-and-vercel-deployment-protection).

@@ -8,7 +8,7 @@ Add these in the Vercel project → **Settings** → **Environment Variables** f
 |------|--------|
 | `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase **anon** JWT from Dashboard → API |
-| `VITE_PUBLIC_SITE_URL` | Canonical site origin, e.g. `https://your-domain.com` |
+| `VITE_PUBLIC_SITE_URL` | Canonical site origin — production: `https://beonely.in` (no `www`). See [custom-domain-beonely-in.md](./custom-domain-beonely-in.md). |
 | `VITE_RAZORPAY_KEY_ID` | Optional. Same value as `RAZORPAY_KEY_ID` (publishable **key id** only). If set, the client uses it for Checkout; if omitted, [`api/create-order`](../api/create-order.ts) still returns `keyId` from the server env so checkout works. **Never** put `RAZORPAY_KEY_SECRET` here or under any `VITE_*` name. |
 | `VITE_TURNSTILE_SITE_KEY` | Optional Cloudflare Turnstile |
 | `VITE_ADMIN_EMAIL_ALLOWLIST` | Comma-separated staff emails allowed to use `/admin` after sign-in at `/staff/sign-in` (must match `recruiters.role = admin`). Also set `ADMIN_EMAIL_ALLOWLIST` with the same values for documentation parity. |
@@ -137,7 +137,7 @@ Cause: the production bundle was built without **`VITE_SUPABASE_URL`** and **`VI
 Fix:
 
 1. Vercel → **Settings** → **Environment Variables** — set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for **Production** (and Preview if you use it). Use the same Supabase project as local `.env` unless you intend a separate database.
-2. Set **`VITE_PUBLIC_SITE_URL`** to your canonical origin (e.g. `https://beonely.vercel.app`).
+2. Set **`VITE_PUBLIC_SITE_URL`** to your canonical origin (production: `https://beonely.in`).
 3. **Redeploy** Production from the Deployments tab (or push a commit) so a new build runs.
 4. Hard-refresh the browser or use a private window.
 
@@ -157,6 +157,10 @@ If someone says they clicked an email link and were asked to **log in to Vercel*
 
 Give testers the **same unprotected URL** you expect real candidates to use.
 
+## Custom domain (beonely.in)
+
+Redirect **`www.beonely.in`** → **`https://beonely.in`**, DNS, Vercel domains, and verification: [custom-domain-beonely-in.md](./custom-domain-beonely-in.md).
+
 ## Supabase Auth URL configuration (email confirmation)
 
 **Site URL** is the default origin Supabase uses when building magic links and auth emails. If it still points at an old Vercel project URL (for example `https://<old>-projects.vercel.app`), users will see that hostname in the email even when they triggered the flow from another deployment. Set **Site URL** to your real canonical origin (same idea as **`VITE_PUBLIC_SITE_URL`**) and keep **Redirect URLs** in sync.
@@ -165,8 +169,8 @@ Sign-up uses `emailRedirectTo` = current origin + `/sign-in` (see [`sign-up-form
 
 In **Supabase Dashboard** → **Authentication** → **URL configuration**:
 
-1. Set **Site URL** to your primary public origin (e.g. `https://beonely.vercel.app`).
-2. Under **Redirect URLs**, add every origin path you use, e.g. `https://beonely.vercel.app/**` and `http://localhost:5173/**` for local dev. Add preview origins only if you test on preview URLs. Keep an old default Vercel URL here only while old email links must still work; remove it once traffic has moved.
+1. Set **Site URL** to your primary public origin (production: `https://beonely.in`).
+2. Under **Redirect URLs**, add `https://beonely.in/**` and `http://localhost:5173/**` for local dev. Add preview origins only if you test on preview URLs.
 
 If the confirmation redirect is not allowed, Supabase may show an error page instead of completing sign-in.
 
