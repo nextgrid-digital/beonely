@@ -1,15 +1,32 @@
-import { useEffect, useRef, useState, type ChangeEventHandler } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEventHandler,
+} from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { jobListingPreviewDataFromJob } from '@/lib/jobs/job-listing-preview-data'
 import {
   plainTextFromJobDescription,
   sanitizeJobDescriptionHtml,
 } from '@/lib/jobs/sanitize-job-description-html'
 import { buildJobSlug } from '@/lib/jobs/slug'
+import {
+  formatSalaryRange,
+  parseSalaryRange,
+} from '@/lib/jobs/salary-range-format'
+import {
+  filterToKnownTaxonomy,
+  SERVICENOW_JOB_CERTIFICATIONS,
+  SERVICENOW_JOB_MODULES,
+  SERVICENOW_JOB_SKILLS,
+} from '@/lib/jobs/servicenow-job-taxonomy'
 import {
   uploadJobCompanyLogo,
   validateJobCompanyLogoFile,
@@ -19,27 +36,23 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
+import {
+  formatListingLiveUntil,
+  jobListingCanRenew,
+} from '@/lib/jobs/job-listing-renewal'
+import { useAuth } from '@/context/auth-provider'
+import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
+import { recruiterOwnsJob } from '@/lib/jobs/recruiter-owned-job'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { companyInitials } from '@/features/jobs/company-logo-avatar'
-import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
+import { Form } from '@/components/ui/form'
+import { JobListingPreview } from '@/features/jobs/job-listing-preview'
+import { useRecruiterChromeActions } from '@/features/recruiter/recruiter-chrome-actions-context'
+import { JobListingInlineEditor } from '@/features/recruiter/job-listing-inline-editor'
+import { JobShareMenu } from '@/features/recruiter/job-share-menu'
+
+export const RECRUITER_JOB_EDITOR_FORM_ID = 'recruiter-job-editor-form'
 
 export const jobEditorSchema = z.object({
   title: z.string().min(2),
@@ -51,11 +64,18 @@ export const jobEditorSchema = z.object({
       message: 'Description must be at least 10 characters of text.',
     }),
   location: z.string().min(1),
+  salary_currency: z.string().min(1),
+  salary_amount: z.string().optional(),
   employment_type: z.string().min(1),
   experience_level: z.string().optional(),
   work_mode: z.string().optional(),
   job_type: z.string().optional(),
+  modules: z.array(z.string()),
+  certifications: z.array(z.string()),
+  skills: z.array(z.string()),
 })
+
+export type JobEditorValues = z.infer<typeof jobEditorSchema>
 
 /** Public job page URL for `apply_url` when the form does not collect it. */
 export function applyUrlForJobSlug(jobSlug: string): string {
@@ -66,19 +86,26 @@ export function applyUrlForJobSlug(jobSlug: string): string {
   return `${origin}/jobs/${jobSlug}`
 }
 
-type JobEditorValues = z.infer<typeof jobEditorSchema>
-
-function defaultFormValues(job: JobRow | null): JobEditorValues {
+export function defaultFormValues(job: JobRow | null): JobEditorValues {
+  const salary = parseSalaryRange(job?.salary_range)
   return {
     title: job?.job_title ?? '',
     company: job?.company_name ?? '',
     company_logo: job?.company_logo ?? '',
     description: job?.job_description ?? '',
     location: job?.location ?? '',
+    salary_currency: salary.currency,
+    salary_amount: salary.amount,
     employment_type: job?.employment_type ?? 'full_time',
     experience_level: job?.experience_level ?? 'mid',
     work_mode: job?.work_mode ?? 'remote',
     job_type: job?.job_type ?? 'developer',
+    modules: filterToKnownTaxonomy(job?.modules ?? [], SERVICENOW_JOB_MODULES),
+    certifications: filterToKnownTaxonomy(
+      job?.certifications ?? [],
+      SERVICENOW_JOB_CERTIFICATIONS
+    ),
+    skills: filterToKnownTaxonomy(job?.skills ?? [], SERVICENOW_JOB_SKILLS),
   }
 }
 
@@ -87,27 +114,44 @@ function companyLogoForSave(value: string | undefined): string | null {
   return trimmed ? trimmed : null
 }
 
+const CHROME_BTN = 'h-7 rounded-md px-2.5 text-xs font-medium'
+
 export function RecruiterJobEditorPage(props: {
   recruiter: RecruiterRow
   job: JobRow | null
+  embedded?: boolean
 }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { session } = useAuth()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
   const [logoBusy, setLogoBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
   const form = useForm<JobEditorValues>({
     resolver: zodResolver(jobEditorSchema),
     defaultValues: defaultFormValues(props.job),
   })
+  const formRef = useRef(form)
+  formRef.current = form
+
+  useEffect(() => {
+    if (
+      props.job &&
+      !recruiterOwnsJob(props.job, props.recruiter.id)
+    ) {
+      void navigate({ to: '/recruiter', replace: true })
+    }
+  }, [props.job, props.recruiter.id, navigate])
 
   useEffect(() => {
     form.reset(defaultFormValues(props.job))
     setPendingLogoFile(null)
-  }, [props.job, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when saved job changes only
+  }, [props.job])
 
-  const companyName = form.watch('company')
-  const companyLogo = form.watch('company_logo')
+  const isNewJob = !props.job
+  const submitLabel = isNewJob ? 'Save draft' : 'Save changes'
 
   const save = useMutation({
     mutationFn: async (values: JobEditorValues) => {
@@ -123,6 +167,15 @@ export function RecruiterJobEditorPage(props: {
         ? props.job.apply_url
         : applyUrlForJobSlug(job_slug)
       const logoFromForm = companyLogoForSave(values.company_logo)
+      const taxonomyPayload = {
+        modules: values.modules,
+        certifications: values.certifications,
+        skills: values.skills,
+        salary_range: formatSalaryRange(
+          values.salary_currency,
+          values.salary_amount
+        ),
+      }
 
       if (props.job) {
         const { error } = await sb
@@ -138,10 +191,15 @@ export function RecruiterJobEditorPage(props: {
             experience_level: expLevel,
             work_mode: workMode,
             job_type: jobType,
+            ...taxonomyPayload,
           })
           .eq('id', props.job.id)
         if (error) throw error
-        return { jobId: props.job.id, jobSlug: props.job.job_slug }
+        return {
+          kind: 'update' as const,
+          jobId: props.job.id,
+          jobSlug: props.job.job_slug,
+        }
       }
 
       const { data: inserted, error } = await sb
@@ -165,11 +223,9 @@ export function RecruiterJobEditorPage(props: {
           listing_tier: 'standard',
           featured: false,
           source_kind: 'recruiter_posted',
-          certifications: [],
-          modules: [],
-          skills: [],
           recruiter_email: props.recruiter.email,
           recruiter_name: props.recruiter.name,
+          ...taxonomyPayload,
         })
         .select('id, job_slug')
         .single()
@@ -190,7 +246,11 @@ export function RecruiterJobEditorPage(props: {
         if (logoError) throw logoError
       }
 
-      return { jobId: inserted.id, jobSlug: inserted.job_slug }
+      return {
+        kind: 'create' as const,
+        jobId: inserted.id,
+        jobSlug: inserted.job_slug,
+      }
     },
     onSuccess: (result) => {
       toast.success('Job saved')
@@ -202,7 +262,17 @@ export function RecruiterJobEditorPage(props: {
       if (result?.jobSlug) {
         void qc.invalidateQueries({ queryKey: ['job', result.jobSlug] })
       }
-      void navigate({ to: '/recruiter' })
+
+      if (result?.kind === 'create') {
+        void navigate({
+          to: '/recruiter/jobs/$jobId/edit',
+          params: { jobId: result.jobId },
+          replace: true,
+        })
+        return
+      }
+
+      setEditing(false)
     },
     onError: () => toast.error('Save failed'),
   })
@@ -253,6 +323,67 @@ export function RecruiterJobEditorPage(props: {
     form.setValue('company_logo', '', { shouldDirty: true })
   }
 
+  const savePending = save.isPending
+  const saveMutate = save.mutate
+  const jobIsLive = props.job ? jobListingIsLive(props.job) : false
+  const jobCanRenew = props.job ? jobListingCanRenew(props.job) : false
+  const liveUntilLabel = props.job ? formatListingLiveUntil(props.job) : null
+
+  const chromeActions = useMemo(() => {
+    if (editing) {
+      return (
+        <Button
+          type='button'
+          className={cn(CHROME_BTN, 'shadow-xs')}
+          disabled={savePending}
+          onClick={() => {
+            void formRef.current.handleSubmit((v) => saveMutate(v))()
+          }}
+        >
+          {savePending ? 'Saving…' : submitLabel}
+        </Button>
+      )
+    }
+    return (
+      <div className='flex items-center gap-2'>
+        {props.job && jobIsLive ? (
+          <JobShareMenu job={props.job} buttonClassName={CHROME_BTN} />
+        ) : null}
+        {props.job && jobCanRenew ? (
+          <ExtendListingButton
+            job={props.job}
+            accessToken={session?.access_token}
+            buttonClassName={CHROME_BTN}
+            compact
+          />
+        ) : null}
+        <Button
+          type='button'
+          variant='outline'
+          className={CHROME_BTN}
+          onClick={() => {
+            formRef.current.reset(defaultFormValues(props.job))
+            // Defer so the Edit click does not land on the Save control that replaces it.
+            window.setTimeout(() => setEditing(true), 0)
+          }}
+        >
+          Edit
+        </Button>
+      </div>
+    )
+  }, [
+    editing,
+    jobCanRenew,
+    jobIsLive,
+    props.job,
+    saveMutate,
+    savePending,
+    session?.access_token,
+    submitLabel,
+  ])
+
+  useRecruiterChromeActions(chromeActions)
+
   if (!getSupabaseConfigured()) {
     return (
       <p className='text-sm text-muted-foreground'>
@@ -262,248 +393,59 @@ export function RecruiterJobEditorPage(props: {
   }
 
   const heading = props.job ? 'Edit job' : 'New job'
-  const isNewJob = !props.job
   const helperText = isNewJob
     ? 'Save as a draft, then pay from My jobs when you are ready to submit.'
     : 'Updates publish immediately on live listings.'
-  const submitLabel = isNewJob ? 'Save draft' : 'Save changes'
-  const logoPreviewUrl = companyLogo?.trim() || undefined
+  const showPageHeading = !props.embedded
+  const containerClass = 'w-full min-w-0 max-w-3xl space-y-6 pb-6'
+  const previewData = jobListingPreviewDataFromJob(props.job)
 
   return (
-    <div className='mx-auto w-full max-w-2xl space-y-6 pb-6'>
-      <div className='space-y-1'>
-        <h1 className='text-lg font-semibold tracking-tight'>{heading}</h1>
+    <div className={containerClass}>
+      {showPageHeading ? (
+        <div className='space-y-1'>
+          <h1 className='text-lg font-semibold tracking-tight'>{heading}</h1>
+          {liveUntilLabel &&
+          props.job?.approval_status === 'approved' &&
+          props.job?.payment_status === 'paid' ? (
+            <p className='text-sm text-muted-foreground'>
+              {jobIsLive
+                ? `Live until ${liveUntilLabel}`
+                : `Listing expired ${liveUntilLabel}`}
+              {jobCanRenew ? ' — extend from the actions above.' : null}
+            </p>
+          ) : editing ? (
+            <p className='text-sm text-muted-foreground'>{helperText}</p>
+          ) : null}
+        </div>
+      ) : editing ? (
         <p className='text-sm text-muted-foreground'>{helperText}</p>
-      </div>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit((v) => save.mutate(v))}
-          className='grid gap-3'
-        >
-          <FormField
-            control={form.control}
-            name='title'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='company'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormItem>
-            <FormLabel>Company logo</FormLabel>
-            <div className='flex flex-wrap items-center gap-3'>
-              <Avatar className='size-14 rounded-md border border-border/60 bg-muted/30'>
-                {logoPreviewUrl ? (
-                  <AvatarImage
-                    src={logoPreviewUrl}
-                    alt={`${companyName || 'Company'} logo`}
-                    className='object-cover'
-                  />
-                ) : null}
-                <AvatarFallback className='rounded-md text-sm font-semibold uppercase'>
-                  {companyInitials(companyName || 'Co')}
-                </AvatarFallback>
-              </Avatar>
-              <div className='flex flex-wrap gap-2'>
-                <input
-                  ref={logoInputRef}
-                  type='file'
-                  accept='image/jpeg,image/png,image/webp'
-                  className='sr-only'
-                  onChange={onLogoFileChange}
-                />
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='min-h-11 sm:min-h-8'
-                  disabled={logoBusy}
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  {logoBusy ? 'Uploading…' : 'Upload logo'}
-                </Button>
-                {(logoPreviewUrl || pendingLogoFile) && (
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='min-h-11 sm:min-h-8'
-                    onClick={clearLogo}
-                  >
-                    Remove logo
-                  </Button>
-                )}
-              </div>
-            </div>
-            <FormDescription className='mt-1.5'>
-              JPEG, PNG, or WebP, up to 5 MB. Shown on the public job board.
-            </FormDescription>
-          </FormItem>
-          <FormField
-            control={form.control}
-            name='location'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='description'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <JobDescriptionRichTextField
-                    value={field.value}
-                    onChange={field.onChange}
-                    editable
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className='grid gap-2 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='employment_type'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='full_time'>Full-time</SelectItem>
-                      <SelectItem value='part_time'>Part-time</SelectItem>
-                      <SelectItem value='contract'>Contract</SelectItem>
-                      <SelectItem value='freelance'>Freelance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+      ) : null}
+
+      {editing ? (
+        <Form {...form}>
+          <form
+            id={RECRUITER_JOB_EDITOR_FORM_ID}
+            onSubmit={form.handleSubmit((v) => save.mutate(v))}
+            className='grid min-w-0 gap-6'
+          >
+            <JobListingInlineEditor
+              form={form}
+              logoInputRef={logoInputRef}
+              onLogoFileChange={onLogoFileChange}
+              clearLogo={clearLogo}
+              logoBusy={logoBusy}
+              hasPendingLogo={Boolean(pendingLogoFile)}
             />
-            <FormField
-              control={form.control}
-              name='job_type'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='developer'>Developer</SelectItem>
-                      <SelectItem value='architect'>Architect</SelectItem>
-                      <SelectItem value='consultant'>Consultant</SelectItem>
-                      <SelectItem value='admin'>Admin</SelectItem>
-                      <SelectItem value='analyst'>Analyst</SelectItem>
-                      <SelectItem value='manager'>Manager</SelectItem>
-                      <SelectItem value='other'>Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className='grid gap-2 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='experience_level'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Experience</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='entry'>Entry</SelectItem>
-                      <SelectItem value='mid'>Mid</SelectItem>
-                      <SelectItem value='senior'>Senior</SelectItem>
-                      <SelectItem value='lead'>Lead</SelectItem>
-                      <SelectItem value='principal'>Principal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='work_mode'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Work mode</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='remote'>Remote</SelectItem>
-                      <SelectItem value='hybrid'>Hybrid</SelectItem>
-                      <SelectItem value='onsite'>On-site</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className='flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end'>
-            <Button
-              type='button'
-              variant='ghost'
-              className='min-h-11 sm:min-h-9'
-              onClick={() => void navigate({ to: '/recruiter' })}
-            >
-              Cancel
-            </Button>
-            <Button
-              type='submit'
-              className='min-h-11 sm:min-h-9'
-              disabled={save.isPending}
-            >
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      ) : (
+        <JobListingPreview
+          data={previewData}
+          variant='public'
+          showBanner={false}
+        />
+      )}
     </div>
   )
 }

@@ -2,6 +2,11 @@ import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
 import type { IngestLinkedInJobInput } from './ingest-linkedin-jobs'
+import {
+  SERVICENOW_CERTIFICATION_PATTERNS,
+  SERVICENOW_JOB_SKILLS,
+  SERVICENOW_MODULE_KEYWORDS,
+} from '../../src/lib/jobs/servicenow-job-taxonomy.js'
 
 export const DEFAULT_LINKEDIN_SEARCH_TERMS = [
   'ServiceNow Developer India',
@@ -73,45 +78,11 @@ const REMOTE_RESTRICTION_KEYWORDS = [
   'australia only',
 ]
 
-const SKILL_TERMS = [
-  'ServiceNow',
-  'JavaScript',
-  'TypeScript',
-  'ITIL',
-  'Flow Designer',
-  'IntegrationHub',
-  'REST API',
-  'SOAP',
-  'CMDB',
-  'Catalog',
-  'Now Platform',
-  'Business Rules',
-  'UI Builder',
-  'Scripting',
-]
+const SKILL_TERMS = [...SERVICENOW_JOB_SKILLS]
 
-const MODULE_TERMS: Record<string, string[]> = {
-  ITSM: ['itsm', 'incident', 'problem management', 'change management'],
-  CSM: ['csm', 'customer service management'],
-  HRSD: ['hrsd', 'hr service delivery'],
-  SPM: ['spm', 'strategic portfolio management', 'ppm'],
-  ITOM: ['itom', 'discovery', 'service mapping', 'event management'],
-  SecOps: ['secops', 'security operations', 'vulnerability response'],
-  GRC: ['grc', 'governance risk', 'policy and compliance'],
-  CMDB: ['cmdb', 'configuration management database'],
-}
+const MODULE_TERMS = SERVICENOW_MODULE_KEYWORDS
 
-const CERTIFICATION_PATTERNS: Array<[RegExp, string]> = [
-  [/\bcsa\b/i, 'CSA'],
-  [/\bcad\b/i, 'CAD'],
-  [/\bcis[-\s]itsm\b/i, 'CIS-ITSM'],
-  [/\bcis[-\s]csm\b/i, 'CIS-CSM'],
-  [/\bcis[-\s]hr\b/i, 'CIS-HR'],
-  [/\bcis[-\s]itom\b/i, 'CIS-ITOM'],
-  [/\bcis[-\s]spm\b/i, 'CIS-SPM'],
-  [/\bcertified system administrator\b/i, 'CSA'],
-  [/\bcertified application developer\b/i, 'CAD'],
-]
+const CERTIFICATION_PATTERNS = SERVICENOW_CERTIFICATION_PATTERNS
 
 export type LinkedInScrapeConfig = {
   searchTerms: string[]

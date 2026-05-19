@@ -9,13 +9,27 @@ import { toast } from 'sonner'
 import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 import { formatQueryError } from '@/lib/format-query-error'
-import { PLAN_LABEL, type PaymentPlan } from '@/lib/payments/plans'
+import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
+import { type PaymentPlan } from '@/lib/payments/plans'
+import { JobShareMenu } from '@/features/recruiter/job-share-menu'
+import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
+import {
+  ListingPlanCheckout,
+  selectedPlanPriceLabel,
+} from '@/features/recruiter/listing-plan-checkout'
+import { FeaturedBoostPlanList } from '@/features/recruiter/plan-option-list'
+import { jobListingCanRenew } from '@/lib/jobs/job-listing-renewal'
+import { paymentPlanFromSelection } from '@/lib/payments/plans'
 import { startRazorpayJobCheckout } from '@/lib/payments/razorpay-job-checkout'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
+import {
+  RECRUITER_OWNED_JOB_SOURCE,
+} from '@/lib/jobs/recruiter-owned-job'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +38,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -57,6 +72,128 @@ type RecruiterJobsPayload = {
   applicationCounts: Record<string, number>
 }
 
+const tableHeadClass =
+  'h-9 bg-muted/40 text-xs font-medium text-muted-foreground'
+const tableCellClass = 'py-2.5 align-middle'
+const recruiterJobsTableChrome = 'overflow-hidden rounded-lg bg-card'
+const recruiterJobsTableRowClass = 'border-0'
+
+function jobListingState(job: JobRow) {
+  const canPay =
+    job.approval_status === 'pending' && job.payment_status === 'unpaid'
+  const isLive = jobListingIsLive(job)
+  const canRenew = jobListingCanRenew(job)
+  return { canPay, isLive, canRenew }
+}
+
+function RecruiterJobStatusBadges({ job }: { job: JobRow }) {
+  return (
+    <div className='flex flex-wrap items-center gap-1'>
+      <Badge
+        variant={job.approval_status === 'rejected' ? 'destructive' : 'outline'}
+        className='text-xs capitalize'
+      >
+        {job.approval_status}
+      </Badge>
+      <Badge variant='outline' className='text-xs capitalize'>
+        {job.payment_status}
+      </Badge>
+      <Badge
+        variant={job.featured ? 'default' : 'outline'}
+        className='text-xs'
+      >
+        {job.featured ? 'Featured' : 'Standard'}
+      </Badge>
+    </div>
+  )
+}
+
+function RecruiterJobRowActions({
+  job,
+  canPay,
+  isLive,
+  canRenew,
+  accessToken,
+  compact = false,
+  className,
+}: {
+  job: JobRow
+  canPay: boolean
+  isLive: boolean
+  canRenew: boolean
+  accessToken: string | undefined
+  compact?: boolean
+  className?: string
+}) {
+  const btnClass = compact
+    ? 'h-8 shrink-0 px-2.5 text-xs'
+    : 'min-h-11 shrink-0 justify-center px-3'
+
+  return (
+    <div
+      className={cn(
+        'flex flex-nowrap items-center gap-1.5',
+        !compact && '-mx-1 overflow-x-auto px-1',
+        className
+      )}
+    >
+      {isLive ? (
+        <>
+          <Button variant='outline' size='sm' asChild className={btnClass}>
+            <Link
+              to='/jobs/$slug'
+              params={{ slug: job.job_slug }}
+              target='_blank'
+            >
+              View
+            </Link>
+          </Button>
+          <JobShareMenu job={job} buttonClassName={btnClass} />
+        </>
+      ) : (
+        <Button
+          variant='outline'
+          size='sm'
+          className={btnClass}
+          disabled
+          title='Live after approval'
+        >
+          View
+        </Button>
+      )}
+      {canRenew ? (
+        <ExtendListingButton
+          job={job}
+          accessToken={accessToken}
+          compact={compact}
+          buttonClassName={btnClass}
+        />
+      ) : null}
+      {isLive ? (
+        <FeaturedBoostButton
+          job={job}
+          accessToken={accessToken}
+          compact={compact}
+          buttonClassName={btnClass}
+        />
+      ) : null}
+      <Button variant='outline' size='sm' asChild className={btnClass}>
+        <Link to='/recruiter/jobs/$jobId/edit' params={{ jobId: job.id }}>
+          Edit
+        </Link>
+      </Button>
+      {canPay ? (
+        <PayJobButton
+          job={job}
+          accessToken={accessToken}
+          buttonClassName={btnClass}
+          label={compact ? 'Pay' : undefined}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 export function RecruiterPortal() {
   const { user, session } = useAuth()
   const qc = useQueryClient()
@@ -86,6 +223,7 @@ export function RecruiterPortal() {
         .from('jobs')
         .select('*')
         .eq('recruiter_id', recruiterId)
+        .eq('source_kind', RECRUITER_OWNED_JOB_SOURCE)
         .order('created_at', { ascending: false })
       if (error) throw error
       const jobs = (data ?? []) as JobRow[]
@@ -286,198 +424,116 @@ export function RecruiterPortal() {
         <>
           <div className='space-y-3 md:hidden'>
             {jobs.map((job) => {
-              const canPay =
-                job.approval_status === 'pending' &&
-                job.payment_status === 'unpaid'
-              const isLive =
-                job.approval_status === 'approved' &&
-                job.payment_status === 'paid' &&
-                (!job.listing_expires_at ||
-                  new Date(job.listing_expires_at) > new Date())
+              const { canPay, isLive, canRenew } = jobListingState(job)
               return (
                 <Card key={job.id} className='border-border/80 shadow-none'>
-                  <CardContent className='space-y-4 p-4'>
-                    <div className='space-y-1'>
-                      <Button
-                        variant='link'
-                        className='h-auto p-0 text-left font-medium'
-                        asChild
+                  <CardContent className='space-y-3 p-3'>
+                    <div className='space-y-0.5'>
+                      <Link
+                        to='/recruiter/jobs/$jobId/edit'
+                        params={{ jobId: job.id }}
+                        className='line-clamp-2 font-medium hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                       >
-                        <Link
-                          to='/recruiter/jobs/$jobId/applicants'
-                          params={{ jobId: job.id }}
-                        >
-                          {job.job_title?.trim() || 'Untitled job'}
-                        </Link>
-                      </Button>
+                        {job.job_title?.trim() || 'Untitled job'}
+                      </Link>
                       <p className='text-xs text-muted-foreground'>
                         {applicationCounts[job.id] ?? 0} applicants
                       </p>
                     </div>
-                    <div className='flex flex-wrap gap-2'>
-                      <Badge variant='outline'>{job.approval_status}</Badge>
-                      <Badge variant='outline'>{job.payment_status}</Badge>
-                      <Badge variant='outline'>
-                        {job.featured ? 'Featured' : 'Standard'}
-                      </Badge>
-                    </div>
-                    <div className='grid gap-2'>
-                      {isLive ? (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          asChild
-                          className='min-h-11 justify-center'
-                        >
-                          <Link
-                            to='/jobs/$slug'
-                            params={{ slug: job.job_slug }}
-                            target='_blank'
-                          >
-                            View
-                          </Link>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='min-h-11 justify-center'
-                          disabled
-                          title='Live after approval'
-                        >
-                          View
-                        </Button>
-                      )}
-                      {isLive && (
-                        <FeaturedBoostButton
-                          job={job}
-                          accessToken={session?.access_token}
-                        />
-                      )}
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        asChild
-                        className='min-h-11 justify-center'
-                      >
-                        <Link
-                          to='/recruiter/jobs/$jobId/edit'
-                          params={{ jobId: job.id }}
-                        >
-                          Edit
-                        </Link>
-                      </Button>
-                      {canPay && (
-                        <PayJobButton
-                          job={job}
-                          accessToken={session?.access_token}
-                        />
-                      )}
-                    </div>
+                    <RecruiterJobStatusBadges job={job} />
+                    <RecruiterJobRowActions
+                      job={job}
+                      canPay={canPay}
+                      isLive={isLive}
+                      canRenew={canRenew}
+                      accessToken={session?.access_token}
+                    />
                   </CardContent>
                 </Card>
               )
             })}
           </div>
-          <div className='hidden overflow-x-auto md:block'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead className='w-[1%] text-end whitespace-nowrap tabular-nums'>
-                    Applicants
-                  </TableHead>
-                  <TableHead>Approval</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead className='text-end'>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {jobs.map((job) => {
-                  const canPay =
-                    job.approval_status === 'pending' &&
-                    job.payment_status === 'unpaid'
-                  const isLive =
-                    job.approval_status === 'approved' &&
-                    job.payment_status === 'paid' &&
-                    (!job.listing_expires_at ||
-                      new Date(job.listing_expires_at) > new Date())
-                  return (
-                    <TableRow key={job.id}>
-                      <TableCell>
-                        <Button
-                          variant='link'
-                          className='h-auto p-0 font-medium'
-                          asChild
+          <div className='hidden md:block'>
+            <div className={recruiterJobsTableChrome}>
+              <Table>
+                <TableHeader className='[&_tr]:border-0'>
+                  <TableRow
+                    className={cn(
+                      recruiterJobsTableRowClass,
+                      'hover:bg-transparent'
+                    )}
+                  >
+                    <TableHead className={tableHeadClass}>Job</TableHead>
+                    <TableHead className={tableHeadClass}>Status</TableHead>
+                    <TableHead
+                      className={cn(
+                        tableHeadClass,
+                        'w-[1%] text-end whitespace-nowrap tabular-nums'
+                      )}
+                    >
+                      Applicants
+                    </TableHead>
+                    <TableHead className={cn(tableHeadClass, 'text-end')}>
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className='[&_tr]:border-0'>
+                  {jobs.map((job) => {
+                    const { canPay, isLive, canRenew } = jobListingState(job)
+                    const applicantCount = applicationCounts[job.id] ?? 0
+                    return (
+                      <TableRow
+                        key={job.id}
+                        className={cn('group', recruiterJobsTableRowClass)}
+                      >
+                        <TableCell
+                          className={cn(
+                            tableCellClass,
+                            'max-w-[14rem] whitespace-normal'
+                          )}
                         >
                           <Link
-                            to='/recruiter/jobs/$jobId/applicants'
+                            to='/recruiter/jobs/$jobId/edit'
                             params={{ jobId: job.id }}
+                            className='line-clamp-2 font-medium hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                           >
                             {job.job_title?.trim() || 'Untitled job'}
                           </Link>
-                        </Button>
-                      </TableCell>
-                      <TableCell className='text-end text-muted-foreground tabular-nums'>
-                        {applicationCounts[job.id] ?? 0}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant='outline'>{job.approval_status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant='outline'>{job.payment_status}</Badge>
-                      </TableCell>
-                      <TableCell>{job.featured ? 'Yes' : 'No'}</TableCell>
-                      <TableCell className='text-end'>
-                        <div className='flex flex-wrap justify-end gap-2'>
-                          {isLive ? (
-                            <Button variant='outline' size='sm' asChild>
-                              <Link
-                                to='/jobs/$slug'
-                                params={{ slug: job.job_slug }}
-                                target='_blank'
-                              >
-                                View
-                              </Link>
-                            </Button>
-                          ) : (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              disabled
-                              title='Live after approval'
-                            >
-                              View
-                            </Button>
+                        </TableCell>
+                        <TableCell className={tableCellClass}>
+                          <RecruiterJobStatusBadges job={job} />
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            tableCellClass,
+                            'text-end text-muted-foreground tabular-nums'
                           )}
-                          {isLive && (
-                            <FeaturedBoostButton
-                              job={job}
-                              accessToken={session?.access_token}
-                            />
+                        >
+                          {applicantCount}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            tableCellClass,
+                            'max-w-[min(100%,20rem)] text-end'
                           )}
-                          <Button variant='outline' size='sm' asChild>
-                            <Link
-                              to='/recruiter/jobs/$jobId/edit'
-                              params={{ jobId: job.id }}
-                            >
-                              Edit
-                            </Link>
-                          </Button>
-                          {canPay && (
-                            <PayJobButton
-                              job={job}
-                              accessToken={session?.access_token}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                        >
+                          <RecruiterJobRowActions
+                            job={job}
+                            canPay={canPay}
+                            isLive={isLive}
+                            canRenew={canRenew}
+                            accessToken={session?.access_token}
+                            compact
+                            className='justify-end'
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </>
       )}
@@ -491,64 +547,86 @@ function RecruiterJobsTableSkeleton() {
       <div className='space-y-3 md:hidden'>
         {Array.from({ length: 3 }, (_, i) => (
           <Card key={`mobile-${i}`} className='border-border/80 shadow-none'>
-            <CardContent className='space-y-3 p-4'>
+            <CardContent className='space-y-3 p-3'>
               <Skeleton className='h-5 w-2/3' />
-              <div className='flex gap-2'>
-                <Skeleton className='h-5 w-20' />
-                <Skeleton className='h-5 w-20' />
+              <div className='flex gap-1.5'>
+                <Skeleton className='h-5 w-16' />
+                <Skeleton className='h-5 w-16' />
+                <Skeleton className='h-5 w-14' />
               </div>
-              <Skeleton className='h-11 w-full' />
+              <div className='flex gap-1.5 overflow-hidden'>
+                <Skeleton className='h-11 w-16 shrink-0' />
+                <Skeleton className='h-11 w-16 shrink-0' />
+                <Skeleton className='h-11 w-14 shrink-0' />
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
       <div className='hidden md:block'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead className='w-[1%] text-end whitespace-nowrap tabular-nums'>
-                Applicants
-              </TableHead>
-              <TableHead>Approval</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Featured</TableHead>
-              <TableHead className='text-end'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }, (_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className='h-5 w-44' />
-                </TableCell>
-                <TableCell className='text-end'>
-                  <Skeleton className='ms-auto h-5 w-8' />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className='h-5 w-20' />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className='h-5 w-20' />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className='h-5 w-10' />
-                </TableCell>
-                <TableCell className='text-end'>
-                  <Skeleton className='ms-auto h-8 w-24' />
-                </TableCell>
+        <div className={recruiterJobsTableChrome}>
+          <Table>
+            <TableHeader className='[&_tr]:border-0'>
+              <TableRow
+                className={cn(recruiterJobsTableRowClass, 'hover:bg-transparent')}
+              >
+                <TableHead className={tableHeadClass}>Job</TableHead>
+                <TableHead className={tableHeadClass}>Status</TableHead>
+                <TableHead
+                  className={cn(
+                    tableHeadClass,
+                    'w-[1%] text-end whitespace-nowrap tabular-nums'
+                  )}
+                >
+                  Applicants
+                </TableHead>
+                <TableHead className={cn(tableHeadClass, 'text-end')}>
+                  Actions
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody className='[&_tr]:border-0'>
+              {Array.from({ length: 5 }, (_, i) => (
+                <TableRow key={i} className={recruiterJobsTableRowClass}>
+                  <TableCell className={tableCellClass}>
+                    <Skeleton className='h-4 w-44' />
+                  </TableCell>
+                  <TableCell className={tableCellClass}>
+                    <div className='flex gap-1'>
+                      <Skeleton className='h-5 w-16' />
+                      <Skeleton className='h-5 w-14' />
+                    </div>
+                  </TableCell>
+                  <TableCell className={cn(tableCellClass, 'text-end')}>
+                    <Skeleton className='ms-auto h-4 w-6' />
+                  </TableCell>
+                  <TableCell className={cn(tableCellClass, 'text-end')}>
+                    <div className='flex justify-end gap-1.5'>
+                      <Skeleton className='h-8 w-14' />
+                      <Skeleton className='h-8 w-12' />
+                      <Skeleton className='h-8 w-12' />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </>
   )
 }
 
-function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
+function PayJobButton(props: {
+  job: JobRow
+  accessToken: string | undefined
+  buttonClassName?: string
+  label?: string
+}) {
   const [planOpen, setPlanOpen] = useState(false)
-  const [plan, setPlan] = useState<PaymentPlan>('standard_week')
+  const [plan, setPlan] = useState<PaymentPlan>(
+    paymentPlanFromSelection('month', false, false)
+  )
   const [paying, setPaying] = useState(false)
 
   const startPay = async () => {
@@ -583,33 +661,28 @@ function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
       <Button
         size='sm'
         variant='secondary'
-        className='min-h-11 md:min-h-8'
+        className={cn(props.buttonClassName ?? 'min-h-11 md:min-h-8')}
         onClick={() => setPlanOpen(true)}
       >
-        Pay & submit
+        {props.label ?? 'Pay & submit'}
       </Button>
       <Dialog open={planOpen} onOpenChange={setPlanOpen}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Choose plan</DialogTitle>
+            <DialogDescription>
+              Pick how long this listing stays live. Payment is required before
+              moderation review.
+            </DialogDescription>
           </DialogHeader>
-          <div className='grid gap-2'>
-            {(Object.keys(PLAN_LABEL) as PaymentPlan[]).map((p) => (
-              <label
-                key={p}
-                className='flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm'
-              >
-                <input
-                  type='radio'
-                  name='plan'
-                  checked={plan === p}
-                  onChange={() => setPlan(p)}
-                />
-                {PLAN_LABEL[p]}
-              </label>
-            ))}
-          </div>
-          <DialogFooter>
+          <ListingPlanCheckout plan={plan} onChange={setPlan} />
+          <DialogFooter className='flex-col gap-2 sm:flex-col sm:items-stretch'>
+            <p className='text-center text-sm text-muted-foreground'>
+              Total due:{' '}
+              <span className='font-semibold text-foreground tabular-nums'>
+                {selectedPlanPriceLabel(plan)}
+              </span>
+            </p>
             <Button disabled={paying} onClick={() => void startPay()}>
               {paying ? (
                 <>
@@ -617,7 +690,7 @@ function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
                   Starting checkout…
                 </>
               ) : (
-                'Pay with Razorpay'
+                `Pay ${selectedPlanPriceLabel(plan)} with Razorpay`
               )}
             </Button>
           </DialogFooter>
@@ -630,10 +703,11 @@ function PayJobButton(props: { job: JobRow; accessToken: string | undefined }) {
 function FeaturedBoostButton(props: {
   job: JobRow
   accessToken: string | undefined
+  buttonClassName?: string
+  compact?: boolean
 }) {
   const [planOpen, setPlanOpen] = useState(false)
-  const [plan, setPlan] = useState<PaymentPlan>('featured_week')
-  const featuredPlans: PaymentPlan[] = ['featured_week', 'featured_month']
+  const [plan, setPlan] = useState<PaymentPlan>('featured_month')
   const [paying, setPaying] = useState(false)
 
   const startPay = async () => {
@@ -672,37 +746,38 @@ function FeaturedBoostButton(props: {
       <Button
         size='sm'
         variant='default'
-        className='min-h-11 md:min-h-8'
+        className={cn(props.buttonClassName ?? 'min-h-11 md:min-h-8')}
         onClick={() => setPlanOpen(true)}
       >
-        {props.job.featured ? 'Extend featured' : 'Upgrade to Featured'}
+        {props.compact
+          ? props.job.featured
+            ? 'Extend'
+            : 'Feature'
+          : props.job.featured
+            ? 'Extend featured'
+            : 'Upgrade to Featured'}
       </Button>
       <Dialog open={planOpen} onOpenChange={setPlanOpen}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Featured boost</DialogTitle>
+            <DialogDescription>
+              Applies to this live listing: extends visibility and sets the
+              Featured badge after payment.
+            </DialogDescription>
           </DialogHeader>
-          <p className='text-sm text-muted-foreground'>
-            Applies to this live listing: extends visibility and sets the
-            Featured badge after payment.
-          </p>
-          <div className='grid gap-2'>
-            {featuredPlans.map((p) => (
-              <label
-                key={p}
-                className='flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm'
-              >
-                <input
-                  type='radio'
-                  name='boost-plan'
-                  checked={plan === p}
-                  onChange={() => setPlan(p)}
-                />
-                {PLAN_LABEL[p]}
-              </label>
-            ))}
-          </div>
-          <DialogFooter>
+          <FeaturedBoostPlanList
+            name='boost-plan'
+            value={plan}
+            onChange={setPlan}
+          />
+          <DialogFooter className='flex-col gap-2 sm:flex-col sm:items-stretch'>
+            <p className='text-center text-sm text-muted-foreground'>
+              Total due:{' '}
+              <span className='font-semibold text-foreground tabular-nums'>
+                {selectedPlanPriceLabel(plan)}
+              </span>
+            </p>
             <Button disabled={paying} onClick={() => void startPay()}>
               {paying ? (
                 <>
@@ -710,7 +785,7 @@ function FeaturedBoostButton(props: {
                   Starting checkout…
                 </>
               ) : (
-                'Pay with Razorpay'
+                `Pay ${selectedPlanPriceLabel(plan)} with Razorpay`
               )}
             </Button>
           </DialogFooter>

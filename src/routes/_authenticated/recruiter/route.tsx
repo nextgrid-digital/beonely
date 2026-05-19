@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { requireRecruiterAccountBeforeLoad } from '@/lib/auth/route-guards'
 import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
+import { RecruiterChromeActionsProvider } from '@/features/recruiter/recruiter-chrome-actions-context'
 import { RecruiterChrome } from '@/features/recruiter/recruiter-chrome'
 
 export const Route = createFileRoute('/_authenticated/recruiter')({
@@ -13,9 +14,11 @@ export const Route = createFileRoute('/_authenticated/recruiter')({
 
 function RecruiterSectionLayout() {
   return (
-    <div className={`${PUBLIC_SITE_MAIN_COLUMN} pb-12`}>
-      <RecruiterChrome />
-      <Outlet />
-    </div>
+    <RecruiterChromeActionsProvider>
+      <div className={`${PUBLIC_SITE_MAIN_COLUMN} pb-12`}>
+        <RecruiterChrome />
+        <Outlet />
+      </div>
+    </RecruiterChromeActionsProvider>
   )
 }

@@ -1,9 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { readJsonObjectBody } from './_lib/request-json-body.js'
 import { rateLimitOrThrow } from './_lib/rate-limit.js'
+import { jobListingCanRenew } from './_lib/listing-renewal.js'
 import {
+  ALL_PAYMENT_PLANS,
   PLAN_AMOUNT_INR_PAISE,
   planIsFeatured,
+  planIsRenewal,
   type PaymentPlan,
 } from './_lib/plan-helpers.js'
 import { razorpayCreateOrder } from './_lib/razorpay-rest.js'
@@ -14,12 +17,7 @@ import { verifyTurnstileToken } from './_lib/turnstile.js'
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const PLANS: readonly PaymentPlan[] = [
-  'standard_week',
-  'standard_month',
-  'featured_week',
-  'featured_month',
-]
+const PLANS: readonly PaymentPlan[] = ALL_PAYMENT_PLANS
 
 function parseCreateOrderBody (value: unknown):
   | {
@@ -143,10 +141,25 @@ export default async function handler (
       (!job.listing_expires_at ||
         new Date(job.listing_expires_at) > new Date())
 
-    const boostPayable = isLive && planIsFeatured(plan)
+    const boostPayable =
+      isLive && planIsFeatured(plan) && !planIsRenewal(plan)
 
-    if (!initialPayable && !boostPayable) {
+    const renewPayable =
+      planIsRenewal(plan) && jobListingCanRenew(job)
+
+    const initialPlanOk = !planIsRenewal(plan)
+
+    if (
+      !initialPayable &&
+      !boostPayable &&
+      !renewPayable
+    ) {
       res.status(400).json({ error: 'job_not_payable' })
+      return
+    }
+
+    if (initialPayable && !initialPlanOk) {
+      res.status(400).json({ error: 'invalid_plan_for_initial_checkout' })
       return
     }
 

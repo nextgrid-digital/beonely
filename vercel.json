@@ -16,6 +16,14 @@
       "memory": 1024,
       "maxDuration": 60
     },
+    "api/og/job.tsx": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/share/job.ts": {
+      "memory": 512,
+      "maxDuration": 30
+    },
     "api/razorpay-webhook.ts": {
       "memory": 1024,
       "maxDuration": 60
@@ -25,6 +33,7 @@
     "api/resend-webhook.ts": { "maxDuration": 30 },
     "api/email/dispatch.ts": { "maxDuration": 60 },
     "api/cron/weekly-digest.ts": { "maxDuration": 60 },
+    "api/cron/listing-expiry-reminders.ts": { "maxDuration": 60 },
     "api/admin/[...segments].ts": { "maxDuration": 60 },
     "api/admin/email/[...segments].ts": { "maxDuration": 60 }
   },
@@ -32,6 +41,10 @@
     {
       "path": "/api/cron/weekly-digest",
       "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/listing-expiry-reminders",
+      "schedule": "0 8 * * *"
     }
   ],
   "rewrites": [

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { RecruiterJobApplicants } from '@/features/recruiter/recruiter-job-applicants'
+import { RecruiterJobApplicantsList } from '@/features/recruiter/recruiter-job-applicants'
 
 export const Route = createFileRoute(
   '/_authenticated/recruiter/jobs/$jobId/applicants'
@@ -8,6 +8,5 @@ export const Route = createFileRoute(
 })
 
 function RecruiterJobApplicantsRoute() {
-  const { jobId } = Route.useParams()
-  return <RecruiterJobApplicants jobId={jobId} />
+  return <RecruiterJobApplicantsList />
 }

@@ -91,6 +91,26 @@ export function recruiterSignupEmail(opts: { companyName: string }) {
   }
 }
 
+export function listingExpiryReminderEmail(opts: {
+  jobTitle: string
+  companyName: string
+  daysRemaining: number
+  recruiterPortalUrl: string
+}) {
+  const dayLabel =
+    opts.daysRemaining === 1 ? '1 day' : `${opts.daysRemaining} days`
+  return {
+    subject: `Beonely — listing expires in ${dayLabel}`,
+    html: beonelyTransactionalHtml({
+      headline: 'Listing expiring soon',
+      bodyParagraphs: [
+        `${opts.jobTitle} at ${opts.companyName} expires in ${dayLabel} on the public job board.`,
+        `Extend or reactivate at the renewal rate from your recruiter dashboard: ${opts.recruiterPortalUrl}`,
+      ],
+    }),
+  }
+}
+
 export function jobSubmittedRecruiterEmail(opts: {
   jobTitle: string
   companyName: string

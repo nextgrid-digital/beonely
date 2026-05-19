@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify'
+import { normalizePastedJobDescriptionHtml } from '@/lib/jobs/normalize-pasted-job-description-html'
 
 type PurifyConfig = NonNullable<Parameters<typeof DOMPurify.sanitize>[1]>
 
@@ -30,6 +31,11 @@ export function sanitizeJobDescriptionHtml(dirty: string): string {
   const trimmed = dirty.trim()
   if (!trimmed) return ''
   return String(DOMPurify.sanitize(trimmed, JOB_DESCRIPTION_HTML_PURIFY))
+}
+
+/** Normalize rich paste HTML, then sanitize for the job description editor. */
+export function preparePastedJobDescriptionHtml(html: string): string {
+  return sanitizeJobDescriptionHtml(normalizePastedJobDescriptionHtml(html))
 }
 
 /** Heuristic: legacy plain text vs HTML from the rich editor. */

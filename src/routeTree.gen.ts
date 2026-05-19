@@ -64,6 +64,7 @@ import { Route as AuthenticatedAdminSettingsEmailRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminEmailTestRouteImport } from './routes/_authenticated/admin/email/test'
 import { Route as AuthenticatedAdminEmailAutomationsRouteImport } from './routes/_authenticated/admin/email/automations'
 import { Route as AuthenticatedAdminEmailAnalyticsRouteImport } from './routes/_authenticated/admin/email/analytics'
+import { Route as AuthenticatedRecruiterJobsJobIdRouteRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/route'
 import { Route as AuthenticatedAdminEmailTemplatesIndexRouteImport } from './routes/_authenticated/admin/email/templates/index'
 import { Route as AuthenticatedAdminEmailCampaignsIndexRouteImport } from './routes/_authenticated/admin/email/campaigns/index'
 import { Route as AuthenticatedRecruiterJobsJobIdEditRouteImport } from './routes/_authenticated/recruiter/jobs/$jobId/edit'
@@ -373,6 +374,12 @@ const AuthenticatedAdminEmailAnalyticsRoute =
     path: '/email/analytics',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedRecruiterJobsJobIdRouteRoute =
+  AuthenticatedRecruiterJobsJobIdRouteRouteImport.update({
+    id: '/jobs/$jobId',
+    path: '/jobs/$jobId',
+    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+  } as any)
 const AuthenticatedAdminEmailTemplatesIndexRoute =
   AuthenticatedAdminEmailTemplatesIndexRouteImport.update({
     id: '/email/templates/',
@@ -387,15 +394,15 @@ const AuthenticatedAdminEmailCampaignsIndexRoute =
   } as any)
 const AuthenticatedRecruiterJobsJobIdEditRoute =
   AuthenticatedRecruiterJobsJobIdEditRouteImport.update({
-    id: '/jobs/$jobId/edit',
-    path: '/jobs/$jobId/edit',
-    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedRecruiterJobsJobIdRouteRoute,
   } as any)
 const AuthenticatedRecruiterJobsJobIdApplicantsRoute =
   AuthenticatedRecruiterJobsJobIdApplicantsRouteImport.update({
-    id: '/jobs/$jobId/applicants',
-    path: '/jobs/$jobId/applicants',
-    getParentRoute: () => AuthenticatedRecruiterRouteRoute,
+    id: '/applicants',
+    path: '/applicants',
+    getParentRoute: () => AuthenticatedRecruiterJobsJobIdRouteRoute,
   } as any)
 const AuthenticatedAdminEmailTemplatesTemplateIdRoute =
   AuthenticatedAdminEmailTemplatesTemplateIdRouteImport.update({
@@ -459,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/recruiter/jobs/$jobId': typeof AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren
   '/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
   '/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
@@ -517,6 +525,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/recruiter/jobs/$jobId': typeof AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren
   '/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
   '/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
@@ -582,6 +591,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/recruiter/jobs/$jobId': typeof AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren
   '/_authenticated/admin/email/analytics': typeof AuthenticatedAdminEmailAnalyticsRoute
   '/_authenticated/admin/email/automations': typeof AuthenticatedAdminEmailAutomationsRoute
   '/_authenticated/admin/email/test': typeof AuthenticatedAdminEmailTestRoute
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/tasks/'
     | '/users/'
+    | '/recruiter/jobs/$jobId'
     | '/admin/email/analytics'
     | '/admin/email/automations'
     | '/admin/email/test'
@@ -705,6 +716,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/recruiter/jobs/$jobId'
     | '/admin/email/analytics'
     | '/admin/email/automations'
     | '/admin/email/test'
@@ -769,6 +781,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/recruiter/jobs/$jobId'
     | '/_authenticated/admin/email/analytics'
     | '/_authenticated/admin/email/automations'
     | '/_authenticated/admin/email/test'
@@ -1200,6 +1213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailAnalyticsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/recruiter/jobs/$jobId': {
+      id: '/_authenticated/recruiter/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/recruiter/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdRouteRouteImport
+      parentRoute: typeof AuthenticatedRecruiterRouteRoute
+    }
     '/_authenticated/admin/email/templates/': {
       id: '/_authenticated/admin/email/templates/'
       path: '/email/templates'
@@ -1216,17 +1236,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/recruiter/jobs/$jobId/edit': {
       id: '/_authenticated/recruiter/jobs/$jobId/edit'
-      path: '/jobs/$jobId/edit'
+      path: '/edit'
       fullPath: '/recruiter/jobs/$jobId/edit'
       preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdEditRouteImport
-      parentRoute: typeof AuthenticatedRecruiterRouteRoute
+      parentRoute: typeof AuthenticatedRecruiterJobsJobIdRouteRoute
     }
     '/_authenticated/recruiter/jobs/$jobId/applicants': {
       id: '/_authenticated/recruiter/jobs/$jobId/applicants'
-      path: '/jobs/$jobId/applicants'
+      path: '/applicants'
       fullPath: '/recruiter/jobs/$jobId/applicants'
       preLoaderRoute: typeof AuthenticatedRecruiterJobsJobIdApplicantsRouteImport
-      parentRoute: typeof AuthenticatedRecruiterRouteRoute
+      parentRoute: typeof AuthenticatedRecruiterJobsJobIdRouteRoute
     }
     '/_authenticated/admin/email/templates/$templateId': {
       id: '/_authenticated/admin/email/templates/$templateId'
@@ -1327,24 +1347,39 @@ const AuthenticatedCandidateRouteRouteWithChildren =
     AuthenticatedCandidateRouteRouteChildren,
   )
 
-interface AuthenticatedRecruiterRouteRouteChildren {
-  AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
-  AuthenticatedRecruiterJobsNewRoute: typeof AuthenticatedRecruiterJobsNewRoute
-  AuthenticatedRecruiterPricingIndexRoute: typeof AuthenticatedRecruiterPricingIndexRoute
+interface AuthenticatedRecruiterJobsJobIdRouteRouteChildren {
   AuthenticatedRecruiterJobsJobIdApplicantsRoute: typeof AuthenticatedRecruiterJobsJobIdApplicantsRoute
   AuthenticatedRecruiterJobsJobIdEditRoute: typeof AuthenticatedRecruiterJobsJobIdEditRoute
+}
+
+const AuthenticatedRecruiterJobsJobIdRouteRouteChildren: AuthenticatedRecruiterJobsJobIdRouteRouteChildren =
+  {
+    AuthenticatedRecruiterJobsJobIdApplicantsRoute:
+      AuthenticatedRecruiterJobsJobIdApplicantsRoute,
+    AuthenticatedRecruiterJobsJobIdEditRoute:
+      AuthenticatedRecruiterJobsJobIdEditRoute,
+  }
+
+const AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren =
+  AuthenticatedRecruiterJobsJobIdRouteRoute._addFileChildren(
+    AuthenticatedRecruiterJobsJobIdRouteRouteChildren,
+  )
+
+interface AuthenticatedRecruiterRouteRouteChildren {
+  AuthenticatedRecruiterIndexRoute: typeof AuthenticatedRecruiterIndexRoute
+  AuthenticatedRecruiterJobsJobIdRouteRoute: typeof AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren
+  AuthenticatedRecruiterJobsNewRoute: typeof AuthenticatedRecruiterJobsNewRoute
+  AuthenticatedRecruiterPricingIndexRoute: typeof AuthenticatedRecruiterPricingIndexRoute
 }
 
 const AuthenticatedRecruiterRouteRouteChildren: AuthenticatedRecruiterRouteRouteChildren =
   {
     AuthenticatedRecruiterIndexRoute: AuthenticatedRecruiterIndexRoute,
+    AuthenticatedRecruiterJobsJobIdRouteRoute:
+      AuthenticatedRecruiterJobsJobIdRouteRouteWithChildren,
     AuthenticatedRecruiterJobsNewRoute: AuthenticatedRecruiterJobsNewRoute,
     AuthenticatedRecruiterPricingIndexRoute:
       AuthenticatedRecruiterPricingIndexRoute,
-    AuthenticatedRecruiterJobsJobIdApplicantsRoute:
-      AuthenticatedRecruiterJobsJobIdApplicantsRoute,
-    AuthenticatedRecruiterJobsJobIdEditRoute:
-      AuthenticatedRecruiterJobsJobIdEditRoute,
   }
 
 const AuthenticatedRecruiterRouteRouteWithChildren =

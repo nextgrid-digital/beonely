@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
+import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
+import { jobOgImageUrl } from '@/lib/jobs/job-share-url'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import {
   getSupabaseBrowserClient,
@@ -9,6 +11,7 @@ import {
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
+import { JobListingMetaBadges } from '@/features/jobs/job-listing-meta-badges'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -167,6 +170,10 @@ function JobDetailPage() {
   }
 
   const canonical = `${siteUrl()}/jobs/${job.job_slug}`
+  const ogImage = jobOgImageUrl(job.job_slug)
+  const ogDescription =
+    plainTextFromJobDescription(job.job_description).slice(0, 160) ||
+    `${job.company_name}${job.location ? ` — ${job.location}` : ''}`
   const jsonLd = buildJobPostingJsonLd(job, canonical)
 
   return (
@@ -179,12 +186,16 @@ function JobDetailPage() {
         />
         <link rel='canonical' href={canonical} />
         <meta property='og:title' content={`${job.job_title} · Beonely`} />
-        <meta
-          property='og:description'
-          content={`${job.company_name} — ${job.location}`}
-        />
+        <meta property='og:description' content={ogDescription} />
         <meta property='og:url' content={canonical} />
         <meta property='og:type' content='website' />
+        <meta property='og:image' content={ogImage} />
+        <meta property='og:image:width' content='1200' />
+        <meta property='og:image:height' content='630' />
+        <meta name='twitter:card' content='summary_large_image' />
+        <meta name='twitter:title' content={`${job.job_title} · Beonely`} />
+        <meta name='twitter:description' content={ogDescription} />
+        <meta name='twitter:image' content={ogImage} />
       </Helmet>
       <script type='application/ld+json'>{JSON.stringify(jsonLd)}</script>
 
@@ -223,17 +234,18 @@ function JobDetailPage() {
                   <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
                     {job.company_name}
                   </p>
-                  <div className='mt-3 flex flex-wrap gap-2'>
-                    {job.location && (
-                      <Badge variant='outline'>{job.location}</Badge>
-                    )}
-                    {job.employment_type && (
-                      <Badge variant='outline'>{job.employment_type}</Badge>
-                    )}
-                    {job.work_mode && (
-                      <Badge variant='outline'>{job.work_mode}</Badge>
-                    )}
-                  </div>
+                  <JobListingMetaBadges
+                    className='mt-3'
+                    location={job.location}
+                    employmentType={job.employment_type}
+                    workMode={job.work_mode}
+                    experienceLevel={job.experience_level}
+                    jobType={job.job_type}
+                    salaryRange={job.salary_range}
+                    modules={job.modules}
+                    certifications={job.certifications}
+                    skills={job.skills}
+                  />
                 </div>
               </div>
               <div className='flex w-full shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:w-auto sm:flex-row'>
@@ -245,7 +257,7 @@ function JobDetailPage() {
               <CardHeader>
                 <CardTitle>About this role</CardTitle>
               </CardHeader>
-              <CardContent className='max-w-none'>
+              <CardContent className='min-w-0'>
                 <JobDescriptionRichTextRead value={job.job_description} />
               </CardContent>
             </Card>
@@ -254,19 +266,6 @@ function JobDetailPage() {
       </main>
     </>
   )
-}
-
-function isListedPublicJob(job: JobRow): boolean {
-  if (job.approval_status !== 'approved' || job.payment_status !== 'paid') {
-    return false
-  }
-  if (
-    job.listing_expires_at &&
-    new Date(job.listing_expires_at) <= new Date()
-  ) {
-    return false
-  }
-  return true
 }
 
 async function fetchJobBySlug(slug: string): Promise<JobRow | null> {
@@ -280,7 +279,7 @@ async function fetchJobBySlug(slug: string): Promise<JobRow | null> {
   if (error) throw error
   if (!data) return null
   const job = data as JobRow
-  if (!isListedPublicJob(job)) return null
+  if (!jobListingIsLive(job)) return null
   return job
 }
 

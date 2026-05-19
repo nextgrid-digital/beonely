@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   normalizeRecruiterPathname,
   recruiterBreadcrumbSegments,
+  recruiterJobWorkspaceJobId,
+  recruiterJobWorkspaceTab,
   recruiterSubnavActiveKey,
 } from '@/features/recruiter/recruiter-nav-ia'
 
@@ -58,7 +60,7 @@ describe('recruiterBreadcrumbSegments', () => {
       [
         { label: 'Recruiter', to: '/recruiter' },
         { label: 'My jobs', to: '/recruiter' },
-        { label: 'Applicants' },
+        { label: 'Job listing' },
       ]
     )
   })
@@ -79,7 +81,46 @@ describe('recruiterBreadcrumbSegments', () => {
     ).toEqual([
       { label: 'Recruiter', to: '/recruiter' },
       { label: 'My jobs', to: '/recruiter' },
-      { label: 'Edit listing' },
+      { label: 'Job listing' },
     ])
+  })
+})
+
+describe('recruiterJobWorkspaceTab', () => {
+  it('returns details for edit route', () => {
+    expect(
+      recruiterJobWorkspaceTab(
+        '/recruiter/jobs/550e8400-e29b-41d4-a716-446655440000/edit'
+      )
+    ).toBe('details')
+  })
+
+  it('returns applicants for applicants route', () => {
+    expect(recruiterJobWorkspaceTab('/recruiter/jobs/x/applicants')).toBe(
+      'applicants'
+    )
+  })
+
+  it('returns null for unrelated routes', () => {
+    expect(recruiterJobWorkspaceTab('/recruiter')).toBe(null)
+    expect(recruiterJobWorkspaceTab('/recruiter/jobs/new')).toBe(null)
+  })
+})
+
+describe('recruiterJobWorkspaceJobId', () => {
+  it('returns job id on workspace routes', () => {
+    expect(
+      recruiterJobWorkspaceJobId(
+        '/recruiter/jobs/550e8400-e29b-41d4-a716-446655440000/edit'
+      )
+    ).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(recruiterJobWorkspaceJobId('/recruiter/jobs/x/applicants')).toBe(
+      'x'
+    )
+  })
+
+  it('returns null elsewhere', () => {
+    expect(recruiterJobWorkspaceJobId('/recruiter')).toBe(null)
+    expect(recruiterJobWorkspaceJobId('/recruiter/jobs/new')).toBe(null)
   })
 })

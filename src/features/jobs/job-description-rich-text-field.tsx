@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
+import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
@@ -15,8 +16,13 @@ import {
   Underline as UnderlineIcon,
 } from 'lucide-react'
 import {
+  extractClipboardHtmlFragment,
+  plainTextJobPasteToHtml,
+} from '@/lib/jobs/normalize-pasted-job-description-html'
+import {
   contentFromJobDescriptionRichValue,
   looksLikeJobHtml,
+  preparePastedJobDescriptionHtml,
   sanitizeJobDescriptionHtml,
 } from '@/lib/jobs/sanitize-job-description-html'
 import { cn } from '@/lib/utils'
@@ -25,8 +31,12 @@ import { Button } from '@/components/ui/button'
 const JOB_EDITOR_BODY =
   'antialiased whitespace-pre-wrap text-left break-words text-sm text-foreground leading-relaxed [font-variation-settings:normal]'
 
+const PROSEMIRROR_CONTAINMENT =
+  '[&_.ProseMirror]:max-w-full [&_.ProseMirror]:overflow-x-hidden [&_.ProseMirror]:break-words'
+
 const JOB_EDITOR_CONTENT_CLASS = cn(
-  'max-h-[min(32rem,50vh)] min-h-[12rem] overflow-y-auto',
+  'max-h-[min(32rem,50vh)] min-h-[12rem] overflow-y-auto overflow-x-hidden',
+  PROSEMIRROR_CONTAINMENT,
   JOB_EDITOR_BODY,
   '[&_p]:my-0 [&_p]:block [&_p+_p]:mt-3',
   '[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground',
@@ -37,13 +47,14 @@ const JOB_EDITOR_CONTENT_CLASS = cn(
 )
 
 const JOB_READ_CLASS = cn(
-  'max-w-none min-w-0 text-sm leading-relaxed text-foreground',
+  'min-w-0 w-full max-w-full overflow-x-hidden break-words text-sm leading-relaxed text-foreground',
+  '[&_*]:max-w-full [&_*]:break-words',
   '[&_p]:my-0 [&_p+_p]:mt-3',
   '[&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight',
   '[&_h3]:mt-4 [&_h3]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold',
   '[&_blockquote]:my-4 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground',
   '[&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5',
-  '[&_a]:text-primary [&_a]:underline'
+  '[&_a]:break-all [&_a]:text-primary [&_a]:underline'
 )
 
 export function JobDescriptionRichTextRead({
@@ -75,6 +86,8 @@ export type JobDescriptionRichTextFieldProps = {
   value: string
   onChange: (html: string) => void
   editable: boolean
+  /** `inline` drops outer border for WYSIWYG listing edit. */
+  variant?: 'default' | 'inline'
   className?: string
   editorClassName?: string
 }
@@ -86,6 +99,7 @@ export function JobDescriptionRichTextField({
   value,
   onChange,
   editable,
+  variant = 'default',
   className,
   editorClassName,
 }: JobDescriptionRichTextFieldProps) {
@@ -96,18 +110,27 @@ export function JobDescriptionRichTextField({
     <JobDescriptionRichTextEdit
       value={value}
       onChange={onChange}
+      variant={variant}
       className={className}
       editorClassName={editorClassName}
     />
   )
 }
 
+const JOB_INLINE_EDITOR_CONTENT_CLASS = cn(
+  'max-h-none min-h-[12rem] overflow-y-auto overflow-x-hidden',
+  PROSEMIRROR_CONTAINMENT,
+  JOB_READ_CLASS
+)
+
 function JobDescriptionRichTextEdit({
   value,
   onChange,
+  variant = 'default',
   className,
   editorClassName,
 }: Omit<JobDescriptionRichTextFieldProps, 'editable'>) {
+  const isInline = variant === 'inline'
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -133,12 +156,60 @@ function JobDescriptionRichTextEdit({
       attributes: {
         class: cn(
           'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
-          JOB_EDITOR_CONTENT_CLASS,
+          isInline ? JOB_INLINE_EDITOR_CONTENT_CLASS : JOB_EDITOR_CONTENT_CLASS,
           editorClassName
         ),
       },
       transformPastedHTML(html) {
-        return sanitizeJobDescriptionHtml(html)
+        return preparePastedJobDescriptionHtml(
+          extractClipboardHtmlFragment(html)
+        )
+      },
+      handlePaste(view, event) {
+        const cd = event.clipboardData
+        if (!cd) return false
+
+        const htmlRaw = cd.getData('text/html')?.trim() ?? ''
+        if (htmlRaw.length > 0 && htmlRaw.includes('<')) {
+          event.preventDefault()
+          const prepared = preparePastedJobDescriptionHtml(
+            extractClipboardHtmlFragment(htmlRaw)
+          )
+          const dom = document.createElement('div')
+          dom.innerHTML = prepared || '<p></p>'
+          try {
+            const parser = PMDOMParser.fromSchema(view.state.schema)
+            const slice = parser.parseSlice(dom, { preserveWhitespace: true })
+            view.dispatch(
+              view.state.tr.replaceSelection(slice).scrollIntoView()
+            )
+          } catch {
+            return false
+          }
+          return true
+        }
+
+        const plain = cd.getData('text/plain')
+        if (plain && /\n/.test(plain)) {
+          event.preventDefault()
+          const safe = sanitizeJobDescriptionHtml(
+            plainTextJobPasteToHtml(plain)
+          )
+          const dom = document.createElement('div')
+          dom.innerHTML = safe
+          try {
+            const parser = PMDOMParser.fromSchema(view.state.schema)
+            const slice = parser.parseSlice(dom, { preserveWhitespace: true })
+            view.dispatch(
+              view.state.tr.replaceSelection(slice).scrollIntoView()
+            )
+          } catch {
+            return false
+          }
+          return true
+        }
+
+        return false
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -171,7 +242,8 @@ function JobDescriptionRichTextEdit({
     return (
       <div
         className={cn(
-          'min-h-[12rem] rounded-md border border-border bg-muted/20',
+          'min-h-[12rem]',
+          isInline ? 'bg-transparent' : 'rounded-md border border-border bg-muted/20',
           className
         )}
       />
@@ -181,11 +253,21 @@ function JobDescriptionRichTextEdit({
   return (
     <div
       className={cn(
-        'rounded-md border border-border bg-background motion-reduce:transition-none',
+        'min-w-0 w-full overflow-hidden motion-reduce:transition-none',
+        isInline
+          ? 'border-0 bg-transparent shadow-none'
+          : 'rounded-md border border-border bg-background',
         className
       )}
     >
-      <div className='flex flex-wrap gap-0.5 border-b border-border bg-muted/30 p-1'>
+      <div
+        className={cn(
+          'flex flex-wrap gap-0.5 p-1',
+          isInline
+            ? 'border-b border-border/60 bg-transparent'
+            : 'border-b border-border bg-muted/30'
+        )}
+      >
         <Button
           type='button'
           size='icon'
@@ -281,7 +363,13 @@ function JobDescriptionRichTextEdit({
           <LinkIcon className='size-4' />
         </Button>
       </div>
-      <div className='px-3 py-2'>
+      <div
+        className={cn(
+          'min-w-0',
+          isInline ? 'px-0 py-2' : 'px-3 py-2',
+          PROSEMIRROR_CONTAINMENT
+        )}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>

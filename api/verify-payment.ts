@@ -1,10 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { z } from 'zod'
+import { addListingDays } from './_lib/listing-renewal.js'
 import {
+  ALL_PAYMENT_PLANS,
   PLAN_AMOUNT_INR_PAISE,
   planDurationDays,
   planIsFeatured,
+  planIsRenewal,
   planToJobListingFields,
   type PaymentPlan,
 } from './_lib/plan-helpers.js'
@@ -22,12 +25,7 @@ const bodySchema = z.object({
   razorpay_signature: z.string(),
 })
 
-const PLAN_VALUES = [
-  'standard_week',
-  'standard_month',
-  'featured_week',
-  'featured_month',
-] as const
+const PLAN_VALUES = ALL_PAYMENT_PLANS
 
 function parsePlan (raw: unknown): PaymentPlan | null {
   if (typeof raw !== 'string') return null
@@ -144,22 +142,56 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       })
       .eq('id', payment.id)
 
-    const isBoost =
+    const wasListed =
       jobSnapshot?.approval_status === 'approved' &&
       jobSnapshot?.payment_status === 'paid'
 
+    if (wasListed && planIsRenewal(plan)) {
+      const days = planDurationDays(plan)
+      const iso = addListingDays(
+        jobSnapshot?.listing_expires_at ?? null,
+        days
+      )
+
+      await sb
+        .from('jobs')
+        .update({
+          listing_tier: listing.listing_tier,
+          listing_duration: listing.listing_duration,
+          featured: listing.featured,
+          featured_expiry: listing.featured ? iso : null,
+          listing_expires_at: iso,
+        })
+        .eq('id', payment.job_id)
+
+      await sendTransactionalEmail({
+        to: user.email ?? '',
+        subject: 'Beonely — listing extended',
+        html: beonelyTransactionalHtml({
+          headline: 'Listing extended',
+          bodyParagraphs: [
+            `Your listing is now live until ${iso.slice(0, 10)} (UTC).`,
+            'You can manage your listing from your recruiter dashboard on Beonely.',
+          ],
+        }),
+      })
+
+      return res.status(200).json({
+        ok: true,
+        jobId: payment.job_id,
+        featured: listing.featured,
+        renew: true,
+      })
+    }
+
+    const isBoost = wasListed && planIsFeatured(plan) && !planIsRenewal(plan)
+
     if (isBoost) {
-      if (!jobSnapshot || !planIsFeatured(plan)) {
+      if (!jobSnapshot) {
         return res.status(400).json({ error: 'boost_requires_featured_plan' })
       }
       const days = planDurationDays(plan)
-      const base =
-        jobSnapshot.listing_expires_at &&
-        new Date(jobSnapshot.listing_expires_at) > new Date()
-          ? new Date(jobSnapshot.listing_expires_at)
-          : new Date()
-      base.setUTCDate(base.getUTCDate() + days)
-      const iso = base.toISOString()
+      const iso = addListingDays(jobSnapshot.listing_expires_at, days)
 
       await sb
         .from('jobs')

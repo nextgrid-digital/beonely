@@ -29,7 +29,7 @@ The ingest script sets **approved + paid** automatically (no Razorpay). Admins c
 |----------|---------|
 | `SUPABASE_SERVICE_ROLE_KEY` | Same service role key already on Vercel for `/api` (never `VITE_*`) |
 | `SUPABASE_URL` or `VITE_SUPABASE_URL` | Same Supabase project URL as the browser app |
-| `INGEST_RECRUITER_ID` | Optional — defaults to your first `public.recruiters` row |
+| `INGEST_RECRUITER_ID` | Optional — UUID of a **dedicated system recruiter** used only for ingest metadata. Do not use a real hiring user's recruiter row; the recruiter portal lists only `source_kind = recruiter_posted` jobs. Defaults to your first `public.recruiters` row if unset. |
 | `INGEST_JOBS_FILE` | Path to JSON array (default: `data/linkedin-jobs.json` if present) |
 | `INGEST_JOB_DESCRIPTION` | Single demo row only, when no batch file |
 | `INGEST_JOB_DESCRIPTION_FILE` | File path for demo description |

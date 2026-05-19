@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
+import { SiteVentureAttribution } from '@/components/layout/site-venture-attribution'
 import { PublicSiteAuthProvider } from '@/features/jobs/public-site-auth-provider'
 
 export const Route = createRootRouteWithContext<{
@@ -18,6 +19,7 @@ export const Route = createRootRouteWithContext<{
         <PublicSiteAuthProvider>
           <Outlet />
         </PublicSiteAuthProvider>
+        <SiteVentureAttribution />
         <Toaster duration={5000} />
         {import.meta.env.MODE === 'development' && (
           <>

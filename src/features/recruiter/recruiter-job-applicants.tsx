@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import type {
-  Enums,
-  JobRow,
-  RecruiterRow,
-  Tables,
-} from '@/lib/supabase/database.types'
-import { useAuth } from '@/context/auth-provider'
+import type { Enums, Tables } from '@/lib/supabase/database.types'
+import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -49,63 +43,16 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   'rejected',
 ]
 
-export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
-  const { user } = useAuth()
-  const navigate = useNavigate()
+export function RecruiterJobApplicantsList() {
+  const { jobId } = useRecruiterJobWorkspace()
   const qc = useQueryClient()
   const [profileSheetApp, setProfileSheetApp] = useState<ApplicationRow | null>(
     null
   )
 
-  const recruiterQuery = useQuery({
-    queryKey: ['recruiter', user?.id],
-    enabled: Boolean(user && getSupabaseConfigured()),
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from('recruiters')
-        .select('*')
-        .eq('user_id', user!.id)
-        .maybeSingle()
-      if (error) throw error
-      return data as RecruiterRow | null
-    },
-  })
-
-  const jobQuery = useQuery({
-    queryKey: ['recruiter-job', jobId],
-    enabled: Boolean(getSupabaseConfigured() && jobId),
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from('jobs')
-        .select('*')
-        .eq('id', jobId)
-        .maybeSingle()
-      if (error) throw error
-      return data as JobRow | null
-    },
-  })
-
-  const recruiter = recruiterQuery.data
-  const job = jobQuery.data
-
-  useEffect(() => {
-    if (!recruiterQuery.isSuccess || !jobQuery.isSuccess) return
-    if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
-      void navigate({ to: '/recruiter', replace: true })
-    }
-  }, [recruiter, job, recruiterQuery.isSuccess, jobQuery.isSuccess, navigate])
-
   const appsQuery = useQuery({
     queryKey: ['job-applicants', jobId],
-    enabled: Boolean(
-      getSupabaseConfigured() &&
-      jobId &&
-      job &&
-      recruiter &&
-      job.recruiter_id === recruiter.id
-    ),
+    enabled: Boolean(getSupabaseConfigured() && jobId),
     queryFn: async () => {
       const sb = getSupabaseBrowserClient()
       const { data, error } = await sb
@@ -142,33 +89,8 @@ export function RecruiterJobApplicants({ jobId }: { jobId: string }) {
     )
   }
 
-  if (recruiterQuery.isLoading || jobQuery.isLoading) {
-    return <Loader2 className='size-6 animate-spin text-muted-foreground' />
-  }
-
-  if (!recruiter || !job || job.recruiter_id !== recruiter.id) {
-    return null
-  }
-
   return (
     <div className='space-y-6'>
-      <div className='flex flex-wrap items-center gap-3'>
-        <Button variant='ghost' size='sm' asChild>
-          <Link to='/recruiter'>
-            <ArrowLeft className='me-1 size-4' />
-            Back to listings
-          </Link>
-        </Button>
-      </div>
-      <div>
-        <h1 className='text-xl font-semibold tracking-tight sm:text-2xl'>
-          Applicants
-        </h1>
-        <p className='text-sm text-muted-foreground'>
-          {job.job_title} · {job.company_name}
-        </p>
-      </div>
-
       {appsQuery.isLoading && (
         <Loader2 className='size-6 animate-spin text-muted-foreground' />
       )}
