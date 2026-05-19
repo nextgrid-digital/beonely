@@ -5,27 +5,21 @@
   "framework": null,
   "functions": {
     "api/create-order.ts": {
-      "memory": 1024,
       "maxDuration": 60
     },
     "api/verify-payment.ts": {
-      "memory": 1024,
       "maxDuration": 60
     },
     "api/sitemap.ts": {
-      "memory": 1024,
       "maxDuration": 60
     },
     "api/og/job.tsx": {
-      "memory": 1024,
       "maxDuration": 60
     },
     "api/share/job.ts": {
-      "memory": 512,
       "maxDuration": 30
     },
     "api/razorpay-webhook.ts": {
-      "memory": 1024,
       "maxDuration": 60
     },
     "api/notify-application.ts": { "maxDuration": 60 },

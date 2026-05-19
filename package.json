@@ -8,6 +8,9 @@
     "node": ">=20"
   },
   "packageManager": "pnpm@10.29.2",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  },
   "scripts": {
     "dev": "vite",
     "dev:api": "vercel dev --listen 127.0.0.1:3000",
