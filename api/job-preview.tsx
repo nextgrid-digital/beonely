@@ -2,7 +2,7 @@ import { handleJobShareHtml } from './_handlers/job/share-html.js'
 
 export const config = {
   runtime: 'edge',
-}
+} as const
 
 type JobPreviewMode = 'share'
 
