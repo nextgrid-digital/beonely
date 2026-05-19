@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { AuthGetUserClient, AuthUser } from './auth-types.js'
 
 export type ServiceSupabaseInitResult =
   | { ok: true; client: SupabaseClient }
@@ -31,7 +32,7 @@ export async function getUserFromBearer (jwt: string | undefined) {
   const {
     data: { user },
     error,
-  } = await sb.auth.getUser(jwt)
+  } = await (sb.auth as AuthGetUserClient).getUser(jwt)
   if (error || !user) return { user: null as null, error: error?.message ?? 'invalid' }
-  return { user: user as User, error: null as null }
+  return { user: user as AuthUser, error: null as null }
 }

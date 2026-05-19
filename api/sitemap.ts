@@ -1,6 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { tryGetServiceSupabase } from './_lib/supabase.js'
 
+type SitemapJobRow = {
+  job_slug: string
+  updated_at: string | null
+  listing_expires_at: string | null
+}
+
 function escapeXml (s: string) {
   return s
     .replace(/&/g, '&amp;')
@@ -31,7 +37,7 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       .eq('payment_status', 'paid')
 
     const now = Date.now()
-    const jobs = (jobsRaw ?? []).filter(
+    const jobs = ((jobsRaw ?? []) as SitemapJobRow[]).filter(
       (j) =>
         !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
     )

@@ -4,6 +4,12 @@ import { beonelyMarketingHtml } from '../_lib/email-marketing-layout.js'
 import { sendMarketingEmail } from '../_lib/resend.js'
 import { resolveCampaignAudience } from '../_lib/resolve-campaign-audience.js'
 
+type DigestJobRow = {
+  job_title: string
+  job_slug: string
+  company_name: string
+}
+
 function siteOrigin(): string {
   const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
   if (raw) return raw.replace(/\/$/, '')
@@ -43,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const origin = siteOrigin()
-  const listHtml = jobs
+  const listHtml = (jobs as DigestJobRow[])
     .map(
       (j) =>
         `<p style="margin:0 0 12px;"><a href="${origin}/jobs/${j.job_slug}" style="color:#2563eb;">${j.job_title}</a> — ${j.company_name}</p>`

@@ -9,6 +9,8 @@ const patchSchema = z.object({
   enabled: z.boolean(),
 })
 
+type AutomationRuleRow = Record<string, unknown> & { trigger_key: string }
+
 const TRIGGER_LABELS: Record<string, string> = {
   candidate_signup: 'Candidate signup welcome',
   recruiter_signup: 'Recruiter signup welcome',
@@ -57,7 +59,7 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({
-      rules: (rules ?? []).map((r) => ({
+      rules: ((rules ?? []) as AutomationRuleRow[]).map((r) => ({
         ...r,
         label: TRIGGER_LABELS[r.trigger_key as string] ?? r.trigger_key,
         last_7d: counts[r.trigger_key as string] ?? { sent: 0, failed: 0 },

@@ -14,6 +14,14 @@ export type ResolvedRecipient = {
   unsubscribe_token: string | null
 }
 
+type EmailOnlyRow = { email: string | null }
+type NewsletterRow = { email: string | null; unsubscribe_token: string | null }
+type SubscriberRow = {
+  email: string | null
+  unsubscribe_token: string
+  unsubscribed_at: string | null
+}
+
 function dedupeRecipients(rows: ResolvedRecipient[]): ResolvedRecipient[] {
   const seen = new Set<string>()
   const out: ResolvedRecipient[] = []
@@ -51,7 +59,7 @@ export async function resolveCampaignAudience(
       .eq('marketing_opt_in', true)
       .not('email', 'is', null)
     parts.push(
-      (data ?? []).map((r) => ({
+      ((data ?? []) as EmailOnlyRow[]).map((r) => ({
         email: (r.email as string).trim(),
         recipient_type: 'candidate',
         unsubscribe_token: null,
@@ -67,7 +75,7 @@ export async function resolveCampaignAudience(
       .eq('disabled', false)
       .not('email', 'is', null)
     parts.push(
-      (data ?? []).map((r) => ({
+      ((data ?? []) as EmailOnlyRow[]).map((r) => ({
         email: (r.email as string).trim(),
         recipient_type: 'recruiter',
         unsubscribe_token: null,
@@ -82,7 +90,7 @@ export async function resolveCampaignAudience(
       .eq('audience', 'newsletter')
       .is('unsubscribed_at', null)
     parts.push(
-      (data ?? []).map((r) => ({
+      ((data ?? []) as NewsletterRow[]).map((r) => ({
         email: (r.email as string).trim(),
         recipient_type: 'newsletter',
         unsubscribe_token: r.unsubscribe_token as string,
@@ -99,10 +107,10 @@ export async function resolveCampaignAudience(
     .select('email, unsubscribe_token, unsubscribed_at')
     .in('email', emails)
 
-  const subByEmail = new Map(
-    (subs ?? []).map((s) => [
+  const subByEmail = new Map<string, SubscriberRow>(
+    ((subs ?? []) as SubscriberRow[]).map((s) => [
       (s.email as string).trim().toLowerCase(),
-      s as { unsubscribe_token: string; unsubscribed_at: string | null },
+      s,
     ])
   )
 
