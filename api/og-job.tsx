@@ -149,8 +149,7 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
     res.setHeader('Content-Type', 'image/png')
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400')
     return res.status(200).send(buffer)
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'error'
-    return res.status(500).send(message)
+  } catch {
+    return res.status(500).send('error')
   }
 }
