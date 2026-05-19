@@ -1,6 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handleJobOgImage } from './_handlers/job/og-image.js'
-import { handleJobShareHtml } from './_handlers/job/share-html.js'
 
 type JobPreviewMode = 'og' | 'share'
 
@@ -20,9 +18,11 @@ function jobPreviewMode (req: VercelRequest): JobPreviewMode | null {
 export default async function handler (req: VercelRequest, res: VercelResponse) {
   const mode = jobPreviewMode(req)
   if (mode === 'og') {
+    const { handleJobOgImage } = await import('./_handlers/job/og-image.js')
     return handleJobOgImage(req, res)
   }
   if (mode === 'share') {
+    const { handleJobShareHtml } = await import('./_handlers/job/share-html.js')
     return handleJobShareHtml(req, res)
   }
   return res.status(404).send('Not found')
