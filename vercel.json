@@ -13,7 +13,7 @@
     "api/sitemap.ts": {
       "maxDuration": 60
     },
-    "api/job-preview.tsx": {
+    "api/job-preview.ts": {
       "maxDuration": 30
     },
     "api/og-job.tsx": {
