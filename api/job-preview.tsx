@@ -1,29 +1,31 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { handleJobOgImage } from './_handlers/job/og-image.js'
+import { handleJobShareHtml } from './_handlers/job/share-html.js'
+
+export const config = {
+  runtime: 'edge',
+}
 
 type JobPreviewMode = 'og' | 'share'
 
-function jobPreviewMode (req: VercelRequest): JobPreviewMode | null {
-  const raw = req.query.mode
-  const fromQuery = Array.isArray(raw) ? raw[0] : raw
+function jobPreviewMode (request: Request): JobPreviewMode | null {
+  const url = new URL(request.url)
+  const fromQuery = url.searchParams.get('mode')
   if (fromQuery === 'og' || fromQuery === 'share') {
     return fromQuery
   }
 
-  const pathname = (req.url ?? '').split('?')[0] ?? ''
-  if (pathname.includes('/og/job')) return 'og'
-  if (pathname.includes('/share/job')) return 'share'
+  if (url.pathname.includes('/og/job')) return 'og'
+  if (url.pathname.includes('/share/job')) return 'share'
   return null
 }
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
-  const mode = jobPreviewMode(req)
+export default async function handler (request: Request): Promise<Response> {
+  const mode = jobPreviewMode(request)
   if (mode === 'og') {
-    const { handleJobOgImage } = await import('./_handlers/job/og-image.js')
-    return handleJobOgImage(req, res)
+    return handleJobOgImage(request)
   }
   if (mode === 'share') {
-    const { handleJobShareHtml } = await import('./_handlers/job/share-html.js')
-    return handleJobShareHtml(req, res)
+    return handleJobShareHtml(request)
   }
-  return res.status(404).send('Not found')
+  return new Response('Not found', { status: 404 })
 }

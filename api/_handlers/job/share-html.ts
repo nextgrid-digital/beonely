@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
 import {
   jobOgDescription,
@@ -15,23 +14,20 @@ function escapeHtml (s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-export async function handleJobShareHtml (
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).end()
+export async function handleJobShareHtml (request: Request): Promise<Response> {
+  if (request.method !== 'GET') {
+    return new Response(null, { status: 405 })
   }
 
-  const slug = typeof req.query.slug === 'string' ? req.query.slug.trim() : ''
+  const slug = new URL(request.url).searchParams.get('slug')?.trim() ?? ''
   if (!slug) {
-    return res.status(400).send('Missing slug')
+    return new Response('Missing slug', { status: 400 })
   }
 
   try {
     const job = await fetchPublicJobBySlug(slug)
     if (!job) {
-      return res.status(404).send('Job not found')
+      return new Response('Job not found', { status: 404 })
     }
 
     const pageUrl = publicJobPageUrl(job.job_slug)
@@ -64,10 +60,14 @@ export async function handleJobShareHtml (
 </body>
 </html>`
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600')
-    return res.status(200).send(html)
+    return new Response(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=300, s-maxage=3600',
+      },
+    })
   } catch {
-    return res.status(500).send('error')
+    return new Response('error', { status: 500 })
   }
 }

@@ -1,44 +1,38 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImageResponse } from '@vercel/og'
 import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
 import { OgJobCard } from '../../_lib/og-job-card.js'
 import { serverSiteOrigin } from '../../_lib/site-origin.js'
 
-export async function handleJobOgImage (
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).end()
+export async function handleJobOgImage (request: Request): Promise<Response> {
+  if (request.method !== 'GET') {
+    return new Response(null, { status: 405 })
   }
 
-  const slug = typeof req.query.slug === 'string' ? req.query.slug.trim() : ''
+  const slug = new URL(request.url).searchParams.get('slug')?.trim() ?? ''
   if (!slug) {
-    return res.status(400).send('Missing slug')
+    return new Response('Missing slug', { status: 400 })
   }
 
   try {
     const job = await fetchPublicJobBySlug(slug)
     if (!job) {
-      return res.status(404).send('Job not found')
+      return new Response('Job not found', { status: 404 })
     }
 
     const origin = serverSiteOrigin()
     const beonelyLogoUrl = `${origin}/images/beonely-logo.png`
 
-    const image = new ImageResponse(
+    return new ImageResponse(
       <OgJobCard job={job} beonelyLogoUrl={beonelyLogoUrl} />,
       {
         width: 1200,
         height: 630,
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        },
       }
     )
-
-    const buffer = Buffer.from(await image.arrayBuffer())
-    res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400')
-    return res.status(200).send(buffer)
   } catch {
-    return res.status(500).send('error')
+    return new Response('error', { status: 500 })
   }
 }
