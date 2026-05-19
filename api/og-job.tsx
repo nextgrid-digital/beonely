@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { ImageResponse } from '@vercel/og'
 import { fetchPublicJobBySlug } from './_lib/public-job.js'
 import { OgJobCard } from './_lib/og-job-card.js'
 import { serverSiteOrigin } from './_lib/site-origin.js'
@@ -23,6 +22,7 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
     const origin = serverSiteOrigin()
     const beonelyLogoUrl = `${origin}/images/beonely-logo.png`
 
+    const { ImageResponse } = await import('@vercel/og')
     const image = new ImageResponse(
       <OgJobCard job={job} beonelyLogoUrl={beonelyLogoUrl} />,
       {
