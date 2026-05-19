@@ -29,13 +29,13 @@ function mockRes() {
 
 describe('api/admin/email templates router', () => {
   it('routes templates list with auth', async () => {
-    const { default: handler } = await import('./admin/email/[...segments].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
         method: 'GET',
         url: '/api/admin/email/templates',
-        query: { segments: 'templates' },
+        query: { segments: ['email', 'templates'] },
         headers: {},
       } as unknown as VercelRequest,
       res
@@ -44,13 +44,13 @@ describe('api/admin/email templates router', () => {
   })
 
   it('routes templates/:id with auth', async () => {
-    const { default: handler } = await import('./admin/email/[...segments].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
         method: 'GET',
         url: '/api/admin/email/templates/00000000-0000-4000-8000-000000000001',
-        query: { segments: ['templates', '00000000-0000-4000-8000-000000000001'] },
+        query: { segments: ['email', 'templates', '00000000-0000-4000-8000-000000000001'] },
         headers: {},
       } as unknown as VercelRequest,
       res
@@ -59,7 +59,7 @@ describe('api/admin/email templates router', () => {
   })
 
   it('returns 404 for unknown email admin route', async () => {
-    const { default: handler } = await import('./admin/email/[...segments].js')
+    const { default: handler } = await import('./admin/[...segments].js')
     const res = mockRes()
     await handler(
       {

@@ -14,6 +14,9 @@
       "maxDuration": 60
     },
     "api/job-preview.tsx": {
+      "maxDuration": 30
+    },
+    "api/og-job.tsx": {
       "maxDuration": 60
     },
     "api/razorpay-webhook.ts": {
@@ -24,8 +27,7 @@
     "api/resend-webhook.ts": { "maxDuration": 30 },
     "api/email/dispatch.ts": { "maxDuration": 60 },
     "api/cron.ts": { "maxDuration": 60 },
-    "api/admin/[...segments].ts": { "maxDuration": 60 },
-    "api/admin/email/[...segments].ts": { "maxDuration": 60 }
+    "api/admin/[...segments].ts": { "maxDuration": 60 }
   },
   "redirects": [
     {
@@ -60,7 +62,7 @@
     },
     {
       "source": "/api/og/job",
-      "destination": "/api/job-preview?mode=og"
+      "destination": "/api/og-job"
     },
     {
       "source": "/api/share/job",
