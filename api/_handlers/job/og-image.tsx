@@ -32,7 +32,8 @@ export async function handleJobOgImage (request: Request): Promise<Response> {
         },
       }
     )
-  } catch {
-    return new Response('error', { status: 500 })
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'error'
+    return new Response(message, { status: 500 })
   }
 }
