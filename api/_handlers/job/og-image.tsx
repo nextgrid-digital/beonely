@@ -1,10 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImageResponse } from '@vercel/og'
-import { fetchPublicJobBySlug } from '../_lib/public-job.js'
-import { OgJobCard } from '../_lib/og-job-card.js'
-import { serverSiteOrigin } from '../_lib/site-origin.js'
+import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
+import { OgJobCard } from '../../_lib/og-job-card.js'
+import { serverSiteOrigin } from '../../_lib/site-origin.js'
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
+export async function handleJobOgImage (
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== 'GET') {
     return res.status(405).end()
   }

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { listingExpiryReminderEmail } from '../_lib/email-templates.js'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
-import { sendTransactionalEmail } from '../_lib/resend.js'
+import { listingExpiryReminderEmail } from '../../_lib/email-templates.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { sendTransactionalEmail } from '../../_lib/resend.js'
 
 const REMINDER_DAYS = [7, 3, 1] as const
 
@@ -23,7 +23,7 @@ function daysBetweenUtc (from: Date, to: Date): number {
   return Math.round((b - a) / (24 * 60 * 60 * 1000))
 }
 
-export default async function handler (
+export async function handleListingExpiryReminders (
   req: VercelRequest,
   res: VercelResponse
 ) {

@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchPublicJobBySlug } from '../_lib/public-job.js'
+import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
 import {
   jobOgDescription,
   jobOgImageApiUrl,
   jobOgTitle,
   publicJobPageUrl,
-} from '../_lib/job-og-meta.js'
+} from '../../_lib/job-og-meta.js'
 
 function escapeHtml (s: string): string {
   return s
@@ -15,7 +15,10 @@ function escapeHtml (s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
+export async function handleJobShareHtml (
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== 'GET') {
     return res.status(405).end()
   }

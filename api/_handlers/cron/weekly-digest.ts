@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { tryGetServiceSupabase } from '../_lib/supabase.js'
-import { beonelyMarketingHtml } from '../_lib/email-marketing-layout.js'
-import { sendMarketingEmail } from '../_lib/resend.js'
-import { resolveCampaignAudience } from '../_lib/resolve-campaign-audience.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+import { beonelyMarketingHtml } from '../../_lib/email-marketing-layout.js'
+import { sendMarketingEmail } from '../../_lib/resend.js'
+import { resolveCampaignAudience } from '../../_lib/resolve-campaign-audience.js'
 
 type DigestJobRow = {
   job_title: string
@@ -10,13 +10,16 @@ type DigestJobRow = {
   company_name: string
 }
 
-function siteOrigin(): string {
+function siteOrigin (): string {
   const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
   if (raw) return raw.replace(/\/$/, '')
   return 'https://beonely.vercel.app'
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handleWeeklyDigest (
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' })
   }
