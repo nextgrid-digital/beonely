@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/select'
 
 /** Narrow enough for `/` (merged with `setup`) and legacy `/jobs/` redirect (same filter shape). */
-export type PublishedJobsSearchState = PublishedJobsFilters & { setup?: string }
+export type PublishedJobsSearchState = PublishedJobsFilters & {
+  setup?: string
+  page?: number
+}
 
 export type PublishedJobsNavigate = (opts: {
   search: true | ((prev: PublishedJobsSearchState) => PublishedJobsSearchState)
@@ -67,7 +70,7 @@ export function PublishedJobsFiltersBar(props: {
     const t = window.setTimeout(() => {
       const next = localQ.trim() || undefined
       if (next !== search.q) {
-        void navigate({ search: (p) => ({ ...p, q: next }) })
+        void navigate({ search: (p) => ({ ...p, q: next, page: undefined }) })
       }
     }, 400)
     return () => window.clearTimeout(t)
@@ -81,6 +84,7 @@ export function PublishedJobsFiltersBar(props: {
       search: (prev) => ({
         ...prev,
         [key]: value || undefined,
+        page: undefined,
       }),
     })
   }
@@ -197,7 +201,11 @@ export function PublishedJobsFiltersBar(props: {
               onChange={(e) => {
                 const v = e.target.value
                 void navigate({
-                  search: (p) => ({ ...p, location: v || undefined }),
+                  search: (p) => ({
+                    ...p,
+                    location: v || undefined,
+                    page: undefined,
+                  }),
                 })
               }}
               className='h-11 border-border/80 bg-background/90 pl-7 text-sm shadow-none transition-[background-color,border-color] duration-200 focus-visible:bg-background sm:h-9'

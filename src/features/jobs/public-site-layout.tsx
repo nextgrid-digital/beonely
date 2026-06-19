@@ -42,6 +42,29 @@ export const PUBLIC_SITE_MAX = 'max-w-5xl'
 /** Same outer column as landing `#main-content`: centered, full width up to max, horizontal padding. */
 export const PUBLIC_SITE_MAIN_COLUMN = `mx-auto w-full min-w-0 ${PUBLIC_SITE_MAX} px-4`
 
+const footerLinkGroups = [
+  {
+    title: 'Browse',
+    links: [
+      { label: 'Home', to: '/' },
+      { label: 'Open roles', to: '/', hash: 'open-roles' },
+      { label: 'LinkedIn roles', to: '/', hash: 'linkedin-roles' },
+      { label: 'Changelog', to: '/changelog' },
+    ],
+  },
+  {
+    title: 'Accounts',
+    links: [
+      { label: 'Recruiter sign up', to: '/hire/sign-up' },
+      { label: 'Candidate sign up', to: '/apply/sign-up' },
+    ],
+  },
+  {
+    title: 'Email',
+    links: [{ label: 'Unsubscribe', to: '/unsubscribe' }],
+  },
+] as const
+
 export function PublicSiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -138,10 +161,44 @@ export function PublicSiteHeader() {
 
 export function PublicSiteFooter() {
   return (
-    <footer className='border-t border-border py-8 text-center text-sm text-muted-foreground'>
-      <p>Beonely — niche hiring for ServiceNow.</p>
-      <p className='mt-2'>Subscribe to ServiceNow job updates</p>
-      <FooterNewsletterSubscribe />
+    <footer className='border-t border-border py-8 text-sm text-muted-foreground'>
+      <div className={`${PUBLIC_SITE_MAIN_COLUMN} space-y-8`}>
+        <div className='grid gap-8 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] sm:items-start'>
+          <div className='space-y-3'>
+            <p>Beonely — niche hiring for ServiceNow.</p>
+            <div className='space-y-2'>
+              <p>Subscribe to ServiceNow job updates</p>
+              <FooterNewsletterSubscribe />
+            </div>
+          </div>
+
+          <nav
+            aria-label='Footer navigation'
+            className='grid gap-6 text-left sm:grid-cols-3'
+          >
+            {footerLinkGroups.map((group) => (
+              <div key={group.title} className='space-y-2'>
+                <h2 className='text-xs font-medium tracking-wide text-foreground uppercase'>
+                  {group.title}
+                </h2>
+                <ul className='space-y-1.5'>
+                  {group.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        to={link.to}
+                        hash={'hash' in link ? link.hash : undefined}
+                        className='rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </div>
+      </div>
     </footer>
   )
 }

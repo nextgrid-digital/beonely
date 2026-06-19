@@ -7,7 +7,13 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
-import { Briefcase, LineChart, Shield } from 'lucide-react'
+import {
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  LineChart,
+  Shield,
+} from 'lucide-react'
 import {
   fetchRecruiterPublishedJobs,
   publishedJobsFilterSchema,
@@ -17,6 +23,7 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
+import { getPageNumbers } from '@/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { PublicJobCard } from '@/features/jobs/public-job-card'
@@ -36,8 +43,11 @@ import { ScrapedJobsSection } from '@/features/scraped-jobs'
 const homeSearchSchema = publishedJobsFilterSchema.merge(
   z.object({
     setup: z.string().optional(),
+    page: z.coerce.number().int().min(1).optional().catch(undefined),
   })
 )
+
+const HOME_JOBS_PAGE_SIZE = 6
 
 export const Route = createFileRoute('/')({
   validateSearch: homeSearchSchema,
@@ -72,7 +82,7 @@ export const Route = createFileRoute('/')({
 function publishedJobFiltersFromHomeSearch(
   s: z.infer<typeof homeSearchSchema>
 ): PublishedJobsFilters {
-  const { setup: _setup, ...filters } = s
+  const { setup: _setup, page: _page, ...filters } = s
   return filters
 }
 
@@ -92,6 +102,25 @@ function LandingPageContent() {
   })
   const homeJobs = jobsQuery.data ?? []
   const filtersActive = hasActivePublishedJobFilters(search)
+  const totalPages = Math.max(
+    1,
+    Math.ceil(homeJobs.length / HOME_JOBS_PAGE_SIZE)
+  )
+  const currentPage = Math.min(Math.max(search.page ?? 1, 1), totalPages)
+  const paginatedHomeJobs = homeJobs.slice(
+    (currentPage - 1) * HOME_JOBS_PAGE_SIZE,
+    currentPage * HOME_JOBS_PAGE_SIZE
+  )
+
+  const goToPage = (page: number) => {
+    const nextPage = Math.min(Math.max(page, 1), totalPages)
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        page: nextPage === 1 ? undefined : nextPage,
+      }),
+    })
+  }
 
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
@@ -136,10 +165,19 @@ function LandingPageContent() {
               </p>
             )}
             <div className='grid gap-4'>
-              {homeJobs.map((job) => (
+              {paginatedHomeJobs.map((job) => (
                 <PublicJobCard key={job.id} job={job} />
               ))}
             </div>
+            {!jobsQuery.isLoading && homeJobs.length > HOME_JOBS_PAGE_SIZE && (
+              <PublicJobsPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalJobs={homeJobs.length}
+                pageSize={HOME_JOBS_PAGE_SIZE}
+                onPageChange={goToPage}
+              />
+            )}
             {!jobsQuery.isLoading && homeJobs.length === 0 && (
               <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
                 <p className='text-sm text-muted-foreground'>
@@ -216,5 +254,80 @@ function LandingPageContent() {
       </div>
       <PublicSiteFooter />
     </div>
+  )
+}
+
+function PublicJobsPagination(props: {
+  currentPage: number
+  totalPages: number
+  totalJobs: number
+  pageSize: number
+  onPageChange: (page: number) => void
+}) {
+  const { currentPage, totalPages, totalJobs, pageSize, onPageChange } = props
+  const pageNumbers = getPageNumbers(currentPage, totalPages)
+  const start = (currentPage - 1) * pageSize + 1
+  const end = Math.min(currentPage * pageSize, totalJobs)
+
+  return (
+    <nav
+      aria-label='Published jobs pagination'
+      className='flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between'
+    >
+      <p className='text-sm text-muted-foreground'>
+        Showing {start}-{end} of {totalJobs} roles
+      </p>
+      <div className='flex flex-wrap items-center gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          size='icon'
+          className='size-9'
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          <span className='sr-only'>Go to previous page</span>
+          <ChevronLeft className='size-4' aria-hidden />
+        </Button>
+        {pageNumbers.map((pageNumber, index) => {
+          if (pageNumber === '...') {
+            return (
+              <span
+                key={`ellipsis-${index}`}
+                className='px-1 text-sm text-muted-foreground'
+                aria-hidden
+              >
+                ...
+              </span>
+            )
+          }
+          const page = Number(pageNumber)
+          return (
+            <Button
+              key={page}
+              type='button'
+              variant={page === currentPage ? 'default' : 'outline'}
+              className='h-9 min-w-9 px-3'
+              onClick={() => onPageChange(page)}
+              aria-current={page === currentPage ? 'page' : undefined}
+            >
+              <span className='sr-only'>Go to page </span>
+              {page}
+            </Button>
+          )
+        })}
+        <Button
+          type='button'
+          variant='outline'
+          size='icon'
+          className='size-9'
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          <span className='sr-only'>Go to next page</span>
+          <ChevronRight className='size-4' aria-hidden />
+        </Button>
+      </div>
+    </nav>
   )
 }

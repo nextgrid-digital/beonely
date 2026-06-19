@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as JobsRouteRouteImport } from './routes/jobs/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -76,6 +77,11 @@ import { Route as AuthenticatedAdminEmailCampaignsCampaignIdRouteImport } from '
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRouteRoute = JobsRouteRouteImport.update({
@@ -426,6 +432,7 @@ const AuthenticatedAdminEmailCampaignsCampaignIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jobs': typeof JobsRouteRouteWithChildren
+  '/changelog': typeof ChangelogRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
@@ -489,6 +496,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/changelog': typeof ChangelogRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -551,6 +559,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/jobs': typeof JobsRouteRouteWithChildren
+  '/changelog': typeof ChangelogRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
@@ -617,6 +626,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/jobs'
+    | '/changelog'
     | '/unsubscribe'
     | '/admin'
     | '/candidate'
@@ -680,6 +690,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/changelog'
     | '/unsubscribe'
     | '/forgot-password'
     | '/otp'
@@ -741,6 +752,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/jobs'
+    | '/changelog'
     | '/unsubscribe'
     | '/_authenticated/admin'
     | '/_authenticated/candidate'
@@ -807,6 +819,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   JobsRouteRoute: typeof JobsRouteRouteWithChildren
+  ChangelogRoute: typeof ChangelogRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
@@ -833,6 +846,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs': {
@@ -1459,6 +1479,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   JobsRouteRoute: JobsRouteRouteWithChildren,
+  ChangelogRoute: ChangelogRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
