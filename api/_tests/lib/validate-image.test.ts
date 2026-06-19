@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateImageFile } from '../../src/lib/storage/resize-image'
+import { validateImageFile } from '../../../src/lib/storage/resize-image'
 
 describe('validateImageFile', () => {
   it('rejects unsupported types', () => {

@@ -32,7 +32,7 @@ function mockRes() {
 
 describe('api/marketing router', () => {
   it('returns 404 when route query is missing', async () => {
-    const { default: handler } = await import('./marketing.js')
+    const { default: handler } = await import('../marketing.js')
     const res = mockRes()
     await handler({ method: 'GET', query: {} } as unknown as VercelRequest, res)
     expect(res.statusCode).toBe(404)
@@ -40,7 +40,7 @@ describe('api/marketing router', () => {
   })
 
   it('dispatches unsubscribe with missing token', async () => {
-    const { default: handler } = await import('./marketing.js')
+    const { default: handler } = await import('../marketing.js')
     const res = mockRes()
     await handler(
       {
@@ -54,7 +54,7 @@ describe('api/marketing router', () => {
   })
 
   it('rejects subscribe without POST', async () => {
-    const { default: handler } = await import('./marketing.js')
+    const { default: handler } = await import('../marketing.js')
     const res = mockRes()
     await handler(
       {

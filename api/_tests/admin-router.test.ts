@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-vi.mock('./_lib/admin-auth.js', () => ({
+vi.mock('../_lib/admin-auth.js', () => ({
   requireStaffAdmin: vi.fn(async (_req, res) => {
     res.status(401).json({ error: 'unauthorized' })
     return null
@@ -29,10 +29,13 @@ function mockRes() {
 
 describe('api/admin/[...segments] router', () => {
   it('returns 404 for unknown admin routes', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
-      { method: 'GET', query: { segments: ['unknown-route'] } } as unknown as VercelRequest,
+      {
+        method: 'GET',
+        query: { segments: ['unknown-route'] },
+      } as unknown as VercelRequest,
       res
     )
     expect(res.statusCode).toBe(404)
@@ -40,7 +43,7 @@ describe('api/admin/[...segments] router', () => {
   })
 
   it('dispatches campaigns route and enforces staff auth', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
@@ -52,12 +55,11 @@ describe('api/admin/[...segments] router', () => {
     )
     expect(res.statusCode).toBe(401)
   })
-
 })
 
 describe('api/admin email routes', () => {
   it('dispatches email/automations route', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
@@ -72,7 +74,7 @@ describe('api/admin email routes', () => {
 
   it('resolves test-send from req.url when query.segments is absent', async () => {
     const { routeKeyFromRequest, default: handler } = await import(
-      './admin/[...segments].js'
+      '../admin/[...segments].js'
     )
     expect(
       routeKeyFromRequest({

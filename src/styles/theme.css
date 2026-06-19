@@ -35,6 +35,24 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --surface-1: var(--background);
+  --surface-2: var(--secondary);
+  --surface-3: var(--card);
+  --surface-4: var(--popover);
+  --surface-5: var(--card);
+  --surface-6: var(--popover);
+  --surface-7: var(--card);
+  --surface-8: var(--popover);
+  --shadow-color: rgb(0 0 0 / 0.06);
+  --shadow-1: 0 0 0 1px var(--shadow-color);
+  --shadow-2:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+  --shadow-3: var(--shadow-2), 0 3px 3px -1.5px var(--shadow-color);
+  --shadow-4: var(--shadow-3), 0 6px 6px -3px var(--shadow-color);
+  --shadow-5: var(--shadow-4), 0 12px 12px -6px var(--shadow-color);
+  --shadow-6: var(--shadow-5), 0 24px 24px -12px var(--shadow-color);
+  --shadow-7: var(--shadow-6), 0 48px 48px -24px var(--shadow-color);
+  --shadow-8: var(--shadow-7), 0 96px 96px -48px var(--shadow-color);
 
   --sidebar: var(--background);
   --sidebar-foreground: var(--foreground);
@@ -71,6 +89,23 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --surface-1: var(--background);
+  --surface-2: var(--card);
+  --surface-3: var(--popover);
+  --surface-4: oklch(0.16 0.018 264);
+  --surface-5: oklch(0.19 0.022 264);
+  --surface-6: oklch(0.22 0.026 264);
+  --surface-7: oklch(0.25 0.03 264);
+  --surface-8: oklch(0.28 0.034 264);
+  --shadow-color: rgb(0 0 0 / 0.18);
+  --shadow-1: inset 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-2: var(--shadow-1), 0 1px 1px -0.5px var(--shadow-color);
+  --shadow-3: var(--shadow-2), 0 3px 3px -1.5px var(--shadow-color);
+  --shadow-4: var(--shadow-3), 0 6px 6px -3px var(--shadow-color);
+  --shadow-5: var(--shadow-4), 0 12px 12px -6px var(--shadow-color);
+  --shadow-6: var(--shadow-5), 0 24px 24px -12px var(--shadow-color);
+  --shadow-7: var(--shadow-6), 0 48px 48px -24px var(--shadow-color);
+  --shadow-8: var(--shadow-7), 0 96px 96px -48px var(--shadow-color);
 }
 
 @theme inline {
@@ -105,6 +140,22 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-surface-5: var(--surface-5);
+  --color-surface-6: var(--surface-6);
+  --color-surface-7: var(--surface-7);
+  --color-surface-8: var(--surface-8);
+  --shadow-surface-1: var(--shadow-1);
+  --shadow-surface-2: var(--shadow-2);
+  --shadow-surface-3: var(--shadow-3);
+  --shadow-surface-4: var(--shadow-4);
+  --shadow-surface-5: var(--shadow-5);
+  --shadow-surface-6: var(--shadow-6);
+  --shadow-surface-7: var(--shadow-7);
+  --shadow-surface-8: var(--shadow-8);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

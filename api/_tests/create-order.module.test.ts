@@ -35,12 +35,12 @@ describe('api/create-order serverless module', () => {
   })
 
   it('loads create-order default handler without module-eval errors', async () => {
-    const mod = await import('./create-order.js')
+    const mod = await import('../create-order.js')
     expect(typeof mod.default).toBe('function')
   })
 
   it('tryGetServiceSupabase returns missing_service_role_key when service key absent', async () => {
-    const { tryGetServiceSupabase } = await import('./_lib/supabase.js')
+    const { tryGetServiceSupabase } = await import('../_lib/supabase.js')
     process.env.SUPABASE_URL = 'https://test-ref.supabase.co'
     delete process.env.SUPABASE_SERVICE_ROLE_KEY
     const r = tryGetServiceSupabase()

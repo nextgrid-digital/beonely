@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-vi.mock('./_lib/admin-auth.js', () => ({
+vi.mock('../_lib/admin-auth.js', () => ({
   requireStaffAdmin: vi.fn(async (_req, res) => {
     res.status(401).json({ error: 'unauthorized' })
     return null
@@ -29,7 +29,7 @@ function mockRes() {
 
 describe('api/admin/email templates router', () => {
   it('routes templates list with auth', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
@@ -44,13 +44,19 @@ describe('api/admin/email templates router', () => {
   })
 
   it('routes templates/:id with auth', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
         method: 'GET',
         url: '/api/admin/email/templates/00000000-0000-4000-8000-000000000001',
-        query: { segments: ['email', 'templates', '00000000-0000-4000-8000-000000000001'] },
+        query: {
+          segments: [
+            'email',
+            'templates',
+            '00000000-0000-4000-8000-000000000001',
+          ],
+        },
         headers: {},
       } as unknown as VercelRequest,
       res
@@ -59,7 +65,7 @@ describe('api/admin/email templates router', () => {
   })
 
   it('returns 404 for unknown email admin route', async () => {
-    const { default: handler } = await import('./admin/[...segments].js')
+    const { default: handler } = await import('../admin/[...segments].js')
     const res = mockRes()
     await handler(
       {
