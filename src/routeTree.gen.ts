@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as JobsRouteRouteImport } from './routes/jobs/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -78,6 +80,16 @@ import { Route as AuthenticatedAdminEmailCampaignsCampaignIdRouteImport } from '
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangelogRoute = ChangelogRouteImport.update({
@@ -439,6 +451,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jobs': typeof JobsRouteRouteWithChildren
   '/changelog': typeof ChangelogRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
@@ -504,6 +518,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/changelog': typeof ChangelogRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -568,6 +584,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/jobs': typeof JobsRouteRouteWithChildren
   '/changelog': typeof ChangelogRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/candidate': typeof AuthenticatedCandidateRouteRouteWithChildren
@@ -636,6 +654,8 @@ export interface FileRouteTypes {
     | '/'
     | '/jobs'
     | '/changelog'
+    | '/privacy'
+    | '/terms'
     | '/unsubscribe'
     | '/admin'
     | '/candidate'
@@ -701,6 +721,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/changelog'
+    | '/privacy'
+    | '/terms'
     | '/unsubscribe'
     | '/forgot-password'
     | '/otp'
@@ -764,6 +786,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/jobs'
     | '/changelog'
+    | '/privacy'
+    | '/terms'
     | '/unsubscribe'
     | '/_authenticated/admin'
     | '/_authenticated/candidate'
@@ -832,6 +856,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   JobsRouteRoute: typeof JobsRouteRouteWithChildren
   ChangelogRoute: typeof ChangelogRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
@@ -859,6 +885,20 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changelog': {
@@ -1500,6 +1540,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   JobsRouteRoute: JobsRouteRouteWithChildren,
   ChangelogRoute: ChangelogRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,

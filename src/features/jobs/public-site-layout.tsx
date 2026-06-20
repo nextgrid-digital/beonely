@@ -68,6 +68,13 @@ const footerLinkGroups = [
     title: 'Email',
     links: [{ label: 'Unsubscribe', to: '/unsubscribe' }],
   },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy', to: '/privacy' },
+      { label: 'Terms', to: '/terms' },
+    ],
+  },
 ] as const
 
 export function PublicSiteHeader() {
