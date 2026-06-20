@@ -101,7 +101,7 @@ function InboxListRowComponent({
       </div>
 
       {row.pills && row.pills.length > 0 ? (
-        <div className='relative z-[1] flex shrink-0 flex-wrap items-center justify-end gap-1'>
+        <div className='relative z-[1] hidden shrink-0 flex-wrap items-center justify-end gap-1 sm:flex'>
           {row.pills.map((pill, index) => (
             <InboxStatusPill
               key={`${pill.label}-${index}`}
@@ -115,7 +115,7 @@ function InboxListRowComponent({
 
       {row.timestamp ? (
         <time
-          className='relative z-[1] shrink-0 text-xs text-muted-foreground tabular-nums'
+          className='relative z-[1] hidden shrink-0 text-xs text-muted-foreground tabular-nums sm:block'
           dateTime={new Date(row.timestamp).toISOString()}
         >
           {formatListTimestamp(row.timestamp)}

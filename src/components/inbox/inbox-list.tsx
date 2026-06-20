@@ -1,6 +1,6 @@
-import { type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { LayoutGroup } from 'motion/react'
-import { Search } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { groupByDate } from '@/lib/list/group-by-date'
 import { Input } from '@/components/ui/input'
@@ -41,6 +41,13 @@ interface InboxListProps<T extends string> {
   className?: string
   /** Sticky offset for date-group headers (e.g. `top-14` below a fixed site header). */
   stickyTopClassName?: string
+
+  /** Whether more rows can be loaded (enables the infinite-scroll sentinel). */
+  hasMore?: boolean
+  /** Fetch the next page; triggered on scroll and via the fallback button. */
+  onLoadMore?: () => void
+  /** Next page is currently loading. */
+  loadingMore?: boolean
 }
 
 const SKELETON_ROWS = 6
@@ -64,9 +71,28 @@ export function InboxList<T extends string>({
   emptyMessage,
   className,
   stickyTopClassName = 'top-0',
+  hasMore = false,
+  onLoadMore,
+  loadingMore = false,
 }: InboxListProps<T>) {
   const groups = groupByDate(rows, (row) => row.timestamp)
   const selectionLayoutId = `${layoutId}-selection`
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node || !hasMore || !onLoadMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !loadingMore) {
+          onLoadMore()
+        }
+      },
+      { rootMargin: '400px 0px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, onLoadMore, loadingMore])
 
   return (
     <div
@@ -180,6 +206,28 @@ export function InboxList<T extends string>({
                   </section>
                 )
               })}
+
+              {hasMore ? (
+                <div
+                  ref={sentinelRef}
+                  className='flex items-center justify-center px-4 py-4'
+                >
+                  {loadingMore ? (
+                    <span className='flex items-center gap-2 text-xs text-muted-foreground'>
+                      <Loader2 className='size-3.5 animate-spin motion-reduce:hidden' />
+                      Loading more…
+                    </span>
+                  ) : (
+                    <button
+                      type='button'
+                      onClick={onLoadMore}
+                      className='rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                    >
+                      Load more
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </div>
           </LayoutGroup>
         </div>

@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import {
   createFileRoute,
   isRedirect,
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
+import { publishedJobsFilterSchema } from '@/lib/jobs/fetch-published-jobs'
 import {
-  fetchRecruiterPublishedJobs,
-  publishedJobsFilterSchema,
-} from '@/lib/jobs/fetch-published-jobs'
-import { fetchScrapedJobs } from '@/lib/jobs/fetch-scraped-jobs'
+  fetchPublicJobsCount,
+  fetchPublicJobsPage,
+  PUBLIC_FEED_PAGE_SIZE,
+} from '@/lib/jobs/fetch-public-jobs-feed'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import {
   getSupabaseBrowserClient,
@@ -137,57 +142,51 @@ function LandingPageContent() {
     return () => window.clearTimeout(t)
   }, [localQ, navigate, search.q])
 
-  const recruiterQuery = useQuery({
-    queryKey: ['public-jobs', 'recruiter', jobFilters],
-    queryFn: () => fetchRecruiterPublishedJobs(jobFilters),
-    placeholderData: keepPreviousData,
-  })
-  const scrapedQuery = useQuery({
-    queryKey: ['public-jobs', 'scraped', jobFilters],
-    queryFn: () => fetchScrapedJobs(jobFilters),
+  const featuredOnly = activeTab === 'featured'
+
+  const feedQuery = useInfiniteQuery({
+    queryKey: ['public-jobs', 'feed', jobFilters, activeTab],
+    queryFn: ({ pageParam }) =>
+      fetchPublicJobsPage(jobFilters, {
+        offset: pageParam,
+        limit: PUBLIC_FEED_PAGE_SIZE,
+        featuredOnly,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((sum, page) => sum + page.rows.length, 0)
+      return loaded < lastPage.total ? loaded : undefined
+    },
     placeholderData: keepPreviousData,
   })
 
-  const recruiterJobs = useMemo(
-    () => recruiterQuery.data ?? [],
-    [recruiterQuery.data]
-  )
-  const scrapedJobs = useMemo(
-    () => scrapedQuery.data ?? [],
-    [scrapedQuery.data]
-  )
-
-  const allJobs = useMemo(
-    () => [...recruiterJobs, ...scrapedJobs],
-    [recruiterJobs, scrapedJobs]
-  )
+  const allCountQuery = useQuery({
+    queryKey: ['public-jobs', 'count', 'all', jobFilters],
+    queryFn: () => fetchPublicJobsCount(jobFilters),
+    placeholderData: keepPreviousData,
+  })
+  const featuredCountQuery = useQuery({
+    queryKey: ['public-jobs', 'count', 'featured', jobFilters],
+    queryFn: () => fetchPublicJobsCount(jobFilters, { featuredOnly: true }),
+    placeholderData: keepPreviousData,
+  })
 
   const counts = useMemo(
     () => ({
-      all: allJobs.length,
-      featured: allJobs.filter((j) => j.featured).length,
+      all: allCountQuery.data ?? 0,
+      featured: featuredCountQuery.data ?? 0,
     }),
-    [allJobs]
+    [allCountQuery.data, featuredCountQuery.data]
   )
 
-  const visibleJobs = useMemo(() => {
-    switch (activeTab) {
-      case 'featured':
-        return allJobs.filter((j) => j.featured)
-      case 'all':
-        return allJobs
-      default: {
-        const _exhaustive: never = activeTab
-        return _exhaustive
-      }
-    }
-  }, [activeTab, allJobs])
+  const rows = useMemo(
+    () => feedQuery.data?.pages.flatMap((page) => page.rows.map(jobToRow)) ?? [],
+    [feedQuery.data]
+  )
 
-  const rows = useMemo(() => visibleJobs.map(jobToRow), [visibleJobs])
-
-  const isLoading = recruiterQuery.isLoading || scrapedQuery.isLoading
-  const refetching = recruiterQuery.isFetching || scrapedQuery.isFetching
-  const isError = recruiterQuery.isError && scrapedQuery.isError
+  const isLoading = feedQuery.isLoading
+  const refetching = feedQuery.isFetching && !feedQuery.isFetchingNextPage
+  const isError = feedQuery.isError
 
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
@@ -277,6 +276,9 @@ function LandingPageContent() {
                 }
                 loading={isLoading}
                 busy={refetching}
+                hasMore={feedQuery.hasNextPage}
+                onLoadMore={() => void feedQuery.fetchNextPage()}
+                loadingMore={feedQuery.isFetchingNextPage}
                 emptyMessage='No roles match these filters yet.'
               />
             )}
