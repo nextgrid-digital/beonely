@@ -15,7 +15,7 @@
     "dev": "vite",
     "dev:api": "vercel dev --listen 127.0.0.1:3000",
     "dev:local": "concurrently -k -n api,vite -c magenta,cyan \"pnpm dev:api\" \"pnpm dev\"",
-    "build": "tsc -b && vite build",
+    "build": "vite build && tsc -b",
     "typecheck:api": "tsc -p api/tsconfig.json --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
