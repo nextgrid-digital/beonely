@@ -63,6 +63,13 @@ const footerLinkGroups = [
     title: 'Email',
     links: [{ label: 'Unsubscribe', to: '/unsubscribe' }],
   },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy', to: '/privacy' },
+      { label: 'Terms', to: '/terms' },
+    ],
+  },
 ] as const
 
 export function PublicSiteHeader() {
@@ -174,7 +181,7 @@ export function PublicSiteFooter() {
 
           <nav
             aria-label='Footer navigation'
-            className='grid gap-6 text-left sm:grid-cols-3'
+            className='grid gap-6 text-left sm:grid-cols-4'
           >
             {footerLinkGroups.map((group) => (
               <div key={group.title} className='space-y-2'>
