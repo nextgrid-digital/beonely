@@ -4,15 +4,22 @@ import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { PublicJobListSkeleton } from '@/features/jobs/public-job-list-skeleton'
+import { PublicJobsPagination } from '@/features/jobs/public-jobs-pagination'
 import { ScrapedJobCard } from '@/features/scraped-jobs/scraped-job-card'
 
 export function ScrapedJobsSection({
   filters,
   filtersActive,
+  page,
+  pageSize,
+  onPageChange,
   onClearFilters,
 }: {
   filters: PublishedJobsFilters
   filtersActive: boolean
+  page: number
+  pageSize: number
+  onPageChange: (page: number) => void
   onClearFilters: () => void
 }) {
   const scrapedQuery = useQuery({
@@ -20,6 +27,12 @@ export function ScrapedJobsSection({
     queryFn: () => fetchScrapedJobs(filters),
   })
   const scrapedJobs = scrapedQuery.data ?? []
+  const totalPages = Math.max(1, Math.ceil(scrapedJobs.length / pageSize))
+  const currentPage = Math.min(Math.max(page, 1), totalPages)
+  const paginatedScrapedJobs = scrapedJobs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
 
   return (
     <section
@@ -36,10 +49,19 @@ export function ScrapedJobsSection({
         </p>
       )}
       <div className='grid gap-4'>
-        {scrapedJobs.map((job) => (
+        {paginatedScrapedJobs.map((job) => (
           <ScrapedJobCard key={job.id} job={job} />
         ))}
       </div>
+      {!scrapedQuery.isLoading && scrapedJobs.length > pageSize && (
+        <PublicJobsPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalJobs={scrapedJobs.length}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+        />
+      )}
       {!scrapedQuery.isLoading && scrapedJobs.length === 0 && (
         <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
           <p className='text-sm text-muted-foreground'>

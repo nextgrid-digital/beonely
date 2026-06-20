@@ -16,6 +16,7 @@ import {
 export type PublishedJobsSearchState = PublishedJobsFilters & {
   setup?: string
   page?: number
+  linkedinPage?: number
 }
 
 export type PublishedJobsNavigate = (opts: {
@@ -70,7 +71,14 @@ export function PublishedJobsFiltersBar(props: {
     const t = window.setTimeout(() => {
       const next = localQ.trim() || undefined
       if (next !== search.q) {
-        void navigate({ search: (p) => ({ ...p, q: next, page: undefined }) })
+        void navigate({
+          search: (p) => ({
+            ...p,
+            q: next,
+            page: undefined,
+            linkedinPage: undefined,
+          }),
+        })
       }
     }, 400)
     return () => window.clearTimeout(t)
@@ -85,6 +93,7 @@ export function PublishedJobsFiltersBar(props: {
         ...prev,
         [key]: value || undefined,
         page: undefined,
+        linkedinPage: undefined,
       }),
     })
   }
@@ -205,6 +214,7 @@ export function PublishedJobsFiltersBar(props: {
                     ...p,
                     location: v || undefined,
                     page: undefined,
+                    linkedinPage: undefined,
                   }),
                 })
               }}
