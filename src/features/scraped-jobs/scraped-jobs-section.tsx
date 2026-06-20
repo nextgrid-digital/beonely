@@ -33,6 +33,11 @@ export function ScrapedJobsSection({
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   )
+  const isEmptyWithoutFilters =
+    !scrapedQuery.isLoading &&
+    !scrapedQuery.isError &&
+    scrapedJobs.length === 0 &&
+    !filtersActive
 
   return (
     <section
@@ -40,7 +45,7 @@ export function ScrapedJobsSection({
       className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'
       aria-label='LinkedIn roles'
     >
-      <Separator className='my-2' />
+      {!isEmptyWithoutFilters && <Separator className='my-2' />}
 
       {scrapedQuery.isLoading && <PublicJobListSkeleton count={3} />}
       {scrapedQuery.isError && (
@@ -62,22 +67,19 @@ export function ScrapedJobsSection({
           onPageChange={onPageChange}
         />
       )}
-      {!scrapedQuery.isLoading && scrapedJobs.length === 0 && (
+      {!scrapedQuery.isLoading && scrapedJobs.length === 0 && filtersActive && (
         <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
           <p className='text-sm text-muted-foreground'>
-            No LinkedIn roles match these filters yet. Check back after the next
-            ingest run.
+            No LinkedIn roles match these filters yet.
           </p>
-          {filtersActive && (
-            <Button
-              type='button'
-              variant='link'
-              className='mt-2 h-auto p-0 text-foreground'
-              onClick={onClearFilters}
-            >
-              Clear filters and show all roles
-            </Button>
-          )}
+          <Button
+            type='button'
+            variant='link'
+            className='mt-2 h-auto p-0 text-foreground'
+            onClick={onClearFilters}
+          >
+            Clear filters and show all roles
+          </Button>
         </div>
       )}
     </section>

@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Link,
   createFileRoute,
   isRedirect,
   redirect,
@@ -179,39 +178,24 @@ function LandingPageContent() {
                 onPageChange={goToPage}
               />
             )}
-            {!jobsQuery.isLoading && homeJobs.length === 0 && (
+            {!jobsQuery.isLoading && homeJobs.length === 0 && filtersActive && (
               <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
                 <p className='text-sm text-muted-foreground'>
-                  {filtersActive ? (
-                    'No jobs match these filters yet.'
-                  ) : (
-                    <>
-                      No recruiter has posted a job yet. If you are a recruiter,{' '}
-                      <Link
-                        to='/hire/sign-up'
-                        className='font-medium text-foreground underline underline-offset-4 hover:text-foreground/90 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                      >
-                        sign up as a recruiter
-                      </Link>{' '}
-                      and post the role you are hiring for.
-                    </>
-                  )}
+                  No jobs match these filters yet.
                 </p>
-                {filtersActive && (
-                  <Button
-                    type='button'
-                    variant='link'
-                    className='mt-2 h-auto p-0 text-foreground'
-                    onClick={() => {
-                      void navigate({
-                        search: (prev) =>
-                          clearPublishedJobSearchPreserveSetup(prev),
-                      })
-                    }}
-                  >
-                    Clear filters and show all roles
-                  </Button>
-                )}
+                <Button
+                  type='button'
+                  variant='link'
+                  className='mt-2 h-auto p-0 text-foreground'
+                  onClick={() => {
+                    void navigate({
+                      search: (prev) =>
+                        clearPublishedJobSearchPreserveSetup(prev),
+                    })
+                  }}
+                >
+                  Clear filters and show all roles
+                </Button>
               </div>
             )}
           </section>
