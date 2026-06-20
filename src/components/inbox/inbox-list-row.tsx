@@ -84,10 +84,10 @@ function InboxListRowComponent({
         )}
       </div>
 
-      <div className='relative z-[1] flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden'>
+      <div className='relative z-[1] flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden sm:flex-row sm:items-baseline sm:gap-1.5'>
         <span
           className={cn(
-            'shrink-0 text-sm',
+            'min-w-0 truncate text-sm sm:shrink-0',
             showUnread ? 'font-semibold' : 'font-medium'
           )}
         >
