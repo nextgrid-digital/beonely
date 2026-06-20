@@ -42,8 +42,8 @@ const homeSearchSchema = publishedJobsFilterSchema.merge(
   })
 )
 
-const HOME_JOBS_PAGE_SIZE = 6
-const LINKEDIN_JOBS_PAGE_SIZE = 6
+const HOME_JOBS_PAGE_SIZE = 10
+const LINKEDIN_JOBS_PAGE_SIZE = 10
 
 export const Route = createFileRoute('/')({
   validateSearch: homeSearchSchema,
