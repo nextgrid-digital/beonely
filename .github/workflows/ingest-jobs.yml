@@ -1,4 +1,4 @@
-# Sync LinkedIn-import jobs from data/linkedin-jobs.json (or scraper output) into Supabase.
+# Sync LinkedIn-import jobs from the latest scrape output into Supabase.
 # Secrets (same Supabase project as Vercel Production):
 # SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (= VITE_SUPABASE_URL value), optional INGEST_RECRUITER_ID
 name: Ingest jobs
@@ -56,10 +56,8 @@ jobs:
             fs.appendFileSync(envPath, `INGEST_SKIPPED=${summary.ingest?.skipped ?? 0}\n`);
             fs.appendFileSync(envPath, `INGEST_FAILED=${summary.ingest?.failed ?? 0}\n`);
             fs.appendFileSync(envPath, `STALE_CANDIDATES=${summary.stale?.candidates ?? 0}\n`);
-            fs.appendFileSync(envPath, `STALE_CHECKED=${summary.stale?.checked ?? 0}\n`);
             fs.appendFileSync(envPath, `STALE_EXPIRED=${summary.stale?.expired ?? 0}\n`);
             fs.appendFileSync(envPath, `STALE_SKIPPED=${summary.stale?.skipped ?? 0}\n`);
-            fs.appendFileSync(envPath, `STALE_CHECK_ERRORS=${summary.stale?.checkErrors ?? 0}\n`);
             fs.appendFileSync(envPath, `STALE_UPDATE_ERRORS=${summary.stale?.updateErrors ?? 0}\n`);
             const errorCount = Array.isArray(summary.errors) ? summary.errors.length : 0;
             fs.appendFileSync(envPath, `SYNC_ERROR_COUNT=${errorCount}\n`);
@@ -82,11 +80,9 @@ jobs:
             echo "- Ingest updated: ${INGEST_UPDATED:-0}"
             echo "- Ingest skipped duplicates: ${INGEST_SKIPPED:-0}"
             echo "- Ingest failed: ${INGEST_FAILED:-0}"
-            echo "- Stale candidates: ${STALE_CANDIDATES:-0}"
-            echo "- Stale checked: ${STALE_CHECKED:-0}"
+            echo "- Missing imported jobs: ${STALE_CANDIDATES:-0}"
             echo "- Stale expired (removed from feed): ${STALE_EXPIRED:-0}"
-            echo "- Stale skipped (no close signal): ${STALE_SKIPPED:-0}"
-            echo "- Stale check errors: ${STALE_CHECK_ERRORS:-0}"
+            echo "- Stale cleanup skipped: ${STALE_SKIPPED:-0}"
             echo "- Stale update errors: ${STALE_UPDATE_ERRORS:-0}"
             echo "- Sync errors: ${SYNC_ERROR_COUNT:-0}"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -2,7 +2,7 @@
  * Daily Beonely LinkedIn jobs maintenance:
  * 1) Scrape fresh listings
  * 2) Ingest/upsert listings into Supabase
- * 3) Expire stale imported rows only when close signals are detected
+ * 3) Expire active imported rows missing from the latest scrape payload
  *
  * Run:
  *   pnpm sync:jobs
@@ -12,13 +12,11 @@ import { dirname, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
 import {
+  normalizeLinkedInApplyUrl,
   parseIngestJobsFile,
   type IngestLinkedInJobInput,
 } from './lib/ingest-linkedin-jobs'
-import {
-  buildCanonicalApplyUrlSet,
-  detectLinkedInClosedSignal,
-} from './lib/prune-linkedin-jobs'
+import { buildCanonicalApplyUrlSet } from './lib/prune-linkedin-jobs'
 
 type ScrapeSummary = {
   jobsWritten?: number
@@ -79,12 +77,6 @@ function resolveSyncSummaryFile(): string | null {
   return null
 }
 
-function parsePositiveInt(raw: string | undefined, fallback: number): number {
-  if (!raw) return fallback
-  const n = Number.parseInt(raw, 10)
-  return Number.isFinite(n) && n > 0 ? n : fallback
-}
-
 function getScrapeSummaryPath(): string {
   const explicit = process.env.SCRAPE_LINKEDIN_SUMMARY_FILE?.trim()
   return explicit ? resolve(explicit) : resolve(process.cwd(), '.tmp/scrape-summary.json')
@@ -120,24 +112,6 @@ async function runCommand(cmd: string, args: string[], env: Record<string, strin
 function resolveJobsFilePath(): string {
   const explicit = process.env.INGEST_JOBS_FILE?.trim()
   return explicit ? resolve(explicit) : DEFAULT_LINKEDIN_JOBS_FILE
-}
-
-async function fetchWithTimeout(url: string, timeoutMs: number) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'user-agent':
-          process.env.SCRAPE_LINKEDIN_USER_AGENT?.trim() ||
-          'Mozilla/5.0 (compatible; BeonelyJobsBot/1.0; +https://beonely.vercel.app)',
-      },
-      redirect: 'follow',
-    })
-  } finally {
-    clearTimeout(timeout)
-  }
 }
 
 async function main() {
@@ -211,97 +185,76 @@ async function main() {
     )
     summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
   } else {
-    const maxChecks = parsePositiveInt(process.env.JOBS_STALE_CHECK_MAX, 120)
-    const timeoutMs = parsePositiveInt(process.env.JOBS_STALE_CHECK_TIMEOUT_MS, 12000)
-    const delayMs = parsePositiveInt(process.env.JOBS_STALE_CHECK_DELAY_MS, 700)
-
     const sb = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
     let sourceJobs: IngestLinkedInJobInput[] = []
+    let sourceJobsLoaded = false
     try {
       const raw = readFileSync(resolveJobsFilePath(), 'utf8')
       sourceJobs = parseIngestJobsFile(raw)
+      sourceJobsLoaded = true
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       errors.push(`source_jobs_unreadable:${message}`)
       summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     }
 
-    const canonicalApplyUrls = buildCanonicalApplyUrlSet(sourceJobs)
-
-    const { data: importedRows, error: importedRowsError } = await sb
-      .from('jobs')
-      .select('id, job_slug, apply_url, listing_expires_at')
-      .eq('source_kind', 'linkedin_import')
-
-    if (importedRowsError) {
-      errors.push(`fetch_imported_jobs_failed:${importedRowsError.message}`)
+    if (!sourceJobsLoaded) {
+      summary.stale.skipped++
+      errors.push('stale_cleanup_skipped:source_jobs_unavailable')
       summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     } else {
-      const nowTs = Date.now()
-      const activeImportedRows = (importedRows ?? []).filter((row) => {
-        if (!row.listing_expires_at) return true
-        return new Date(row.listing_expires_at).getTime() > nowTs
-      })
+      const canonicalApplyUrls = buildCanonicalApplyUrlSet(sourceJobs)
 
-      summary.stale.activeImportedJobs = activeImportedRows.length
+      const { data: importedRows, error: importedRowsError } = await sb
+        .from('jobs')
+        .select('id, job_slug, apply_url, listing_expires_at')
+        .eq('source_kind', 'linkedin_import')
 
-      const candidates = activeImportedRows
-        .filter((row) => !canonicalApplyUrls.has(row.apply_url))
-        .slice(0, maxChecks)
+      if (importedRowsError) {
+        errors.push(`fetch_imported_jobs_failed:${importedRowsError.message}`)
+        summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
+      } else {
+        const nowTs = Date.now()
+        const activeImportedRows = (importedRows ?? []).filter((row) => {
+          if (!row.listing_expires_at) return true
+          return new Date(row.listing_expires_at).getTime() > nowTs
+        })
 
-      summary.stale.candidates = candidates.length
+        summary.stale.activeImportedJobs = activeImportedRows.length
 
-      for (const row of candidates) {
-        if (summary.stale.checked > 0) {
-          await new Promise((r) => setTimeout(r, delayMs))
-        }
-        summary.stale.checked++
+        const candidates = activeImportedRows.filter(
+          (row) => !canonicalApplyUrls.has(normalizeLinkedInApplyUrl(row.apply_url))
+        )
 
-        try {
-          const response = await fetchWithTimeout(row.apply_url, timeoutMs)
-          const body = await response.text()
-          const detection = detectLinkedInClosedSignal({
-            status: response.status,
-            body,
-          })
+        summary.stale.candidates = candidates.length
+        summary.stale.checked = candidates.length
 
-          if (!detection.closed) {
-            summary.stale.skipped++
-            continue
-          }
-
+        if (candidates.length > 0) {
           const nowIso = new Date().toISOString()
+          const candidateIds = candidates.map((row) => row.id)
           const { error: updateError } = await sb
             .from('jobs')
             .update({
               listing_expires_at: nowIso,
               updated_at: nowIso,
             })
-            .eq('id', row.id)
+            .in('id', candidateIds)
 
           if (updateError) {
             summary.stale.updateErrors++
-            errors.push(
-              `expire_failed:${row.job_slug ?? row.id}:${updateError.message}`
-            )
+            errors.push(`expire_missing_imports_failed:${updateError.message}`)
           } else {
-            summary.stale.expired++
+            summary.stale.expired = candidates.length
             console.info(
-              '[jobs-sync] expired stale listing',
+              '[jobs-sync] expired imported listings missing from latest scrape',
               JSON.stringify({
-                id: row.id,
-                job_slug: row.job_slug,
-                reason: detection.reason,
+                count: candidates.length,
               })
             )
           }
-        } catch (error) {
-          summary.stale.checkErrors++
-          const message = error instanceof Error ? error.message : String(error)
-          errors.push(`stale_check_failed:${row.job_slug ?? row.id}:${message}`)
         }
       }
     }

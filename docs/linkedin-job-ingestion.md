@@ -61,9 +61,9 @@ pnpm sync:jobs
 Stale cleanup policy (`pnpm sync:jobs`):
 
 - checks imported jobs currently live in Supabase but missing from the latest scrape payload
-- expires only rows with a close signal (`404/410` or close text such as “no longer accepting applications”)
+- expires every active imported row missing from the latest scrape payload
 - does not hard-delete rows
-- leaves uncertain/blocked checks untouched for the next run
+- skips stale cleanup when the latest source payload cannot be read
 
 ### JSON schema (`data/linkedin-jobs.json`)
 
@@ -107,9 +107,6 @@ Each array element:
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `JOBS_STALE_CHECK_MAX` | Max stale candidate URLs to verify per run | `120` |
-| `JOBS_STALE_CHECK_TIMEOUT_MS` | Timeout per stale listing verify request | `12000` |
-| `JOBS_STALE_CHECK_DELAY_MS` | Delay between stale listing verify requests | `700` |
 | `JOBS_SYNC_SUMMARY_FILE` | Full sync summary JSON output path | unset |
 
 ### System recruiter (`INGEST_RECRUITER_ID`)
@@ -141,7 +138,7 @@ Typical Codex loop:
 1. Merge scraper or ingestion updates to `main`.
 2. Workflow scrapes and refreshes `data/linkedin-jobs.json`.
 3. Workflow ingests JSON into Supabase (`source_kind = linkedin_import`).
-4. Workflow expires stale imported listings only when close signals are detected.
+4. Workflow expires stale imported listings missing from the latest scrape payload.
 5. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
 
 ## Legal / ToS note
