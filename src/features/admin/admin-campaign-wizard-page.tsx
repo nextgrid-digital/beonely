@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react'
@@ -11,10 +11,10 @@ import {
   updateAdminCampaign,
   type EmailTemplateRow,
 } from '@/lib/email/admin-email-api'
-import type { Database } from '@/lib/supabase/database.types'
 import { renderEmailTemplatePreview } from '@/lib/email/render-email-template'
+import type { Database } from '@/lib/supabase/database.types'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
-import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,24 +29,18 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 
 type CampaignAudience = Database['public']['Enums']['campaign_audience']
 
-const STEPS = [
-  'Audience',
-  'Template',
-  'Compose',
-  'Review',
-  'Send',
-] as const
+const STEPS = ['Audience', 'Template', 'Compose', 'Review', 'Send'] as const
 
 const AUDIENCE_OPTIONS: {
   value: CampaignAudience
@@ -114,9 +108,9 @@ export function AdminCampaignWizardPage({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     initialTemplateId ?? null
   )
-  const [subject, setSubject] = useState('')
-  const [previewText, setPreviewText] = useState('')
-  const [body, setBody] = useState('<p>Hello from Beonely.</p>')
+  const [subject, setSubject] = useState<string | null>(null)
+  const [previewText, setPreviewText] = useState<string | null>(null)
+  const [body, setBody] = useState<string | null>(null)
   const [advancedHtml, setAdvancedHtml] = useState(false)
   const [confirmedOptIn, setConfirmedOptIn] = useState(false)
   const [testEmail, setTestEmail] = useState('')
@@ -146,15 +140,27 @@ export function AdminCampaignWizardPage({
     )
   }, [templatesQuery.data, audience])
 
+  const selectedTemplate = useMemo(() => {
+    return (
+      (templatesQuery.data ?? []).find((t) => t.id === selectedTemplateId) ??
+      null
+    )
+  }, [templatesQuery.data, selectedTemplateId])
+
+  const subjectValue = subject ?? selectedTemplate?.subject ?? ''
+  const previewTextValue = previewText ?? selectedTemplate?.preview_text ?? ''
+  const bodyValue =
+    body ?? selectedTemplate?.body_html ?? '<p>Hello from Beonely.</p>'
+
   const previewHtml = useMemo(
     () =>
       renderEmailTemplatePreview({
         shell: 'marketing',
-        subject,
-        preview_text: previewText,
-        body_html: body,
+        subject: subjectValue,
+        preview_text: previewTextValue,
+        body_html: bodyValue,
       }),
-    [subject, previewText, body]
+    [subjectValue, previewTextValue, bodyValue]
   )
 
   const recipientCount = useMemo(() => {
@@ -172,29 +178,23 @@ export function AdminCampaignWizardPage({
     setBody(t.body_html)
   }
 
-  useEffect(() => {
-    if (!initialTemplateId || !templatesQuery.data) return
-    const t = templatesQuery.data.find((x) => x.id === initialTemplateId)
-    if (t) applyTemplate(t)
-  }, [initialTemplateId, templatesQuery.data])
-
   const saveDraftMutation = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error('no_token')
       if (savedCampaignId) {
         return updateAdminCampaign(token, {
           id: savedCampaignId,
-          subject,
-          preview_text: previewText || null,
-          body,
+          subject: subjectValue,
+          preview_text: previewTextValue || null,
+          body: bodyValue,
           audience,
           template_id: selectedTemplateId,
         })
       }
       return createAdminCampaign(token, {
-        subject,
-        preview_text: previewText || null,
-        body,
+        subject: subjectValue,
+        preview_text: previewTextValue || null,
+        body: bodyValue,
         audience,
         template_id: selectedTemplateId,
       })
@@ -254,7 +254,7 @@ export function AdminCampaignWizardPage({
 
   const canNext = () => {
     if (step === 0) return Boolean(audience)
-    if (step === 2) return subject.trim() && body.trim()
+    if (step === 2) return subjectValue.trim() && bodyValue.trim()
     if (step === 3) return confirmedOptIn
     return true
   }
@@ -266,7 +266,9 @@ export function AdminCampaignWizardPage({
           <Link to='/admin/email/campaigns'>← Campaigns</Link>
         </Button>
         <div>
-          <h1 className='text-2xl font-semibold tracking-tight'>New campaign</h1>
+          <h1 className='text-2xl font-semibold tracking-tight'>
+            New campaign
+          </h1>
           <p className='text-sm text-muted-foreground'>
             Step {step + 1} of {STEPS.length}: {STEPS[step]}
           </p>
@@ -320,6 +322,9 @@ export function AdminCampaignWizardPage({
             className='w-full justify-start'
             onClick={() => {
               setSelectedTemplateId(null)
+              setSubject('')
+              setPreviewText('')
+              setBody('<p>Hello from Beonely.</p>')
               setStep(2)
             }}
           >
@@ -339,7 +344,9 @@ export function AdminCampaignWizardPage({
                 }}
               >
                 <CardHeader className='pb-2'>
-                  <CardTitle className='text-sm font-medium'>{t.name}</CardTitle>
+                  <CardTitle className='text-sm font-medium'>
+                    {t.name}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className='text-xs text-muted-foreground'>
                   {t.subject}
@@ -356,7 +363,7 @@ export function AdminCampaignWizardPage({
             <Label htmlFor='camp-subject'>Subject</Label>
             <Input
               id='camp-subject'
-              value={subject}
+              value={subjectValue}
               onChange={(e) => setSubject(e.target.value)}
             />
           </div>
@@ -364,16 +371,16 @@ export function AdminCampaignWizardPage({
             <Label htmlFor='camp-preview'>Preview text</Label>
             <Input
               id='camp-preview'
-              value={previewText}
+              value={previewTextValue}
               onChange={(e) => setPreviewText(e.target.value)}
             />
           </div>
           {!advancedHtml ? (
-            <EmailBodyRichTextField value={body} onChange={setBody} />
+            <EmailBodyRichTextField value={bodyValue} onChange={setBody} />
           ) : (
             <textarea
               className='min-h-[12rem] w-full rounded-md border border-border bg-background p-3 font-mono text-xs'
-              value={body}
+              value={bodyValue}
               onChange={(e) => setBody(e.target.value)}
             />
           )}
@@ -416,7 +423,7 @@ export function AdminCampaignWizardPage({
               <div className='flex justify-between gap-4'>
                 <dt className='text-muted-foreground'>Subject</dt>
                 <dd className='max-w-[60%] truncate text-end font-medium'>
-                  {subject}
+                  {subjectValue}
                 </dd>
               </div>
             </dl>
@@ -496,7 +503,7 @@ export function AdminCampaignWizardPage({
               This will email approximately {recipientCount ?? 'unknown'}{' '}
               recipients in the{' '}
               {AUDIENCE_OPTIONS.find((o) => o.value === audience)?.label}{' '}
-              audience with subject “{subject}”.
+              audience with subject “{subjectValue}”.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -515,4 +522,3 @@ export function AdminCampaignWizardPage({
     </div>
   )
 }
-

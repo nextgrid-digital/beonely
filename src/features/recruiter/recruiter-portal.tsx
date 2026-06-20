@@ -10,25 +10,18 @@ import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
 import { formatQueryError } from '@/lib/format-query-error'
 import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
-import { type PaymentPlan } from '@/lib/payments/plans'
-import { JobShareMenu } from '@/features/recruiter/job-share-menu'
-import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
-import {
-  ListingPlanCheckout,
-  selectedPlanPriceLabel,
-} from '@/features/recruiter/listing-plan-checkout'
-import { FeaturedBoostPlanList } from '@/features/recruiter/plan-option-list'
 import { jobListingCanRenew } from '@/lib/jobs/job-listing-renewal'
-import { paymentPlanFromSelection } from '@/lib/payments/plans'
+import { RECRUITER_OWNED_JOB_SOURCE } from '@/lib/jobs/recruiter-owned-job'
+import {
+  paymentPlanFromSelection,
+  type PaymentPlan,
+} from '@/lib/payments/plans'
 import { startRazorpayJobCheckout } from '@/lib/payments/razorpay-job-checkout'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
-import {
-  RECRUITER_OWNED_JOB_SOURCE,
-} from '@/lib/jobs/recruiter-owned-job'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -61,6 +54,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
+import { JobShareMenu } from '@/features/recruiter/job-share-menu'
+import {
+  ListingPlanCheckout,
+  selectedPlanPriceLabel,
+} from '@/features/recruiter/listing-plan-checkout'
+import { FeaturedBoostPlanList } from '@/features/recruiter/plan-option-list'
 
 const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
@@ -98,10 +98,7 @@ function RecruiterJobStatusBadges({ job }: { job: JobRow }) {
       <Badge variant='outline' className='text-xs capitalize'>
         {job.payment_status}
       </Badge>
-      <Badge
-        variant={job.featured ? 'default' : 'outline'}
-        className='text-xs'
-      >
+      <Badge variant={job.featured ? 'default' : 'outline'} className='text-xs'>
         {job.featured ? 'Featured' : 'Standard'}
       </Badge>
     </div>
@@ -568,7 +565,10 @@ function RecruiterJobsTableSkeleton() {
           <Table>
             <TableHeader className='[&_tr]:border-0'>
               <TableRow
-                className={cn(recruiterJobsTableRowClass, 'hover:bg-transparent')}
+                className={cn(
+                  recruiterJobsTableRowClass,
+                  'hover:bg-transparent'
+                )}
               >
                 <TableHead className={tableHeadClass}>Job</TableHead>
                 <TableHead className={tableHeadClass}>Status</TableHead>

@@ -45,7 +45,6 @@ export function OgJobCard ({ job, beonelyLogoUrl }: OgJobCardProps) {
         >
           ServiceNow hiring
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={beonelyLogoUrl}
           alt='Beonely'

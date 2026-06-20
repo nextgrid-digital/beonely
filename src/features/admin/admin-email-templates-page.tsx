@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Copy, Loader2, Plus, Trash2 } from 'lucide-react'
@@ -12,8 +12,8 @@ import {
   type EmailTemplateRow,
 } from '@/lib/email/admin-email-api'
 import { renderEmailTemplatePreview } from '@/lib/email/render-email-template'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
-import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 
 const AUDIENCE_LABELS: Record<string, string> = {
   candidates: 'Candidates',
@@ -46,6 +46,11 @@ type Draft = {
   subject: string
   preview_text: string
   body_html: string
+}
+
+type DraftOverride = {
+  templateId: string
+  value: Draft
 }
 
 function groupTemplates(templates: EmailTemplateRow[]) {
@@ -83,7 +88,7 @@ export function AdminEmailTemplatesPage({
   const [newAudience, setNewAudience] = useState<
     'candidates' | 'recruiters' | 'newsletter'
   >('candidates')
-  const [draft, setDraft] = useState<Draft | null>(null)
+  const [draftOverride, setDraftOverride] = useState<DraftOverride | null>(null)
 
   const templatesQuery = useQuery({
     queryKey: ['admin-email-templates', token],
@@ -97,13 +102,16 @@ export function AdminEmailTemplatesPage({
     return list.find((t) => t.id === templateId) ?? null
   }, [templatesQuery.data, templateId])
 
-  useEffect(() => {
-    if (selected) {
-      setDraft(draftFromTemplate(selected))
-    } else {
-      setDraft(null)
-    }
-  }, [selected?.id, selected?.updated_at])
+  const draft = useMemo(() => {
+    if (!selected) return null
+    if (draftOverride?.templateId === selected.id) return draftOverride.value
+    return draftFromTemplate(selected)
+  }, [selected, draftOverride])
+
+  const updateDraft = (next: Draft) => {
+    if (!selected) return
+    setDraftOverride({ templateId: selected.id, value: next })
+  }
 
   const isMarketing = selected?.category === 'marketing'
   const previewHtml = useMemo(() => {
@@ -192,7 +200,9 @@ export function AdminEmailTemplatesPage({
     if (items.length === 0) return null
     return (
       <div className='space-y-1'>
-        <p className='px-2 text-xs font-medium text-muted-foreground'>{label}</p>
+        <p className='px-2 text-xs font-medium text-muted-foreground'>
+          {label}
+        </p>
         {items.map((t) => (
           <button
             key={t.id}
@@ -216,8 +226,8 @@ export function AdminEmailTemplatesPage({
         <div>
           <h1 className='text-2xl font-semibold tracking-tight'>Templates</h1>
           <p className='text-sm text-muted-foreground'>
-            Marketing templates are editable. Transactional templates mirror live
-            automations (read-only).
+            Marketing templates are editable. Transactional templates mirror
+            live automations (read-only).
           </p>
         </div>
         <Button type='button' onClick={() => setNewOpen(true)}>
@@ -274,7 +284,7 @@ export function AdminEmailTemplatesPage({
                         value={draft.name}
                         disabled={!isMarketing}
                         onChange={(e) =>
-                          setDraft({ ...draft, name: e.target.value })
+                          updateDraft({ ...draft, name: e.target.value })
                         }
                       />
                     </div>
@@ -285,7 +295,7 @@ export function AdminEmailTemplatesPage({
                         value={draft.subject}
                         disabled={!isMarketing}
                         onChange={(e) =>
-                          setDraft({ ...draft, subject: e.target.value })
+                          updateDraft({ ...draft, subject: e.target.value })
                         }
                       />
                     </div>
@@ -297,7 +307,10 @@ export function AdminEmailTemplatesPage({
                           value={draft.preview_text}
                           disabled={!isMarketing}
                           onChange={(e) =>
-                            setDraft({ ...draft, preview_text: e.target.value })
+                            updateDraft({
+                              ...draft,
+                              preview_text: e.target.value,
+                            })
                           }
                         />
                       </div>
@@ -309,7 +322,7 @@ export function AdminEmailTemplatesPage({
                       value={draft.body_html}
                       disabled={!isMarketing}
                       onChange={(html) =>
-                        setDraft({ ...draft, body_html: html })
+                        updateDraft({ ...draft, body_html: html })
                       }
                     />
                   </div>
@@ -385,9 +398,7 @@ export function AdminEmailTemplatesPage({
               <Label>Audience</Label>
               <Select
                 value={newAudience}
-                onValueChange={(v) =>
-                  setNewAudience(v as typeof newAudience)
-                }
+                onValueChange={(v) => setNewAudience(v as typeof newAudience)}
               >
                 <SelectTrigger>
                   <SelectValue />

@@ -11,22 +11,28 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
 import { jobListingPreviewDataFromJob } from '@/lib/jobs/job-listing-preview-data'
 import {
-  plainTextFromJobDescription,
-  sanitizeJobDescriptionHtml,
-} from '@/lib/jobs/sanitize-job-description-html'
-import { buildJobSlug } from '@/lib/jobs/slug'
+  formatListingLiveUntil,
+  jobListingCanRenew,
+} from '@/lib/jobs/job-listing-renewal'
+import { recruiterOwnsJob } from '@/lib/jobs/recruiter-owned-job'
 import {
   formatSalaryRange,
   parseSalaryRange,
 } from '@/lib/jobs/salary-range-format'
+import {
+  plainTextFromJobDescription,
+  sanitizeJobDescriptionHtml,
+} from '@/lib/jobs/sanitize-job-description-html'
 import {
   filterToKnownTaxonomy,
   SERVICENOW_JOB_CERTIFICATIONS,
   SERVICENOW_JOB_MODULES,
   SERVICENOW_JOB_SKILLS,
 } from '@/lib/jobs/servicenow-job-taxonomy'
+import { buildJobSlug } from '@/lib/jobs/slug'
 import {
   uploadJobCompanyLogo,
   validateJobCompanyLogoFile,
@@ -36,21 +42,15 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
-import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
-import {
-  formatListingLiveUntil,
-  jobListingCanRenew,
-} from '@/lib/jobs/job-listing-renewal'
-import { useAuth } from '@/context/auth-provider'
-import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
-import { recruiterOwnsJob } from '@/lib/jobs/recruiter-owned-job'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { JobListingPreview } from '@/features/jobs/job-listing-preview'
-import { useRecruiterChromeActions } from '@/features/recruiter/recruiter-chrome-actions-context'
+import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
 import { JobListingInlineEditor } from '@/features/recruiter/job-listing-inline-editor'
 import { JobShareMenu } from '@/features/recruiter/job-share-menu'
+import { useRecruiterChromeActions } from '@/features/recruiter/recruiter-chrome-actions-context'
 
 export const RECRUITER_JOB_EDITOR_FORM_ID = 'recruiter-job-editor-form'
 
@@ -125,7 +125,16 @@ export function RecruiterJobEditorPage(props: {
   const qc = useQueryClient()
   const { session } = useAuth()
   const logoInputRef = useRef<HTMLInputElement>(null)
-  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
+  const jobDraftKey = props.job?.id ?? 'new'
+  const [pendingLogoState, setPendingLogoState] = useState<{
+    jobDraftKey: string
+    file: File | null
+  }>({ jobDraftKey, file: null })
+  const pendingLogoFile =
+    pendingLogoState.jobDraftKey === jobDraftKey ? pendingLogoState.file : null
+  const setPendingLogoFile = (file: File | null) => {
+    setPendingLogoState({ jobDraftKey, file })
+  }
   const [logoBusy, setLogoBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const form = useForm<JobEditorValues>({
@@ -133,20 +142,19 @@ export function RecruiterJobEditorPage(props: {
     defaultValues: defaultFormValues(props.job),
   })
   const formRef = useRef(form)
-  formRef.current = form
 
   useEffect(() => {
-    if (
-      props.job &&
-      !recruiterOwnsJob(props.job, props.recruiter.id)
-    ) {
+    formRef.current = form
+  }, [form])
+
+  useEffect(() => {
+    if (props.job && !recruiterOwnsJob(props.job, props.recruiter.id)) {
       void navigate({ to: '/recruiter', replace: true })
     }
   }, [props.job, props.recruiter.id, navigate])
 
   useEffect(() => {
     form.reset(defaultFormValues(props.job))
-    setPendingLogoFile(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when saved job changes only
   }, [props.job])
 
