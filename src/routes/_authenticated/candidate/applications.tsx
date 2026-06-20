@@ -1,17 +1,40 @@
+import { useState } from 'react'
+import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import type { JobRow, Tables } from '@/lib/supabase/database.types'
+import type { Enums, JobRow, Tables } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
-import { Badge } from '@/components/ui/badge'
+import { InboxList } from '@/components/inbox/inbox-list'
+import type { InboxRowData } from '@/components/inbox/inbox-list-row'
+import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
+import { JobPeek, JOB_PEEK_PARAM } from '@/features/jobs/job-peek'
 import { PUBLIC_SITE_MAIN_COLUMN } from '@/features/jobs/public-site-layout'
 
+const applicationsSearchSchema = z.object({
+  peek: z.string().optional(),
+  tab: z
+    .enum(['all', 'new', 'reviewed', 'shortlisted', 'rejected', 'tracked'])
+    .optional()
+    .catch(undefined),
+})
+
 export const Route = createFileRoute('/_authenticated/candidate/applications')({
+  validateSearch: applicationsSearchSchema,
   component: CandidateApplicationsPage,
 })
+
+type ApplicationStatus = Enums<'application_status'>
+type CandidateTab =
+  | 'all'
+  | 'new'
+  | 'reviewed'
+  | 'shortlisted'
+  | 'rejected'
+  | 'tracked'
 
 type JobAppRow = {
   applied_at: string
@@ -24,8 +47,43 @@ type BeonelyAppRow = Tables<'applications'> & {
   jobs: JobRow | null
 }
 
+interface CandidateApplicationItem {
+  slug: string
+  title: string
+  company: string
+  status: ApplicationStatus | null
+  date: string
+}
+
+function statusPill(status: ApplicationStatus | null): InboxPillItem {
+  switch (status) {
+    case 'new':
+      return { label: 'New', variant: 'info' }
+    case 'reviewed':
+      return { label: 'Reviewed', variant: 'muted' }
+    case 'shortlisted':
+      return { label: 'Shortlisted', variant: 'success' }
+    case 'rejected':
+      return { label: 'Rejected', variant: 'danger' }
+    case null:
+      return { label: 'Tracked', variant: 'muted' }
+    default: {
+      const _exhaustive: never = status
+      return _exhaustive
+    }
+  }
+}
+
+function jobOf(row: { jobs: JobRow | null }): JobRow | null {
+  return Array.isArray(row.jobs) ? (row.jobs[0] ?? null) : row.jobs
+}
+
 function CandidateApplicationsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const search = Route.useSearch()
+  const activeTab: CandidateTab = search.tab ?? 'all'
+  const [searchQuery, setSearchQuery] = useState('')
 
   const jobAppsQuery = useQuery({
     queryKey: ['job-applications', user?.id],
@@ -65,128 +123,123 @@ function CandidateApplicationsPage() {
     )
   }
 
-  return (
-    <div className={`${PUBLIC_SITE_MAIN_COLUMN} space-y-10 py-12`}>
-      <section className='space-y-4'>
-        <div>
-          <h1 className='text-2xl font-semibold tracking-tight'>
-            Beonely applications
-          </h1>
-          <p className='text-sm text-muted-foreground'>
-            Roles where you applied with your Beonely profile to a recruiter
-            listing.
-          </p>
-        </div>
-        {beonelyAppsQuery.isLoading && (
-          <p className='text-sm text-muted-foreground'>Loading…</p>
-        )}
-        {beonelyAppsQuery.isError && (
-          <p className='text-sm text-destructive'>
-            Could not load Beonely applications. Apply the latest Supabase
-            migration if this table is missing.
-          </p>
-        )}
-        <ul className='space-y-3'>
-          {(beonelyAppsQuery.data ?? []).map((row) => {
-            const job = Array.isArray(row.jobs) ? row.jobs[0] : row.jobs
-            if (!job) return null
-            return (
-              <li key={row.id} className='rounded-lg border p-3'>
-                <div className='flex flex-wrap items-start justify-between gap-2'>
-                  <div>
-                    <p className='font-medium'>{job.job_title}</p>
-                    <p className='text-sm text-muted-foreground'>
-                      {job.company_name}
-                    </p>
-                    <div className='mt-2 flex flex-wrap items-center gap-2'>
-                      <Badge variant='outline' className='text-xs capitalize'>
-                        {row.status}
-                      </Badge>
-                      <p className='text-xs text-muted-foreground'>
-                        Submitted{' '}
-                        {new Date(row.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    to='/jobs/$slug'
-                    params={{ slug: job.job_slug }}
-                    className='text-sm font-medium text-primary underline-offset-4 hover:underline'
-                  >
-                    View job
-                  </Link>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-        {!beonelyAppsQuery.isLoading &&
-          (beonelyAppsQuery.data ?? []).length === 0 && (
-            <p className='text-sm text-muted-foreground'>
-              No Beonely applications yet. Apply from a recruiter-posted job
-              using your Beonely profile.
-            </p>
-          )}
-      </section>
+  // Merge both sources, deduped by job slug (Beonely applications win since
+  // they carry a recruiter-managed status).
+  const itemsBySlug = new Map<string, CandidateApplicationItem>()
+  for (const row of beonelyAppsQuery.data ?? []) {
+    const job = jobOf(row)
+    if (!job) continue
+    itemsBySlug.set(job.job_slug, {
+      slug: job.job_slug,
+      title: job.job_title,
+      company: job.company_name,
+      status: row.status,
+      date: row.created_at,
+    })
+  }
+  for (const row of jobAppsQuery.data ?? []) {
+    const job = jobOf(row)
+    if (!job || itemsBySlug.has(job.job_slug)) continue
+    itemsBySlug.set(job.job_slug, {
+      slug: job.job_slug,
+      title: job.job_title,
+      company: job.company_name,
+      status: null,
+      date: row.applied_at,
+    })
+  }
+  const items = [...itemsBySlug.values()].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
 
-      <section className='space-y-4'>
-        <div>
-          <h2 className='text-lg font-semibold tracking-tight'>
-            Tracked applications
-          </h2>
-          <p className='text-sm text-muted-foreground'>
-            Roles you marked as applied yourself (e.g. after using an external
-            apply link).
-          </p>
-        </div>
-        {jobAppsQuery.isLoading && (
-          <p className='text-sm text-muted-foreground'>Loading…</p>
-        )}
-        {jobAppsQuery.isError && (
-          <p className='text-sm text-destructive'>
-            Could not load tracked applications.
-          </p>
-        )}
-        <ul className='space-y-3'>
-          {(jobAppsQuery.data ?? []).map((row) => {
-            const job = Array.isArray(row.jobs) ? row.jobs[0] : row.jobs
-            if (!job) return null
-            return (
-              <li key={row.job_id} className='rounded-lg border p-3'>
-                <div className='flex flex-wrap items-start justify-between gap-2'>
-                  <div>
-                    <p className='font-medium'>{job.job_title}</p>
-                    <p className='text-sm text-muted-foreground'>
-                      {job.company_name}
-                    </p>
-                    <p className='mt-1 text-xs text-muted-foreground'>
-                      Applied {new Date(row.applied_at).toLocaleDateString()}
-                    </p>
-                    {row.notes && (
-                      <p className='mt-2 text-sm text-muted-foreground'>
-                        {row.notes}
-                      </p>
-                    )}
-                  </div>
-                  <Link
-                    to='/jobs/$slug'
-                    params={{ slug: job.job_slug }}
-                    className='text-sm font-medium text-primary underline-offset-4 hover:underline'
-                  >
-                    View job
-                  </Link>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-        {!jobAppsQuery.isLoading && (jobAppsQuery.data ?? []).length === 0 && (
-          <p className='text-sm text-muted-foreground'>
-            No tracked applications yet. On a scraped or external listing, use
-            &quot;Mark as applied&quot; on the job page.
-          </p>
-        )}
-      </section>
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const rows: InboxRowData[] = items
+    .filter((item) => {
+      switch (activeTab) {
+        case 'all':
+          return true
+        case 'tracked':
+          return item.status === null
+        default:
+          return item.status === activeTab
+      }
+    })
+    .filter((item) =>
+      normalizedQuery
+        ? `${item.title} ${item.company}`
+            .toLowerCase()
+            .includes(normalizedQuery)
+        : true
+    )
+    .map((item) => ({
+      id: item.slug,
+      title: item.title,
+      preview: item.company,
+      pills: [statusPill(item.status)],
+      timestamp: item.date,
+    }))
+
+  const countBy = (predicate: (item: CandidateApplicationItem) => boolean) =>
+    items.filter(predicate).length
+
+  const tabPills = [
+    { id: 'all' as const, label: 'All', count: items.length },
+    {
+      id: 'new' as const,
+      label: 'New',
+      count: countBy((i) => i.status === 'new'),
+    },
+    {
+      id: 'reviewed' as const,
+      label: 'Reviewed',
+      count: countBy((i) => i.status === 'reviewed'),
+    },
+    {
+      id: 'shortlisted' as const,
+      label: 'Shortlisted',
+      count: countBy((i) => i.status === 'shortlisted'),
+    },
+    {
+      id: 'rejected' as const,
+      label: 'Rejected',
+      count: countBy((i) => i.status === 'rejected'),
+    },
+    {
+      id: 'tracked' as const,
+      label: 'Tracked',
+      count: countBy((i) => i.status === null),
+    },
+  ]
+
+  const isLoading = beonelyAppsQuery.isLoading || jobAppsQuery.isLoading
+
+  return (
+    <div className={`${PUBLIC_SITE_MAIN_COLUMN} py-8`}>
+      <InboxList<CandidateTab>
+        className='h-auto'
+        title='Applications'
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder='Search applications...'
+        pills={tabPills}
+        activeFilter={activeTab}
+        onFilterChange={(tab) =>
+          void navigate({
+            search: (p) => ({ ...p, tab: tab === 'all' ? undefined : tab }),
+          })
+        }
+        layoutId='candidate-applications'
+        rows={rows}
+        selectedId={search.peek ?? null}
+        onSelect={(slug) =>
+          void navigate({
+            search: (p) => ({ ...p, [JOB_PEEK_PARAM]: slug }),
+          })
+        }
+        loading={isLoading}
+        emptyMessage='No applications in this view yet.'
+      />
+      <JobPeek />
     </div>
   )
 }

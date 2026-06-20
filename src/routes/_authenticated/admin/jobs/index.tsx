@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { MoreHorizontal } from 'lucide-react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { notifyJobStatus } from '@/lib/email/admin-email-api'
 import { formatQueryError } from '@/lib/format-query-error'
@@ -13,10 +12,8 @@ import {
 import { listingDurationToDays } from '@/lib/payments/plans'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -26,24 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { InboxList } from '@/components/inbox/inbox-list'
+import type { InboxRowData } from '@/components/inbox/inbox-list-row'
+import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
+import { PeekPanel } from '@/components/peek/peek-panel'
 import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
+import { JobDetailView } from '@/features/jobs/job-detail-view'
 
 const adminJobsSearchSchema = z.object({
   queue: z
@@ -60,6 +47,31 @@ const QUEUE_TABS: { id: NonNullable<AdminJobsQueue>; label: string }[] = [
   { id: 'rejected', label: 'Rejected' },
   { id: 'all', label: 'All' },
 ]
+
+/** Right-aligned status pills for the admin moderation list (approval + payment/source). */
+function adminJobPills(job: JobRow): InboxPillItem[] {
+  const pills: InboxPillItem[] = []
+  switch (job.approval_status) {
+    case 'approved':
+      pills.push({ label: 'Approved', variant: 'success' })
+      break
+    case 'rejected':
+      pills.push({ label: 'Rejected', variant: 'danger' })
+      break
+    case 'pending':
+    default:
+      pills.push({ label: 'Pending', variant: 'attention' })
+      break
+  }
+  if (job.source_kind === 'linkedin_import') {
+    pills.push({ label: 'LinkedIn', variant: 'info' })
+  } else if (job.payment_status === 'unpaid') {
+    pills.push({ label: 'Unpaid', variant: 'attention' })
+  } else if (job.featured) {
+    pills.push({ label: 'Featured', variant: 'success' })
+  }
+  return pills.slice(0, 2)
+}
 
 function filterJobsByQueue(jobs: JobRow[], queue: AdminJobsQueue): JobRow[] {
   const q = queue ?? 'all'
@@ -86,6 +98,7 @@ export const Route = createFileRoute('/_authenticated/admin/jobs/')({
 
 function AdminJobsPage() {
   const { queue } = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
   const { session } = useAuth()
   const accessToken = session?.access_token
   const qc = useQueryClient()
@@ -93,6 +106,8 @@ function AdminJobsPage() {
   const [descriptionDraft, setDescriptionDraft] = useState('')
   const [rejectTarget, setRejectTarget] = useState<JobRow | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [peekJobId, setPeekJobId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const jobsQuery = useQuery({
     queryKey: ['admin-jobs'],
     queryFn: async () => {
@@ -253,9 +268,39 @@ function AdminJobsPage() {
     [jobsQuery.data, queue]
   )
 
-  const stickyHead = 'sticky z-10 bg-background'
-  const stickyCell =
-    'sticky z-10 bg-background group-hover:bg-muted/50 group-data-[state=selected]:bg-muted'
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const rows: InboxRowData[] = filteredJobs
+    .filter((job) =>
+      normalizedQuery
+        ? `${job.job_title} ${job.company_name}`
+            .toLowerCase()
+            .includes(normalizedQuery)
+        : true
+    )
+    .map((job) => ({
+      id: job.id,
+      title: job.job_title,
+      preview: job.company_name,
+      pills: adminJobPills(job),
+      timestamp: job.created_at,
+    }))
+
+  const allJobs = jobsQuery.data ?? []
+  const queuePills = QUEUE_TABS.map((tab) => ({
+    id: tab.id,
+    label: tab.label,
+    count: filterJobsByQueue(allJobs, tab.id).length,
+  }))
+
+  const peekJob = peekJobId
+    ? (jobsQuery.data?.find((j) => j.id === peekJobId) ?? null)
+    : null
+  const peekCanApprove =
+    peekJob?.approval_status === 'pending' &&
+    (peekJob.payment_status === 'paid' ||
+      peekJob.source_kind === 'linkedin_import')
+  const peekCanFeature =
+    peekJob?.approval_status === 'approved' && peekJob.payment_status === 'paid'
 
   return (
     <div className='max-w-full min-w-0 space-y-4 py-6'>
@@ -369,31 +414,6 @@ function AdminJobsPage() {
           ) : null}
         </DialogContent>
       </Dialog>
-      <div>
-        <h1 className='text-2xl font-semibold tracking-tight'>
-          Job moderation
-        </h1>
-        <p className='text-sm text-muted-foreground'>
-          Approve paid listings, toggle featured, reject spam.
-        </p>
-      </div>
-      <div className='flex flex-wrap gap-2'>
-        {QUEUE_TABS.map((tab) => (
-          <Link
-            key={tab.id}
-            to='/admin/jobs'
-            search={{ queue: tab.id }}
-            className={cn(
-              'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-              (queue ?? 'all') === tab.id
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
       {jobsQuery.isError ? (
         <div className='space-y-4'>
           <Alert variant='destructive'>
@@ -413,132 +433,107 @@ function AdminJobsPage() {
             Try again
           </Button>
         </div>
-      ) : null}
-      {!jobsQuery.isError ? (
-        <div className='min-w-0 overflow-x-auto'>
-          <Table className='min-w-[56rem]'>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className={cn(
-                    stickyHead,
-                    'start-0 max-w-[14rem] min-w-[10rem]'
-                  )}
+      ) : (
+        <InboxList<NonNullable<AdminJobsQueue>>
+          className='h-auto'
+          title='Job moderation'
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder='Search listings...'
+          pills={queuePills}
+          activeFilter={queue ?? 'all'}
+          onFilterChange={(next) =>
+            void navigate({
+              search: (p) => ({ ...p, queue: next }),
+            })
+          }
+          layoutId='admin-jobs'
+          rows={rows}
+          selectedId={peekJobId}
+          onSelect={(id) => setPeekJobId(id)}
+          loading={jobsQuery.isLoading}
+          emptyMessage='No listings in this queue.'
+        />
+      )}
+
+      <PeekPanel
+        open={Boolean(peekJob)}
+        onOpenChange={(open) => {
+          if (!open) setPeekJobId(null)
+        }}
+        title={peekJob?.job_title ?? 'Job'}
+        description={
+          peekJob
+            ? `${peekJob.company_name} · ${peekJob.approval_status} · ${peekJob.payment_status}`
+            : undefined
+        }
+        bodyClassName='space-y-6 px-4 py-5 sm:px-6'
+      >
+        {peekJob ? (
+          <>
+            <div className='flex flex-wrap items-center gap-2'>
+              {peekCanApprove ? (
+                <Button
+                  type='button'
+                  size='sm'
+                  disabled={approveListing.isPending}
+                  onClick={() => approveListing.mutate(peekJob)}
                 >
-                  Title
-                </TableHead>
-                <TableHead className='min-w-[7rem]'>Company</TableHead>
-                <TableHead className='hidden min-w-[8rem] sm:table-cell'>
-                  Plan
-                </TableHead>
-                <TableHead>Approval</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead className='hidden min-w-[7rem] lg:table-cell'>
-                  Source
-                </TableHead>
-                <TableHead className='hidden md:table-cell'>Created</TableHead>
-                <TableHead className={cn(stickyHead, 'end-0 w-12 text-end')}>
-                  <span className='sr-only'>Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJobs.map((job) => (
-                <TableRow key={job.id} className='group'>
-                  <TableCell
-                    className={cn(
-                      stickyCell,
-                      'start-0 max-w-[14rem] font-medium whitespace-normal'
-                    )}
-                  >
-                    <Link
-                      to='/jobs/$slug'
-                      params={{ slug: job.job_slug }}
-                      target='_blank'
-                      rel='noreferrer'
-                      className='line-clamp-2 hover:underline'
-                      title={job.job_title}
-                    >
-                      {job.job_title}
-                    </Link>
-                  </TableCell>
-                  <TableCell className='max-w-[10rem] truncate'>
-                    {job.company_name}
-                  </TableCell>
-                  <TableCell className='hidden text-sm capitalize sm:table-cell'>
-                    {job.listing_tier} · {job.listing_duration}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant='outline'>{job.approval_status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant='outline'>{job.payment_status}</Badge>
-                  </TableCell>
-                  <TableCell className='hidden lg:table-cell'>
-                    {job.source_kind}
-                  </TableCell>
-                  <TableCell className='hidden text-sm text-muted-foreground tabular-nums md:table-cell'>
-                    {new Date(job.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className={cn(stickyCell, 'end-0 text-end')}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type='button'
-                          size='icon'
-                          variant='outline'
-                          className='size-8'
-                          aria-label={`Actions for ${job.job_title}`}
-                        >
-                          <MoreHorizontal className='size-4' aria-hidden />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end' className='w-48'>
-                        <DropdownMenuItem
-                          onClick={() => openEditDescription(job)}
-                        >
-                          Edit description
-                        </DropdownMenuItem>
-                        {job.approval_status === 'pending' &&
-                          (job.payment_status === 'paid' ||
-                            job.source_kind === 'linkedin_import') && (
-                            <DropdownMenuItem
-                              onClick={() => approveListing.mutate(job)}
-                            >
-                              Approve listing
-                            </DropdownMenuItem>
-                          )}
-                        {job.approval_status !== 'rejected' ? (
-                          <DropdownMenuItem
-                            className='text-destructive focus:text-destructive'
-                            onClick={() => {
-                              setRejectTarget(job)
-                              setRejectReason('')
-                            }}
-                          >
-                            Reject listing
-                          </DropdownMenuItem>
-                        ) : null}
-                        {job.approval_status === 'approved' &&
-                        job.payment_status === 'paid' ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => toggleFeatured.mutate(job)}
-                            >
-                              {job.featured ? 'Unfeature' : 'Feature'} listing
-                            </DropdownMenuItem>
-                          </>
-                        ) : null}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : null}
+                  Approve
+                </Button>
+              ) : null}
+              {peekJob.approval_status !== 'rejected' ? (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='destructive'
+                  onClick={() => {
+                    setRejectTarget(peekJob)
+                    setRejectReason('')
+                  }}
+                >
+                  Reject
+                </Button>
+              ) : null}
+              {peekCanFeature ? (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  disabled={toggleFeatured.isPending}
+                  onClick={() => toggleFeatured.mutate(peekJob)}
+                >
+                  {peekJob.featured ? 'Unfeature' : 'Feature'}
+                </Button>
+              ) : null}
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={() => openEditDescription(peekJob)}
+              >
+                Edit description
+              </Button>
+              <Button asChild size='sm' variant='ghost'>
+                <Link
+                  to='/jobs/$slug'
+                  params={{ slug: peekJob.job_slug }}
+                  target='_blank'
+                  rel='noreferrer'
+                >
+                  Open public page
+                </Link>
+              </Button>
+            </div>
+
+            <JobDetailView
+              job={peekJob}
+              showApplySection={false}
+              showSimilarJobs={false}
+            />
+          </>
+        ) : null}
+      </PeekPanel>
     </div>
   )
 }

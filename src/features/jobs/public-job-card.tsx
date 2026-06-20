@@ -1,4 +1,7 @@
+import { type MouseEvent } from 'react'
 import { Link } from '@tanstack/react-router'
+import { ArrowUpRight } from 'lucide-react'
+import { formatJobEnumLabel } from '@/lib/jobs/job-enum-labels'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
@@ -14,11 +17,35 @@ function excerptPlain(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
-export function PublicJobCard({ job }: { job: JobRow }) {
+export function PublicJobCard({
+  job,
+  onSelect,
+}: {
+  job: JobRow
+  /** When provided, a plain left-click opens this job in-page (peek) instead of navigating. */
+  onSelect?: (job: JobRow) => void
+}) {
   const { profile, user, loading } = useAuth()
   const descriptionExcerpt = excerptPlain(
     plainTextFromJobDescription(job.job_description ?? '')
   )
+
+  const handleTitleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!onSelect) return
+    // Preserve new-tab / modified clicks and middle-click for the full page.
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
+    event.preventDefault()
+    onSelect(job)
+  }
 
   const recruiterOrAdmin =
     profile?.role === 'recruiter' || profile?.role === 'admin'
@@ -29,11 +56,11 @@ export function PublicJobCard({ job }: { job: JobRow }) {
   return (
     <Card
       className={cn(
-        'rounded-none border-0 border-b border-border bg-card shadow-none',
+        'group relative rounded-none border-0 border-b border-border bg-card shadow-none transition-colors hover:bg-muted/30',
         job.featured && 'border-primary/40 bg-primary/[0.03]'
       )}
     >
-      <CardHeader className='flex flex-col gap-3 space-y-0 pb-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
+      <CardHeader className='flex flex-row items-start justify-between gap-3 space-y-0 pb-2 sm:gap-4'>
         <div className='flex min-w-0 flex-1 gap-3'>
           <CompanyLogoAvatar
             companyName={job.company_name}
@@ -45,7 +72,8 @@ export function PublicJobCard({ job }: { job: JobRow }) {
                 <Link
                   to='/jobs/$slug'
                   params={{ slug: job.job_slug }}
-                  className='hover:underline'
+                  onClick={handleTitleClick}
+                  className='rounded-sm group-hover:underline after:absolute after:inset-0 after:content-[""] focus-visible:underline focus-visible:outline-none'
                 >
                   {job.job_title}
                 </Link>
@@ -60,51 +88,51 @@ export function PublicJobCard({ job }: { job: JobRow }) {
               {job.company_name} · {job.location || 'Location TBD'}
             </p>
             {descriptionExcerpt ? (
-              <p className='mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground'>
+              <p className='mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground'>
                 {descriptionExcerpt}
               </p>
             ) : null}
           </div>
         </div>
-        <div className='w-full sm:w-auto sm:shrink-0'>
+        <div className='shrink-0'>
           {user && loading ? (
-            <Skeleton className='h-11 w-full sm:h-8 sm:w-20' aria-hidden />
-          ) : recruiterOrAdmin ? (
-            ownsBeonelyListing ? (
-              <Button
-                asChild
-                size='sm'
-                variant='outline'
-                className='min-h-11 w-full sm:min-h-8 sm:w-auto'
-              >
-                <Link
-                  to='/recruiter/jobs/$jobId/applicants'
-                  params={{ jobId: job.id }}
-                >
-                  Applicants
-                </Link>
-              </Button>
-            ) : null
-          ) : (
+            <Skeleton className='size-9 rounded-full' aria-hidden />
+          ) : recruiterOrAdmin && ownsBeonelyListing ? (
             <Button
               asChild
               size='sm'
-              variant='secondary'
-              className='min-h-11 w-full sm:min-h-8 sm:w-auto'
+              variant='outline'
+              className='relative z-10 min-h-9 sm:min-h-8'
             >
-              <Link to='/jobs/$slug' params={{ slug: job.job_slug }}>
-                Apply
+              <Link
+                to='/recruiter/jobs/$jobId/applicants'
+                params={{ jobId: job.id }}
+              >
+                Applicants
               </Link>
             </Button>
+          ) : recruiterOrAdmin ? null : (
+            <span
+              aria-hidden
+              className='pointer-events-none grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground'
+            >
+              <ArrowUpRight className='size-4' />
+            </span>
           )}
         </div>
       </CardHeader>
       <CardContent className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
-        {job.job_type && <Badge variant='outline'>{job.job_type}</Badge>}
-        {job.employment_type && (
-          <Badge variant='outline'>{job.employment_type}</Badge>
+        {job.job_type && (
+          <Badge variant='outline'>{formatJobEnumLabel(job.job_type)}</Badge>
         )}
-        {job.work_mode && <Badge variant='outline'>{job.work_mode}</Badge>}
+        {job.employment_type && (
+          <Badge variant='outline'>
+            {formatJobEnumLabel(job.employment_type)}
+          </Badge>
+        )}
+        {job.work_mode && (
+          <Badge variant='outline'>{formatJobEnumLabel(job.work_mode)}</Badge>
+        )}
       </CardContent>
     </Card>
   )

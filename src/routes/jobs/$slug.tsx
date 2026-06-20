@@ -2,24 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
-import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
+import { fetchJobBySlug } from '@/lib/jobs/fetch-job-by-slug'
 import { jobOgImageUrl } from '@/lib/jobs/job-share-url'
 import { plainTextFromJobDescription } from '@/lib/jobs/sanitize-job-description-html'
-import {
-  getSupabaseBrowserClient,
-  getSupabaseConfigured,
-} from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
-import { JobListingMetaBadges } from '@/features/jobs/job-listing-meta-badges'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ApplyWithCandidateAuth } from '@/features/jobs/apply-with-candidate-auth'
 import { RecordApplicationButton } from '@/features/jobs/candidate-job-actions'
-import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
-import { JobDescriptionRichTextRead } from '@/features/jobs/job-description-rich-text-field'
+import { JobDetailView } from '@/features/jobs/job-detail-view'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
@@ -58,54 +49,6 @@ function JobDetailBreadcrumb({ currentLabel }: { currentLabel: string }) {
       </li>
     </ol>
   )
-}
-
-function JobDetailApplySection({ job }: { job: JobRow }) {
-  const { profile, loading, user } = useAuth()
-  const recruiterOrAdmin =
-    profile?.role === 'recruiter' || profile?.role === 'admin'
-
-  if (user && loading) {
-    return (
-      <div className='flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row'>
-        <Skeleton className='h-11 w-full sm:h-10 sm:w-36' aria-hidden />
-      </div>
-    )
-  }
-
-  if (recruiterOrAdmin) {
-    const ownsListing =
-      job.source_kind === 'recruiter_posted' &&
-      Boolean(profile?.recruiter_row_id) &&
-      profile.recruiter_row_id === job.recruiter_id
-
-    return (
-      <div className='flex w-full shrink-0 flex-col gap-2 text-left sm:w-auto sm:max-w-[14rem] sm:items-end sm:text-right'>
-        {ownsListing ? (
-          <Button
-            asChild
-            variant='outline'
-            size='default'
-            className='min-h-11 w-full sm:min-h-9 sm:w-auto'
-          >
-            <Link
-              to='/recruiter/jobs/$jobId/applicants'
-              params={{ jobId: job.id }}
-            >
-              View applicants
-            </Link>
-          </Button>
-        ) : null}
-        {!ownsListing ? (
-          <p className='text-xs text-muted-foreground'>
-            Recruiter accounts cannot apply from this page.
-          </p>
-        ) : null}
-      </div>
-    )
-  }
-
-  return <ApplyWithCandidateAuth job={job} />
 }
 
 function JobDetailPage() {
@@ -216,71 +159,13 @@ function JobDetailPage() {
               ) : null
             }
           />
-          <div className='mx-auto max-w-3xl space-y-6 pt-4 pb-12 sm:space-y-8 sm:pt-6 sm:pb-16'>
-            <div className='flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:justify-between'>
-              <div className='flex min-w-0 flex-1 gap-4'>
-                <CompanyLogoAvatar
-                  companyName={job.company_name}
-                  logoUrl={job.company_logo}
-                  className='size-14'
-                />
-                <div className='min-w-0 flex-1'>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <h1 className='text-2xl font-semibold tracking-tight sm:text-3xl'>
-                      {job.job_title}
-                    </h1>
-                    {job.featured && <Badge>Featured</Badge>}
-                  </div>
-                  <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
-                    {job.company_name}
-                  </p>
-                  <JobListingMetaBadges
-                    className='mt-3'
-                    location={job.location}
-                    employmentType={job.employment_type}
-                    workMode={job.work_mode}
-                    experienceLevel={job.experience_level}
-                    jobType={job.job_type}
-                    salaryRange={job.salary_range}
-                    modules={job.modules}
-                    certifications={job.certifications}
-                    skills={job.skills}
-                  />
-                </div>
-              </div>
-              <div className='flex w-full shrink-0 flex-col gap-2 sm:sticky sm:top-[7.125rem] sm:z-10 sm:w-auto sm:flex-row'>
-                <JobDetailApplySection job={job} />
-              </div>
-            </div>
-
-            <Card className='border-0 shadow-none'>
-              <CardHeader>
-                <CardTitle>About this role</CardTitle>
-              </CardHeader>
-              <CardContent className='min-w-0'>
-                <JobDescriptionRichTextRead value={job.job_description} />
-              </CardContent>
-            </Card>
+          <div className='mx-auto max-w-3xl pt-4 pb-12 sm:pt-6 sm:pb-16'>
+            <JobDetailView job={job} />
           </div>
         </div>
       </main>
     </>
   )
-}
-
-async function fetchJobBySlug(slug: string): Promise<JobRow | null> {
-  if (!getSupabaseConfigured()) return null
-  const sb = getSupabaseBrowserClient()
-  const { data, error } = await sb
-    .from('jobs')
-    .select('*')
-    .eq('job_slug', slug)
-    .maybeSingle()
-  if (error) throw error
-  if (!data) return null
-  const job = data as JobRow
-  if (!jobListingIsLive(job)) return null
-  return job
 }
 
 function buildJobPostingJsonLd(job: JobRow, url: string) {

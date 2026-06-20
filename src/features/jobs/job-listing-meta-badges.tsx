@@ -1,3 +1,4 @@
+import { formatJobEnumLabel } from '@/lib/jobs/job-enum-labels'
 import { displaySalaryRange } from '@/lib/jobs/salary-range-format'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -13,10 +14,6 @@ export type JobListingMetaBadgesProps = {
   certifications?: string[]
   skills?: string[]
   className?: string
-}
-
-function formatEnumLabel(value: string): string {
-  return value.replace(/_/g, ' ')
 }
 
 export function JobListingMetaBadges(props: JobListingMetaBadgesProps) {
@@ -47,19 +44,21 @@ export function JobListingMetaBadges(props: JobListingMetaBadgesProps) {
           ) : null}
           {props.employmentType ? (
             <Badge variant='outline'>
-              {formatEnumLabel(props.employmentType)}
+              {formatJobEnumLabel(props.employmentType)}
             </Badge>
           ) : null}
           {props.workMode ? (
-            <Badge variant='outline'>{formatEnumLabel(props.workMode)}</Badge>
+            <Badge variant='outline'>
+              {formatJobEnumLabel(props.workMode)}
+            </Badge>
           ) : null}
           {props.experienceLevel ? (
             <Badge variant='outline'>
-              {formatEnumLabel(props.experienceLevel)}
+              {formatJobEnumLabel(props.experienceLevel)}
             </Badge>
           ) : null}
           {props.jobType ? (
-            <Badge variant='outline'>{formatEnumLabel(props.jobType)}</Badge>
+            <Badge variant='outline'>{formatJobEnumLabel(props.jobType)}</Badge>
           ) : null}
           {salaryLabel ? (
             <Badge variant='outline'>{salaryLabel}</Badge>

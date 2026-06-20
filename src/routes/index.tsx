@@ -1,48 +1,51 @@
+import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   isRedirect,
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
-import { Briefcase, LineChart, Shield } from 'lucide-react'
 import {
   fetchRecruiterPublishedJobs,
   publishedJobsFilterSchema,
 } from '@/lib/jobs/fetch-published-jobs'
+import { fetchScrapedJobs } from '@/lib/jobs/fetch-scraped-jobs'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
+import type { JobRow } from '@/lib/supabase/database.types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { PublicJobCard } from '@/features/jobs/public-job-card'
-import { PublicJobListSkeleton } from '@/features/jobs/public-job-list-skeleton'
-import { PublicJobsPagination } from '@/features/jobs/public-jobs-pagination'
+import { InboxList } from '@/components/inbox/inbox-list'
+import type { InboxRowData } from '@/components/inbox/inbox-list-row'
+import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
+import { JobPeek, JOB_PEEK_PARAM } from '@/features/jobs/job-peek'
+import { jobPublicPills } from '@/features/jobs/job-inbox-row'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
   PUBLIC_SITE_MAIN_COLUMN,
 } from '@/features/jobs/public-site-layout'
 import {
-  PublishedJobsFiltersBar,
-  clearPublishedJobSearchPreserveSetup,
-  hasActivePublishedJobFilters,
+  PublishedJobsActiveFilters,
+  PublishedJobsFiltersButton,
 } from '@/features/jobs/published-jobs-filters'
-import { ScrapedJobsSection } from '@/features/scraped-jobs'
 
 const homeSearchSchema = publishedJobsFilterSchema.merge(
   z.object({
     setup: z.string().optional(),
+    tab: z.enum(['all', 'featured']).optional().catch(undefined),
+    // Retained (optional) so the shared filters drawer's navigate typing stays compatible.
     page: z.coerce.number().int().min(1).optional().catch(undefined),
     linkedinPage: z.coerce.number().int().min(1).optional().catch(undefined),
+    peek: z.string().optional(),
   })
 )
 
-const HOME_JOBS_PAGE_SIZE = 10
-const LINKEDIN_JOBS_PAGE_SIZE = 10
+type HomeTab = 'all' | 'featured'
 
 export const Route = createFileRoute('/')({
   validateSearch: homeSearchSchema,
@@ -79,11 +82,30 @@ function publishedJobFiltersFromHomeSearch(
 ): PublishedJobsFilters {
   const {
     setup: _setup,
+    tab: _tab,
     page: _page,
     linkedinPage: _linkedinPage,
+    peek: _peek,
     ...filters
   } = s
   return filters
+}
+
+function jobToRow(job: JobRow): InboxRowData {
+  return {
+    id: job.job_slug,
+    leading: (
+      <CompanyLogoAvatar
+        companyName={job.company_name}
+        logoUrl={job.company_logo}
+        className='size-6 rounded-[5px]'
+      />
+    ),
+    title: job.company_name,
+    preview: job.job_title,
+    pills: jobPublicPills(job),
+    timestamp: job.created_at ?? undefined,
+  }
 }
 
 function LandingPage() {
@@ -93,34 +115,79 @@ function LandingPage() {
 function LandingPageContent() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const { setup } = search
+  const { setup, peek } = search
+  const activeTab: HomeTab = search.tab ?? 'all'
   const jobFilters = publishedJobFiltersFromHomeSearch(search)
 
-  const jobsQuery = useQuery({
+  const [localQ, setLocalQ] = useState(search.q ?? '')
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync URL -> input
+    setLocalQ(search.q ?? '')
+  }, [search.q])
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = localQ.trim() || undefined
+      if (next !== search.q) {
+        void navigate({
+          search: (p) => ({ ...p, q: next }),
+          resetScroll: false,
+        })
+      }
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [localQ, navigate, search.q])
+
+  const recruiterQuery = useQuery({
     queryKey: ['public-jobs', 'recruiter', jobFilters],
     queryFn: () => fetchRecruiterPublishedJobs(jobFilters),
+    placeholderData: keepPreviousData,
   })
-  const homeJobs = jobsQuery.data ?? []
-  const filtersActive = hasActivePublishedJobFilters(search)
-  const totalPages = Math.max(
-    1,
-    Math.ceil(homeJobs.length / HOME_JOBS_PAGE_SIZE)
+  const scrapedQuery = useQuery({
+    queryKey: ['public-jobs', 'scraped', jobFilters],
+    queryFn: () => fetchScrapedJobs(jobFilters),
+    placeholderData: keepPreviousData,
+  })
+
+  const recruiterJobs = useMemo(
+    () => recruiterQuery.data ?? [],
+    [recruiterQuery.data]
   )
-  const currentPage = Math.min(Math.max(search.page ?? 1, 1), totalPages)
-  const paginatedHomeJobs = homeJobs.slice(
-    (currentPage - 1) * HOME_JOBS_PAGE_SIZE,
-    currentPage * HOME_JOBS_PAGE_SIZE
+  const scrapedJobs = useMemo(
+    () => scrapedQuery.data ?? [],
+    [scrapedQuery.data]
   )
 
-  const goToPage = (page: number) => {
-    const nextPage = Math.min(Math.max(page, 1), totalPages)
-    void navigate({
-      search: (prev) => ({
-        ...prev,
-        page: nextPage === 1 ? undefined : nextPage,
-      }),
-    })
-  }
+  const allJobs = useMemo(
+    () => [...recruiterJobs, ...scrapedJobs],
+    [recruiterJobs, scrapedJobs]
+  )
+
+  const counts = useMemo(
+    () => ({
+      all: allJobs.length,
+      featured: allJobs.filter((j) => j.featured).length,
+    }),
+    [allJobs]
+  )
+
+  const visibleJobs = useMemo(() => {
+    switch (activeTab) {
+      case 'featured':
+        return allJobs.filter((j) => j.featured)
+      case 'all':
+        return allJobs
+      default: {
+        const _exhaustive: never = activeTab
+        return _exhaustive
+      }
+    }
+  }, [activeTab, allJobs])
+
+  const rows = useMemo(() => visibleJobs.map(jobToRow), [visibleJobs])
+
+  const isLoading = recruiterQuery.isLoading || scrapedQuery.isLoading
+  const refetching = recruiterQuery.isFetching || scrapedQuery.isFetching
+  const isError = recruiterQuery.isError && scrapedQuery.isError
 
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
@@ -128,7 +195,7 @@ function LandingPageContent() {
       <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <main
           id='main-content'
-          className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-w-0 flex-1 flex-col gap-12 overflow-x-clip py-8 sm:gap-14 sm:py-10 md:gap-16 md:py-12`}
+          className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-w-0 flex-1 flex-col gap-8 overflow-x-clip py-8 sm:py-10`}
         >
           {setup === 'supabase' && (
             <Alert variant='destructive'>
@@ -140,6 +207,7 @@ function LandingPageContent() {
               </AlertDescription>
             </Alert>
           )}
+
           <section className='max-w-2xl space-y-5 sm:space-y-6'>
             <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl'>
               ServiceNow Careers,
@@ -152,102 +220,71 @@ function LandingPageContent() {
             </p>
           </section>
 
-          <section
-            id='open-roles'
-            className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'
-          >
-            <PublishedJobsFiltersBar search={search} navigate={navigate} />
-
-            {jobsQuery.isLoading && <PublicJobListSkeleton />}
-            {jobsQuery.isError && (
-              <p className='text-sm text-destructive'>
+          <div className='min-w-0'>
+            {isError ? (
+              <p className='px-4 py-12 text-center text-sm text-destructive'>
                 Could not load jobs. Configure Supabase or try again later.
               </p>
-            )}
-            <div className='grid gap-4'>
-              {paginatedHomeJobs.map((job) => (
-                <PublicJobCard key={job.id} job={job} />
-              ))}
-            </div>
-            {!jobsQuery.isLoading && homeJobs.length > HOME_JOBS_PAGE_SIZE && (
-              <PublicJobsPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalJobs={homeJobs.length}
-                pageSize={HOME_JOBS_PAGE_SIZE}
-                onPageChange={goToPage}
+            ) : (
+              <InboxList<HomeTab>
+                className='h-auto'
+                stickyTopClassName='top-14'
+                search={localQ}
+                onSearchChange={setLocalQ}
+                searchPlaceholder='Search roles or companies...'
+                pills={
+                  counts.featured > 0
+                    ? [
+                        { id: 'all', label: 'All', count: counts.all },
+                        {
+                          id: 'featured',
+                          label: 'Featured',
+                          count: counts.featured,
+                        },
+                      ]
+                    : [{ id: 'all', label: 'All', count: counts.all }]
+                }
+                activeFilter={activeTab}
+                onFilterChange={(tab) =>
+                  void navigate({
+                    search: (p) => ({
+                      ...p,
+                      tab: tab === 'all' ? undefined : tab,
+                    }),
+                    resetScroll: false,
+                  })
+                }
+                layoutId='home-jobs'
+                pillsTrailing={
+                  <div className='flex items-center gap-1.5'>
+                    <PublishedJobsActiveFilters
+                      search={search}
+                      navigate={navigate}
+                    />
+                    <PublishedJobsFiltersButton
+                      search={search}
+                      navigate={navigate}
+                    />
+                  </div>
+                }
+                rows={rows}
+                selectedId={peek ?? null}
+                onSelect={(slug) =>
+                  void navigate({
+                    search: (p) => ({ ...p, [JOB_PEEK_PARAM]: slug }),
+                    resetScroll: false,
+                  })
+                }
+                loading={isLoading}
+                busy={refetching}
+                emptyMessage='No roles match these filters yet.'
               />
             )}
-            {!jobsQuery.isLoading && homeJobs.length === 0 && filtersActive && (
-              <div className='rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center'>
-                <p className='text-sm text-muted-foreground'>
-                  No jobs match these filters yet.
-                </p>
-                <Button
-                  type='button'
-                  variant='link'
-                  className='mt-2 h-auto p-0 text-foreground'
-                  onClick={() => {
-                    void navigate({
-                      search: (prev) =>
-                        clearPublishedJobSearchPreserveSetup(prev),
-                    })
-                  }}
-                >
-                  Clear filters and show all roles
-                </Button>
-              </div>
-            )}
-          </section>
-
-          <ScrapedJobsSection
-            filters={jobFilters}
-            filtersActive={filtersActive}
-            page={search.linkedinPage ?? 1}
-            pageSize={LINKEDIN_JOBS_PAGE_SIZE}
-            onPageChange={(page) => {
-              void navigate({
-                search: (prev) => ({
-                  ...prev,
-                  linkedinPage: page === 1 ? undefined : page,
-                }),
-              })
-            }}
-            onClearFilters={() => {
-              void navigate({
-                search: (prev) => clearPublishedJobSearchPreserveSetup(prev),
-              })
-            }}
-          />
-
-          <section className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3'>
-            <div className='rounded-xl border bg-card p-6'>
-              <Briefcase className='mb-3 size-8 text-primary' />
-              <h2 className='font-medium'>Relevant only</h2>
-              <p className='mt-2 text-sm text-muted-foreground'>
-                Filters tuned for ServiceNow roles, locations, and engagement
-                models.
-              </p>
-            </div>
-            <div className='rounded-xl border bg-card p-6'>
-              <Shield className='mb-3 size-8 text-primary' />
-              <h2 className='font-medium'>Trusted listings</h2>
-              <p className='mt-2 text-sm text-muted-foreground'>
-                Featured placements and moderated ingestion keep quality high.
-              </p>
-            </div>
-            <div className='rounded-xl border bg-card p-6'>
-              <LineChart className='mb-3 size-8 text-primary' />
-              <h2 className='font-medium'>Built for scale</h2>
-              <p className='mt-2 text-sm text-muted-foreground'>
-                SEO-first job pages, sitemaps, and structured data for organic
-                growth.
-              </p>
-            </div>
-          </section>
+          </div>
         </main>
       </div>
       <PublicSiteFooter />
+      <JobPeek />
     </div>
   )
 }

@@ -14,6 +14,7 @@ export function ScrapedJobsSection({
   pageSize,
   onPageChange,
   onClearFilters,
+  showTopDivider = true,
 }: {
   filters: PublishedJobsFilters
   filtersActive: boolean
@@ -21,6 +22,8 @@ export function ScrapedJobsSection({
   pageSize: number
   onPageChange: (page: number) => void
   onClearFilters: () => void
+  /** Hide the leading divider when no roles render above this section. */
+  showTopDivider?: boolean
 }) {
   const scrapedQuery = useQuery({
     queryKey: ['public-jobs', 'scraped', filters],
@@ -45,7 +48,9 @@ export function ScrapedJobsSection({
       className='w-full scroll-mt-28 space-y-4 sm:scroll-mt-32'
       aria-label='LinkedIn roles'
     >
-      {!isEmptyWithoutFilters && <Separator className='my-2' />}
+      {showTopDivider && !isEmptyWithoutFilters && (
+        <Separator className='my-2' />
+      )}
 
       {scrapedQuery.isLoading && <PublicJobListSkeleton count={3} />}
       {scrapedQuery.isError && (

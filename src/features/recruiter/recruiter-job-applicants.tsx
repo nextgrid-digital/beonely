@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   getSupabaseBrowserClient,
@@ -8,7 +7,7 @@ import {
 } from '@/lib/supabase/client'
 import type { Enums, Tables } from '@/lib/supabase/database.types'
 import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
-import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -16,25 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { InboxList } from '@/components/inbox/inbox-list'
+import type { InboxRowData } from '@/components/inbox/inbox-list-row'
+import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
+import { PeekPanel } from '@/components/peek/peek-panel'
 import { ApplicationProfileSnapshotReadonly } from '@/features/recruiter/application-profile-snapshot-readonly'
 
 type ApplicationRow = Tables<'applications'>
 type ApplicationStatus = Enums<'application_status'>
+type ApplicantsTab = 'all' | ApplicationStatus
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
   'new',
@@ -43,12 +32,38 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   'rejected',
 ]
 
+const STATUS_LABEL: Record<ApplicationStatus, string> = {
+  new: 'New',
+  reviewed: 'Reviewed',
+  shortlisted: 'Shortlisted',
+  rejected: 'Rejected',
+}
+
+function applicationStatusPill(status: ApplicationStatus): InboxPillItem {
+  switch (status) {
+    case 'new':
+      return { label: 'New', variant: 'info' }
+    case 'reviewed':
+      return { label: 'Reviewed', variant: 'muted' }
+    case 'shortlisted':
+      return { label: 'Shortlisted', variant: 'success' }
+    case 'rejected':
+      return { label: 'Rejected', variant: 'danger' }
+    default: {
+      const _exhaustive: never = status
+      return _exhaustive
+    }
+  }
+}
+
 export function RecruiterJobApplicantsList() {
   const { jobId } = useRecruiterJobWorkspace()
   const qc = useQueryClient()
   const [profileSheetApp, setProfileSheetApp] = useState<ApplicationRow | null>(
     null
   )
+  const [tab, setTab] = useState<ApplicantsTab>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const appsQuery = useQuery({
     queryKey: ['job-applicants', jobId],
@@ -89,228 +104,170 @@ export function RecruiterJobApplicantsList() {
     )
   }
 
+  const apps = appsQuery.data ?? []
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+
+  const rows: InboxRowData[] = apps
+    .filter((app) => (tab === 'all' ? true : app.status === tab))
+    .filter((app) =>
+      normalizedQuery
+        ? [app.candidate_name, app.candidate_email, app.current_company]
+            .filter(Boolean)
+            .some((v) => (v as string).toLowerCase().includes(normalizedQuery))
+        : true
+    )
+    .map((app) => ({
+      id: app.id,
+      title: app.candidate_name,
+      preview: app.current_company ?? app.candidate_email,
+      pills: [applicationStatusPill(app.status)],
+      timestamp: app.created_at,
+    }))
+
+  const tabPills = [
+    { id: 'all' as const, label: 'All', count: apps.length },
+    ...STATUS_OPTIONS.map((status) => ({
+      id: status,
+      label: STATUS_LABEL[status],
+      count: apps.filter((app) => app.status === status).length,
+    })),
+  ]
+
+  if (appsQuery.isError) {
+    return (
+      <p className='text-sm text-destructive'>
+        Could not load applicants. Apply the latest database migration if this
+        fails.
+      </p>
+    )
+  }
+
   return (
     <div className='space-y-6'>
-      {appsQuery.isLoading && (
-        <Loader2 className='size-6 animate-spin text-muted-foreground' />
-      )}
-      {appsQuery.isError && (
-        <p className='text-sm text-destructive'>
-          Could not load applicants. Apply the latest database migration if this
-          fails.
-        </p>
-      )}
+      <InboxList<ApplicantsTab>
+        className='h-auto'
+        title='Applicants'
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder='Search applicants...'
+        pills={tabPills}
+        activeFilter={tab}
+        onFilterChange={setTab}
+        layoutId='recruiter-applicants'
+        rows={rows}
+        selectedId={profileSheetApp?.id ?? null}
+        onSelect={(id) => {
+          const next = apps.find((app) => app.id === id) ?? null
+          setProfileSheetApp(next)
+        }}
+        loading={appsQuery.isLoading}
+        emptyMessage='No applicants in this view yet.'
+      />
 
-      <div className='space-y-3 md:hidden'>
-        {(appsQuery.data ?? []).map((app) => (
-          <div
-            key={app.id}
-            className='rounded-lg border border-border/80 bg-card p-4'
-          >
-            <div className='flex flex-wrap items-start justify-between gap-2'>
-              <div>
-                <p className='font-medium'>{app.candidate_name}</p>
-                <p className='text-xs text-muted-foreground'>
-                  {new Date(app.created_at).toLocaleString()}
-                </p>
-              </div>
-              <Button
-                type='button'
-                variant='link'
-                className='h-auto min-h-11 px-0 text-sm'
-                onClick={() => setProfileSheetApp(app)}
-              >
-                View profile
-              </Button>
-            </div>
-            <div className='mt-3 space-y-1 text-sm'>
-              <p>{app.candidate_email}</p>
-              <p>{app.candidate_phone ?? 'Phone not provided'}</p>
-              <p>{app.current_company ?? 'Current company not provided'}</p>
-              {app.linkedin_url ? (
-                <a
-                  href={app.linkedin_url}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-primary underline-offset-4 hover:underline'
-                >
-                  LinkedIn profile
-                </a>
-              ) : null}
-              {app.resume_url ? (
-                <a
-                  href={app.resume_url}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='block text-primary underline-offset-4 hover:underline'
-                >
-                  Resume / Portfolio
-                </a>
-              ) : app.resume_storage_path ? (
-                <span className='text-muted-foreground'>Resume uploaded</span>
-              ) : null}
-            </div>
-            <div className='mt-3'>
+      <PeekPanel
+        open={Boolean(profileSheetApp)}
+        onOpenChange={(open) => {
+          if (!open) setProfileSheetApp(null)
+        }}
+        title={profileSheetApp?.candidate_name ?? 'Candidate profile'}
+        description='Snapshot from when they applied.'
+        bodyClassName='space-y-6 px-4 py-4 sm:px-6'
+      >
+        {profileSheetApp ? (
+          <>
+            <div className='space-y-2'>
+              <Label htmlFor='applicant-status'>Status</Label>
               <Select
-                value={app.status}
+                value={profileSheetApp.status}
                 disabled={updateStatus.isPending}
                 onValueChange={(v) =>
                   updateStatus.mutate({
-                    id: app.id,
+                    id: profileSheetApp.id,
                     status: v as ApplicationStatus,
                   })
                 }
               >
-                <SelectTrigger className='h-11 w-full'>
+                <SelectTrigger id='applicant-status' className='h-9 w-full'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {s}
+                      {STATUS_LABEL[s]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        ))}
-      </div>
-      <div className='hidden overflow-x-auto md:block'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>LinkedIn</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Applied</TableHead>
-              <TableHead>Links</TableHead>
-              <TableHead>Profile</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(appsQuery.data ?? []).map((app) => (
-              <TableRow key={app.id}>
-                <TableCell className='font-medium'>
-                  {app.candidate_name}
-                </TableCell>
-                <TableCell className='max-w-[10rem] truncate text-sm'>
-                  {app.candidate_email}
-                </TableCell>
-                <TableCell className='text-sm'>
-                  {app.candidate_phone ?? '—'}
-                </TableCell>
-                <TableCell className='max-w-[8rem] truncate text-sm'>
-                  {app.linkedin_url ? (
+
+            <dl className='grid gap-2 text-sm'>
+              <ContactRow label='Email' value={profileSheetApp.candidate_email} />
+              <ContactRow
+                label='Phone'
+                value={profileSheetApp.candidate_phone}
+              />
+              <ContactRow
+                label='Company'
+                value={profileSheetApp.current_company}
+              />
+              {profileSheetApp.linkedin_url ? (
+                <div className='flex flex-wrap items-center gap-x-2'>
+                  <dt className='text-muted-foreground'>LinkedIn</dt>
+                  <dd>
                     <a
-                      href={app.linkedin_url}
+                      href={profileSheetApp.linkedin_url}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
                     >
-                      Profile
+                      View profile
                     </a>
-                  ) : (
-                    '—'
-                  )}
-                </TableCell>
-                <TableCell className='text-sm'>
-                  {app.current_company ?? '—'}
-                </TableCell>
-                <TableCell className='text-xs whitespace-nowrap text-muted-foreground'>
-                  {new Date(app.created_at).toLocaleString()}
-                </TableCell>
-                <TableCell className='text-sm'>
-                  <div className='flex flex-col gap-1'>
-                    {app.resume_url ? (
-                      <a
-                        href={app.resume_url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='text-primary underline-offset-4 hover:underline'
-                      >
-                        Portfolio
-                      </a>
-                    ) : null}
-                    {app.resume_storage_path ? (
-                      <span className='text-muted-foreground'>
-                        Resume uploaded
-                      </span>
-                    ) : null}
-                    {!app.resume_url && !app.resume_storage_path ? '—' : null}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    type='button'
-                    variant='link'
-                    className='h-auto px-0 text-sm'
-                    onClick={() => setProfileSheetApp(app)}
-                  >
-                    View profile
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={app.status}
-                    disabled={updateStatus.isPending}
-                    onValueChange={(v) =>
-                      updateStatus.mutate({
-                        id: app.id,
-                        status: v as ApplicationStatus,
-                      })
-                    }
-                  >
-                    <SelectTrigger className='h-8 w-[9.5rem]'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OPTIONS.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                  </dd>
+                </div>
+              ) : null}
+              {profileSheetApp.resume_url ? (
+                <div className='flex flex-wrap items-center gap-x-2'>
+                  <dt className='text-muted-foreground'>Resume</dt>
+                  <dd>
+                    <a
+                      href={profileSheetApp.resume_url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-primary underline-offset-4 hover:underline'
+                    >
+                      Open resume / portfolio
+                    </a>
+                  </dd>
+                </div>
+              ) : profileSheetApp.resume_storage_path ? (
+                <div className='flex flex-wrap items-center gap-x-2'>
+                  <dt className='text-muted-foreground'>Resume</dt>
+                  <dd className='text-muted-foreground'>Uploaded</dd>
+                </div>
+              ) : null}
+            </dl>
 
-      {!appsQuery.isLoading && (appsQuery.data ?? []).length === 0 && (
-        <p className='text-sm text-muted-foreground'>No applicants yet.</p>
-      )}
+            <ApplicationProfileSnapshotReadonly
+              snapshot={profileSheetApp.resume_structured_snapshot}
+            />
+          </>
+        ) : null}
+      </PeekPanel>
+    </div>
+  )
+}
 
-      <Sheet
-        open={Boolean(profileSheetApp)}
-        onOpenChange={(open) => {
-          if (!open) setProfileSheetApp(null)
-        }}
-      >
-        <SheetContent
-          side='right'
-          className='flex w-full flex-col gap-0 overflow-hidden sm:max-w-xl'
-        >
-          <SheetHeader className='shrink-0 border-b border-border pb-4'>
-            <SheetTitle>Candidate profile</SheetTitle>
-            <SheetDescription>
-              Snapshot from when they applied. Contact details are in the table.
-            </SheetDescription>
-          </SheetHeader>
-          <div className='min-h-0 flex-1 overflow-y-auto py-4'>
-            {profileSheetApp ? (
-              <ApplicationProfileSnapshotReadonly
-                snapshot={profileSheetApp.resume_structured_snapshot}
-              />
-            ) : null}
-          </div>
-        </SheetContent>
-      </Sheet>
+function ContactRow({
+  label,
+  value,
+}: {
+  label: string
+  value: string | null | undefined
+}) {
+  return (
+    <div className='flex flex-wrap items-center gap-x-2'>
+      <dt className='text-muted-foreground'>{label}</dt>
+      <dd className='min-w-0 break-words'>{value?.trim() || '—'}</dd>
     </div>
   )
 }

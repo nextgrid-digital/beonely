@@ -25,7 +25,6 @@ import type { JobRow, RecruiterRow } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -45,17 +44,12 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { InboxList } from '@/components/inbox/inbox-list'
+import type { InboxRowData } from '@/components/inbox/inbox-list-row'
+import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
 import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
 import { JobShareMenu } from '@/features/recruiter/job-share-menu'
+import { RecruiterJobPeek } from '@/features/recruiter/recruiter-job-peek'
 import {
   ListingPlanCheckout,
   selectedPlanPriceLabel,
@@ -72,11 +66,7 @@ type RecruiterJobsPayload = {
   applicationCounts: Record<string, number>
 }
 
-const tableHeadClass =
-  'h-9 bg-muted/40 text-xs font-medium text-muted-foreground'
-const tableCellClass = 'py-2.5 align-middle'
-const recruiterJobsTableChrome = 'overflow-hidden rounded-lg bg-card'
-const recruiterJobsTableRowClass = 'border-0'
+type RecruiterJobsTab = 'all' | 'live' | 'pending' | 'unpaid'
 
 function jobListingState(job: JobRow) {
   const canPay =
@@ -86,23 +76,44 @@ function jobListingState(job: JobRow) {
   return { canPay, isLive, canRenew }
 }
 
-function RecruiterJobStatusBadges({ job }: { job: JobRow }) {
-  return (
-    <div className='flex flex-wrap items-center gap-1'>
-      <Badge
-        variant={job.approval_status === 'rejected' ? 'destructive' : 'outline'}
-        className='text-xs capitalize'
-      >
-        {job.approval_status}
-      </Badge>
-      <Badge variant='outline' className='text-xs capitalize'>
-        {job.payment_status}
-      </Badge>
-      <Badge variant={job.featured ? 'default' : 'outline'} className='text-xs'>
-        {job.featured ? 'Featured' : 'Standard'}
-      </Badge>
-    </div>
-  )
+/** Right-aligned status pills for a recruiter's own listing (approval, payment, featured). */
+function recruiterJobPills(job: JobRow): InboxPillItem[] {
+  const pills: InboxPillItem[] = []
+  switch (job.approval_status) {
+    case 'approved':
+      pills.push({ label: 'Approved', variant: 'success' })
+      break
+    case 'rejected':
+      pills.push({ label: 'Rejected', variant: 'danger' })
+      break
+    case 'pending':
+    default:
+      pills.push({ label: 'Pending', variant: 'attention' })
+      break
+  }
+  if (job.payment_status === 'unpaid') {
+    pills.push({ label: 'Unpaid', variant: 'attention' })
+  } else if (job.featured) {
+    pills.push({ label: 'Featured', variant: 'success' })
+  }
+  return pills.slice(0, 2)
+}
+
+function jobMatchesRecruiterTab(job: JobRow, tab: RecruiterJobsTab): boolean {
+  switch (tab) {
+    case 'all':
+      return true
+    case 'live':
+      return jobListingIsLive(job)
+    case 'pending':
+      return job.approval_status === 'pending'
+    case 'unpaid':
+      return job.payment_status === 'unpaid'
+    default: {
+      const _exhaustive: never = tab
+      return _exhaustive
+    }
+  }
 }
 
 function RecruiterJobRowActions({
@@ -194,6 +205,9 @@ function RecruiterJobRowActions({
 export function RecruiterPortal() {
   const { user, session } = useAuth()
   const qc = useQueryClient()
+  const [peekJob, setPeekJob] = useState<JobRow | null>(null)
+  const [tab, setTab] = useState<RecruiterJobsTab>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const recruiterQuery = useQuery({
     queryKey: ['recruiter', user?.id],
@@ -368,9 +382,46 @@ export function RecruiterPortal() {
 
   const jobs = jobsQuery.data?.jobs ?? []
   const applicationCounts = jobsQuery.data?.applicationCounts ?? {}
-  const showJobsSkeleton = jobsQuery.isLoading
   const showEmptyJobs =
     !jobsQuery.isLoading && jobsQuery.isSuccess && jobs.length === 0
+
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const recruiterRows: InboxRowData[] = jobs
+    .filter((job) => jobMatchesRecruiterTab(job, tab))
+    .filter((job) =>
+      normalizedQuery
+        ? (job.job_title ?? '').toLowerCase().includes(normalizedQuery)
+        : true
+    )
+    .map((job) => {
+      const applicantCount = applicationCounts[job.id] ?? 0
+      return {
+        id: job.id,
+        title: job.job_title?.trim() || 'Untitled job',
+        preview: `${applicantCount} applicant${applicantCount === 1 ? '' : 's'}`,
+        pills: recruiterJobPills(job),
+        timestamp: job.created_at ?? undefined,
+      }
+    })
+
+  const recruiterTabPills = [
+    { id: 'all' as const, label: 'All', count: jobs.length },
+    {
+      id: 'live' as const,
+      label: 'Live',
+      count: jobs.filter((j) => jobListingIsLive(j)).length,
+    },
+    {
+      id: 'pending' as const,
+      label: 'Pending',
+      count: jobs.filter((j) => j.approval_status === 'pending').length,
+    },
+    {
+      id: 'unpaid' as const,
+      label: 'Unpaid',
+      count: jobs.filter((j) => j.payment_status === 'unpaid').length,
+    },
+  ]
 
   return (
     <div className='space-y-6'>
@@ -394,9 +445,7 @@ export function RecruiterPortal() {
           </Button>
         </div>
       ) : null}
-      {!jobsQuery.isError && showJobsSkeleton ? (
-        <RecruiterJobsTableSkeleton />
-      ) : !jobsQuery.isError && showEmptyJobs ? (
+      {!jobsQuery.isError && showEmptyJobs ? (
         <Card className='border-dashed bg-muted/30'>
           <CardContent className='flex flex-col items-center gap-4 py-12 text-center'>
             <Briefcase className='size-12 text-muted-foreground' aria-hidden />
@@ -417,203 +466,61 @@ export function RecruiterPortal() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <>
-          <div className='space-y-3 md:hidden'>
-            {jobs.map((job) => {
-              const { canPay, isLive, canRenew } = jobListingState(job)
-              return (
-                <Card key={job.id} className='border-border/80 shadow-none'>
-                  <CardContent className='space-y-3 p-3'>
-                    <div className='space-y-0.5'>
-                      <Link
-                        to='/recruiter/jobs/$jobId/edit'
-                        params={{ jobId: job.id }}
-                        className='line-clamp-2 font-medium hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                      >
-                        {job.job_title?.trim() || 'Untitled job'}
-                      </Link>
-                      <p className='text-xs text-muted-foreground'>
-                        {applicationCounts[job.id] ?? 0} applicants
-                      </p>
-                    </div>
-                    <RecruiterJobStatusBadges job={job} />
-                    <RecruiterJobRowActions
-                      job={job}
-                      canPay={canPay}
-                      isLive={isLive}
-                      canRenew={canRenew}
-                      accessToken={session?.access_token}
-                    />
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-          <div className='hidden md:block'>
-            <div className={recruiterJobsTableChrome}>
-              <Table>
-                <TableHeader className='[&_tr]:border-0'>
-                  <TableRow
-                    className={cn(
-                      recruiterJobsTableRowClass,
-                      'hover:bg-transparent'
-                    )}
-                  >
-                    <TableHead className={tableHeadClass}>Job</TableHead>
-                    <TableHead className={tableHeadClass}>Status</TableHead>
-                    <TableHead
-                      className={cn(
-                        tableHeadClass,
-                        'w-[1%] text-end whitespace-nowrap tabular-nums'
-                      )}
-                    >
-                      Applicants
-                    </TableHead>
-                    <TableHead className={cn(tableHeadClass, 'text-end')}>
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className='[&_tr]:border-0'>
-                  {jobs.map((job) => {
-                    const { canPay, isLive, canRenew } = jobListingState(job)
-                    const applicantCount = applicationCounts[job.id] ?? 0
-                    return (
-                      <TableRow
-                        key={job.id}
-                        className={cn('group', recruiterJobsTableRowClass)}
-                      >
-                        <TableCell
-                          className={cn(
-                            tableCellClass,
-                            'max-w-[14rem] whitespace-normal'
-                          )}
-                        >
-                          <Link
-                            to='/recruiter/jobs/$jobId/edit'
-                            params={{ jobId: job.id }}
-                            className='line-clamp-2 font-medium hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                          >
-                            {job.job_title?.trim() || 'Untitled job'}
-                          </Link>
-                        </TableCell>
-                        <TableCell className={tableCellClass}>
-                          <RecruiterJobStatusBadges job={job} />
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            tableCellClass,
-                            'text-end text-muted-foreground tabular-nums'
-                          )}
-                        >
-                          {applicantCount}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            tableCellClass,
-                            'max-w-[min(100%,20rem)] text-end'
-                          )}
-                        >
-                          <RecruiterJobRowActions
-                            job={job}
-                            canPay={canPay}
-                            isLive={isLive}
-                            canRenew={canRenew}
-                            accessToken={session?.access_token}
-                            compact
-                            className='justify-end'
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
+      ) : !jobsQuery.isError ? (
+        <InboxList<RecruiterJobsTab>
+          className='h-auto'
+          title='My jobs'
+          titleActions={
+            <Button asChild size='sm'>
+              <Link to='/recruiter/jobs/new'>
+                <Plus className='me-1 size-4' aria-hidden />
+                New job
+              </Link>
+            </Button>
+          }
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder='Search your jobs...'
+          pills={recruiterTabPills}
+          activeFilter={tab}
+          onFilterChange={setTab}
+          layoutId='recruiter-jobs'
+          rows={recruiterRows}
+          selectedId={peekJob?.id ?? null}
+          onSelect={(id) => {
+            const next = jobs.find((j) => j.id === id) ?? null
+            setPeekJob(next)
+          }}
+          loading={jobsQuery.isLoading}
+          emptyMessage='No jobs match this view.'
+        />
+      ) : null}
 
-function RecruiterJobsTableSkeleton() {
-  return (
-    <>
-      <div className='space-y-3 md:hidden'>
-        {Array.from({ length: 3 }, (_, i) => (
-          <Card key={`mobile-${i}`} className='border-border/80 shadow-none'>
-            <CardContent className='space-y-3 p-3'>
-              <Skeleton className='h-5 w-2/3' />
-              <div className='flex gap-1.5'>
-                <Skeleton className='h-5 w-16' />
-                <Skeleton className='h-5 w-16' />
-                <Skeleton className='h-5 w-14' />
-              </div>
-              <div className='flex gap-1.5 overflow-hidden'>
-                <Skeleton className='h-11 w-16 shrink-0' />
-                <Skeleton className='h-11 w-16 shrink-0' />
-                <Skeleton className='h-11 w-14 shrink-0' />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <div className='hidden md:block'>
-        <div className={recruiterJobsTableChrome}>
-          <Table>
-            <TableHeader className='[&_tr]:border-0'>
-              <TableRow
-                className={cn(
-                  recruiterJobsTableRowClass,
-                  'hover:bg-transparent'
-                )}
-              >
-                <TableHead className={tableHeadClass}>Job</TableHead>
-                <TableHead className={tableHeadClass}>Status</TableHead>
-                <TableHead
-                  className={cn(
-                    tableHeadClass,
-                    'w-[1%] text-end whitespace-nowrap tabular-nums'
-                  )}
-                >
-                  Applicants
-                </TableHead>
-                <TableHead className={cn(tableHeadClass, 'text-end')}>
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className='[&_tr]:border-0'>
-              {Array.from({ length: 5 }, (_, i) => (
-                <TableRow key={i} className={recruiterJobsTableRowClass}>
-                  <TableCell className={tableCellClass}>
-                    <Skeleton className='h-4 w-44' />
-                  </TableCell>
-                  <TableCell className={tableCellClass}>
-                    <div className='flex gap-1'>
-                      <Skeleton className='h-5 w-16' />
-                      <Skeleton className='h-5 w-14' />
-                    </div>
-                  </TableCell>
-                  <TableCell className={cn(tableCellClass, 'text-end')}>
-                    <Skeleton className='ms-auto h-4 w-6' />
-                  </TableCell>
-                  <TableCell className={cn(tableCellClass, 'text-end')}>
-                    <div className='flex justify-end gap-1.5'>
-                      <Skeleton className='h-8 w-14' />
-                      <Skeleton className='h-8 w-12' />
-                      <Skeleton className='h-8 w-12' />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    </>
+      <RecruiterJobPeek
+        job={peekJob}
+        open={Boolean(peekJob)}
+        onOpenChange={(open) => {
+          if (!open) setPeekJob(null)
+        }}
+        applicantCount={peekJob ? (applicationCounts[peekJob.id] ?? 0) : 0}
+        actions={
+          peekJob
+            ? (() => {
+                const { canPay, isLive, canRenew } = jobListingState(peekJob)
+                return (
+                  <RecruiterJobRowActions
+                    job={peekJob}
+                    canPay={canPay}
+                    isLive={isLive}
+                    canRenew={canRenew}
+                    accessToken={session?.access_token}
+                  />
+                )
+              })()
+            : null
+        }
+      />
+    </div>
   )
 }
 
