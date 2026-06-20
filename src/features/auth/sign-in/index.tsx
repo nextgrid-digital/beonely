@@ -71,7 +71,7 @@ export function SignIn() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <UserAuthForm redirectTo={redirect} />
+          <UserAuthForm redirectTo={redirect} googleIntent={intent} />
         </CardContent>
         <CardFooter>
           <p className='px-2 text-center text-sm text-muted-foreground sm:px-8'>

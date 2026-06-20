@@ -19,6 +19,7 @@ import { Route as StaffSignInRouteImport } from './routes/staff/sign-in'
 import { Route as JobsSlugRouteImport } from './routes/jobs/$slug'
 import { Route as HireSignUpRouteImport } from './routes/hire/sign-up'
 import { Route as HireSignInRouteImport } from './routes/hire/sign-in'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApplySignUpRouteImport } from './routes/apply/sign-up'
 import { Route as ApplySignInRouteImport } from './routes/apply/sign-in'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -121,6 +122,11 @@ const HireSignUpRoute = HireSignUpRouteImport.update({
 const HireSignInRoute = HireSignInRouteImport.update({
   id: '/hire/sign-in',
   path: '/hire/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApplySignUpRoute = ApplySignUpRouteImport.update({
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -511,6 +518,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -578,6 +586,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -645,6 +654,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/apply/sign-in'
     | '/apply/sign-up'
+    | '/auth/callback'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/apply/sign-in'
     | '/apply/sign-up'
+    | '/auth/callback'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -771,6 +782,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/apply/sign-in'
     | '/apply/sign-up'
+    | '/auth/callback'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -834,6 +846,7 @@ export interface RootRouteChildren {
   errors503Route: typeof errors503Route
   ApplySignInRoute: typeof ApplySignInRoute
   ApplySignUpRoute: typeof ApplySignUpRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   HireSignInRoute: typeof HireSignInRoute
   HireSignUpRoute: typeof HireSignUpRoute
   StaffSignInRoute: typeof StaffSignInRoute
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       path: '/hire/sign-in'
       fullPath: '/hire/sign-in'
       preLoaderRoute: typeof HireSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apply/sign-up': {
@@ -1494,6 +1514,7 @@ const rootRouteChildren: RootRouteChildren = {
   errors503Route: errors503Route,
   ApplySignInRoute: ApplySignInRoute,
   ApplySignUpRoute: ApplySignUpRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   HireSignInRoute: HireSignInRoute,
   HireSignUpRoute: HireSignUpRoute,
   StaffSignInRoute: StaffSignInRoute,

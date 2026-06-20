@@ -6,12 +6,17 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
+import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '@/features/auth/components/google-sign-in-button'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -40,6 +45,8 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   onSuccess?: () => void | Promise<void>
   /** Prefill email (e.g. after sign-up tab asks user to confirm then sign in). */
   defaultEmail?: string
+  /** Persona entry point for the "Continue with Google" button. */
+  googleIntent?: SignInIntent
 }
 
 export function UserAuthForm({
@@ -47,6 +54,7 @@ export function UserAuthForm({
   redirectTo,
   onSuccess,
   defaultEmail,
+  googleIntent,
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -120,6 +128,8 @@ export function UserAuthForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
+        <GoogleSignInButton intent={googleIntent} redirect={redirectTo} />
+        <AuthDivider label='or continue with email' />
         <FormField
           control={form.control}
           name='email'

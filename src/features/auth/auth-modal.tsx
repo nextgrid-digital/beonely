@@ -94,7 +94,11 @@ function AuthModalBody({
         <TabsTrigger value='signUp'>Create account</TabsTrigger>
       </TabsList>
       <TabsContent value='signIn' className='mt-0'>
-        <UserAuthForm onSuccess={finishSignIn} defaultEmail={prefillEmail} />
+        <UserAuthForm
+          onSuccess={finishSignIn}
+          defaultEmail={prefillEmail}
+          googleIntent={signUpIntent}
+        />
       </TabsContent>
       <TabsContent value='signUp' className='mt-0'>
         <SignUpForm onSuccess={handleSignUpSuccess} intent={signUpIntent} />

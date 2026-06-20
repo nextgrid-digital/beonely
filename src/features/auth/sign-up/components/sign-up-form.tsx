@@ -20,6 +20,10 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '@/features/auth/components/google-sign-in-button'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -290,6 +294,8 @@ export function SignUpForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
+        <GoogleSignInButton intent={intent} />
+        <AuthDivider label='or sign up with email' />
         <FormField
           control={form.control}
           name='email'

@@ -73,6 +73,7 @@ export function StaffSignIn() {
           ) : null}
           <UserAuthForm
             redirectTo={redirect}
+            googleIntent='admin'
             onSuccess={onStaffSignInSuccess}
           />
         </CardContent>
