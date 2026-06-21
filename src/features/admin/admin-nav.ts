@@ -22,6 +22,7 @@ export const adminOperationsNav: AdminNavItem[] = [
   { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { title: 'Jobs', href: '/admin/jobs', icon: Shield },
   { title: 'Revenue', href: '/admin/revenue', icon: IndianRupee },
+  { title: 'Hiring requests', href: '/admin/hiring-requests', icon: Briefcase },
   { title: 'Recruiters', href: '/admin/recruiters', icon: Users },
   { title: 'Candidates', href: '/admin/candidates', icon: UserCircle },
 ]

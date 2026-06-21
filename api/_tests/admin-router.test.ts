@@ -55,6 +55,20 @@ describe('api/admin/[...segments] router', () => {
     )
     expect(res.statusCode).toBe(401)
   })
+
+  it('dispatches hiring-requests route and enforces staff auth', async () => {
+    const { default: handler } = await import('../admin/[...segments].js')
+    const res = mockRes()
+    await handler(
+      {
+        method: 'GET',
+        query: { segments: 'hiring-requests' },
+        headers: {},
+      } as unknown as VercelRequest,
+      res
+    )
+    expect(res.statusCode).toBe(401)
+  })
 })
 
 describe('api/admin email routes', () => {

@@ -8,6 +8,7 @@ import { handle as handleEmailAutomations } from '../_handlers/admin/email-autom
 import { handle as handleEmailTestSend } from '../_handlers/admin/email-test-send.js'
 import { handle as handleEmailAnalytics } from '../_handlers/admin/email-analytics.js'
 import { handle as handleEmailCampaignRecipients } from '../_handlers/admin/email-campaign-recipients.js'
+import { handle as handleHiringRequests } from '../_handlers/admin/hiring-requests.js'
 import {
   handle as handleEmailTemplates,
   handleDuplicate as handleEmailTemplatesDuplicate,
@@ -29,6 +30,7 @@ const ROUTES: Record<string, AdminRouteHandler> = {
   'email/analytics': handleEmailAnalytics,
   'email/campaign-recipients': handleEmailCampaignRecipients,
   'email/templates': handleEmailTemplates,
+  'hiring-requests': handleHiringRequests,
 }
 
 const ADMIN_API_PREFIX = '/api/admin'

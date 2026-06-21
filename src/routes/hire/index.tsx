@@ -1,14 +1,12 @@
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, Mail, UserPlus } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, UserPlus } from 'lucide-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { HiringRequestForm } from '@/features/jobs/hiring-request-form'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
   PUBLIC_SITE_MAIN_COLUMN,
 } from '@/features/jobs/public-site-layout'
-
-const shortlistMailto =
-  'mailto:nextgrid_os@agentmail.to?cc=hello@nextgrid.digital&subject=Beonely%20ServiceNow%20hiring%20request'
 
 export const Route = createFileRoute('/hire/')({
   component: HirePage,
@@ -33,13 +31,13 @@ function HirePage() {
             <p className='max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg'>
               Beonely is building a focused hiring layer for the ServiceNow ecosystem.
               If you need developers, architects, consultants, or admins, start with a
-              paid listing or request a curated shortlist.
+              paid listing or submit a curated shortlist request.
             </p>
             <div className='flex flex-col gap-3 sm:flex-row'>
               <Button asChild size='lg' className='min-w-[13rem]'>
-                <a href={shortlistMailto}>
+                <a href='#hiring-request-form'>
                   Request a shortlist
-                  <Mail className='size-4' aria-hidden />
+                  <ArrowRight className='size-4' aria-hidden />
                 </a>
               </Button>
               <Button asChild size='lg' variant='outline' className='min-w-[13rem]'>
@@ -88,11 +86,11 @@ function HirePage() {
 
             <article className='rounded-2xl border bg-card p-6 shadow-sm'>
               <div className='mb-4 flex items-center gap-2 text-sm font-medium text-foreground'>
-                <Mail className='size-4' aria-hidden />
+                <ArrowRight className='size-4' aria-hidden />
                 Concierge hiring
               </div>
               <h2 className='text-xl font-semibold tracking-tight'>
-                Need candidates faster? Request a curated shortlist.
+                Need candidates faster? Send a structured hiring brief.
               </h2>
               <p className='mt-3 text-sm leading-6 text-muted-foreground'>
                 Best for urgent or hard-to-fill roles where you want Beonely to help with
@@ -101,24 +99,28 @@ function HirePage() {
               <ul className='mt-5 space-y-3 text-sm text-muted-foreground'>
                 <li className='flex gap-2'>
                   <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  Share the role, seniority, location, and timeline.
+                  Capture the role, hiring timeline, location, and ServiceNow scope.
                 </li>
                 <li className='flex gap-2'>
                   <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  We can use the Beonely pipeline to identify relevant ServiceNow talent.
+                  Route demand into an internal pipeline instead of a generic inbox.
                 </li>
                 <li className='flex gap-2'>
                   <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  This is the fastest path if you care more about shortlist quality than a posting alone.
+                  Use this when shortlist quality matters more than a posting alone.
                 </li>
               </ul>
               <Button asChild variant='outline' className='mt-6 w-full sm:w-auto'>
-                <a href={shortlistMailto}>
-                  Email your hiring need
+                <a href='#hiring-request-form'>
+                  Open hiring brief
                   <ArrowRight className='size-4' aria-hidden />
                 </a>
               </Button>
             </article>
+          </section>
+
+          <section id='hiring-request-form'>
+            <HiringRequestForm />
           </section>
 
           <section className='max-w-3xl rounded-2xl border bg-muted/40 p-6 sm:p-8'>

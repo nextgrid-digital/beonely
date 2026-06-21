@@ -61,6 +61,7 @@ import { Route as AuthenticatedRecruiterPricingIndexRouteImport } from './routes
 import { Route as AuthenticatedAdminRevenueIndexRouteImport } from './routes/_authenticated/admin/revenue/index'
 import { Route as AuthenticatedAdminRecruitersIndexRouteImport } from './routes/_authenticated/admin/recruiters/index'
 import { Route as AuthenticatedAdminJobsIndexRouteImport } from './routes/_authenticated/admin/jobs/index'
+import { Route as AuthenticatedAdminHiringRequestsIndexRouteImport } from './routes/_authenticated/admin/hiring-requests/index'
 import { Route as AuthenticatedAdminEmailIndexRouteImport } from './routes/_authenticated/admin/email/index'
 import { Route as AuthenticatedAdminCandidatesIndexRouteImport } from './routes/_authenticated/admin/candidates/index'
 import { Route as AuthenticatedAdminCampaignsIndexRouteImport } from './routes/_authenticated/admin/campaigns/index'
@@ -356,6 +357,12 @@ const AuthenticatedAdminJobsIndexRoute =
     path: '/jobs/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminHiringRequestsIndexRoute =
+  AuthenticatedAdminHiringRequestsIndexRouteImport.update({
+    id: '/hiring-requests/',
+    path: '/hiring-requests/',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminEmailIndexRoute =
   AuthenticatedAdminEmailIndexRouteImport.update({
     id: '/email/',
@@ -510,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/admin/campaigns/': typeof AuthenticatedAdminCampaignsIndexRoute
   '/admin/candidates/': typeof AuthenticatedAdminCandidatesIndexRoute
   '/admin/email/': typeof AuthenticatedAdminEmailIndexRoute
+  '/admin/hiring-requests/': typeof AuthenticatedAdminHiringRequestsIndexRoute
   '/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
   '/admin/recruiters/': typeof AuthenticatedAdminRecruitersIndexRoute
   '/admin/revenue/': typeof AuthenticatedAdminRevenueIndexRoute
@@ -574,6 +582,7 @@ export interface FileRoutesByTo {
   '/admin/campaigns': typeof AuthenticatedAdminCampaignsIndexRoute
   '/admin/candidates': typeof AuthenticatedAdminCandidatesIndexRoute
   '/admin/email': typeof AuthenticatedAdminEmailIndexRoute
+  '/admin/hiring-requests': typeof AuthenticatedAdminHiringRequestsIndexRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsIndexRoute
   '/admin/recruiters': typeof AuthenticatedAdminRecruitersIndexRoute
   '/admin/revenue': typeof AuthenticatedAdminRevenueIndexRoute
@@ -645,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/campaigns/': typeof AuthenticatedAdminCampaignsIndexRoute
   '/_authenticated/admin/candidates/': typeof AuthenticatedAdminCandidatesIndexRoute
   '/_authenticated/admin/email/': typeof AuthenticatedAdminEmailIndexRoute
+  '/_authenticated/admin/hiring-requests/': typeof AuthenticatedAdminHiringRequestsIndexRoute
   '/_authenticated/admin/jobs/': typeof AuthenticatedAdminJobsIndexRoute
   '/_authenticated/admin/recruiters/': typeof AuthenticatedAdminRecruitersIndexRoute
   '/_authenticated/admin/revenue/': typeof AuthenticatedAdminRevenueIndexRoute
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns/'
     | '/admin/candidates/'
     | '/admin/email/'
+    | '/admin/hiring-requests/'
     | '/admin/jobs/'
     | '/admin/recruiters/'
     | '/admin/revenue/'
@@ -780,6 +791,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns'
     | '/admin/candidates'
     | '/admin/email'
+    | '/admin/hiring-requests'
     | '/admin/jobs'
     | '/admin/recruiters'
     | '/admin/revenue'
@@ -850,6 +862,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/campaigns/'
     | '/_authenticated/admin/candidates/'
     | '/_authenticated/admin/email/'
+    | '/_authenticated/admin/hiring-requests/'
     | '/_authenticated/admin/jobs/'
     | '/_authenticated/admin/recruiters/'
     | '/_authenticated/admin/revenue/'
@@ -1257,6 +1270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminJobsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/hiring-requests/': {
+      id: '/_authenticated/admin/hiring-requests/'
+      path: '/hiring-requests'
+      fullPath: '/admin/hiring-requests/'
+      preLoaderRoute: typeof AuthenticatedAdminHiringRequestsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/email/': {
       id: '/_authenticated/admin/email/'
       path: '/email'
@@ -1381,6 +1401,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCampaignsIndexRoute: typeof AuthenticatedAdminCampaignsIndexRoute
   AuthenticatedAdminCandidatesIndexRoute: typeof AuthenticatedAdminCandidatesIndexRoute
   AuthenticatedAdminEmailIndexRoute: typeof AuthenticatedAdminEmailIndexRoute
+  AuthenticatedAdminHiringRequestsIndexRoute: typeof AuthenticatedAdminHiringRequestsIndexRoute
   AuthenticatedAdminJobsIndexRoute: typeof AuthenticatedAdminJobsIndexRoute
   AuthenticatedAdminRecruitersIndexRoute: typeof AuthenticatedAdminRecruitersIndexRoute
   AuthenticatedAdminRevenueIndexRoute: typeof AuthenticatedAdminRevenueIndexRoute
@@ -1405,6 +1426,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminCandidatesIndexRoute:
       AuthenticatedAdminCandidatesIndexRoute,
     AuthenticatedAdminEmailIndexRoute: AuthenticatedAdminEmailIndexRoute,
+    AuthenticatedAdminHiringRequestsIndexRoute:
+      AuthenticatedAdminHiringRequestsIndexRoute,
     AuthenticatedAdminJobsIndexRoute: AuthenticatedAdminJobsIndexRoute,
     AuthenticatedAdminRecruitersIndexRoute:
       AuthenticatedAdminRecruitersIndexRoute,
