@@ -17,6 +17,7 @@ import { Route as JobsRouteRouteImport } from './routes/jobs/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
+import { Route as HireIndexRouteImport } from './routes/hire/index'
 import { Route as StaffSignInRouteImport } from './routes/staff/sign-in'
 import { Route as JobsSlugRouteImport } from './routes/jobs/$slug'
 import { Route as HireSignUpRouteImport } from './routes/hire/sign-up'
@@ -115,6 +116,11 @@ const JobsIndexRoute = JobsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => JobsRouteRoute,
+} as any)
+const HireIndexRoute = HireIndexRouteImport.update({
+  id: '/hire/',
+  path: '/hire/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StaffSignInRoute = StaffSignInRouteImport.update({
   id: '/staff/sign-in',
@@ -476,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
+  '/hire/': typeof HireIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
   '/candidate/profile': typeof AuthenticatedCandidateProfileRoute
@@ -539,6 +546,7 @@ export interface FileRoutesByTo {
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
+  '/hire': typeof HireIndexRoute
   '/jobs': typeof JobsIndexRoute
   '/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
   '/candidate/profile': typeof AuthenticatedCandidateProfileRoute
@@ -609,6 +617,7 @@ export interface FileRoutesById {
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
+  '/hire/': typeof HireIndexRoute
   '/jobs/': typeof JobsIndexRoute
   '/_authenticated/candidate/applications': typeof AuthenticatedCandidateApplicationsRoute
   '/_authenticated/candidate/profile': typeof AuthenticatedCandidateProfileRoute
@@ -679,6 +688,7 @@ export interface FileRouteTypes {
     | '/hire/sign-up'
     | '/jobs/$slug'
     | '/staff/sign-in'
+    | '/hire/'
     | '/jobs/'
     | '/candidate/applications'
     | '/candidate/profile'
@@ -742,6 +752,7 @@ export interface FileRouteTypes {
     | '/hire/sign-up'
     | '/jobs/$slug'
     | '/staff/sign-in'
+    | '/hire'
     | '/jobs'
     | '/candidate/applications'
     | '/candidate/profile'
@@ -811,6 +822,7 @@ export interface FileRouteTypes {
     | '/hire/sign-up'
     | '/jobs/$slug'
     | '/staff/sign-in'
+    | '/hire/'
     | '/jobs/'
     | '/_authenticated/candidate/applications'
     | '/_authenticated/candidate/profile'
@@ -876,6 +888,7 @@ export interface RootRouteChildren {
   HireSignInRoute: typeof HireSignInRoute
   HireSignUpRoute: typeof HireSignUpRoute
   StaffSignInRoute: typeof StaffSignInRoute
+  HireIndexRoute: typeof HireIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -935,6 +948,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/jobs/'
       preLoaderRoute: typeof JobsIndexRouteImport
       parentRoute: typeof JobsRouteRoute
+    }
+    '/hire/': {
+      id: '/hire/'
+      path: '/hire'
+      fullPath: '/hire/'
+      preLoaderRoute: typeof HireIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/staff/sign-in': {
       id: '/staff/sign-in'
@@ -1560,6 +1580,7 @@ const rootRouteChildren: RootRouteChildren = {
   HireSignInRoute: HireSignInRoute,
   HireSignUpRoute: HireSignUpRoute,
   StaffSignInRoute: StaffSignInRoute,
+  HireIndexRoute: HireIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

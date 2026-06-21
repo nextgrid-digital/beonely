@@ -60,6 +60,7 @@ const footerLinkGroups = [
   {
     title: 'Accounts',
     links: [
+      { label: 'Hire talent', to: '/hire' },
       { label: 'Recruiter sign up', to: '/hire/sign-up' },
       { label: 'Candidate sign up', to: '/apply/sign-up' },
     ],
@@ -132,6 +133,15 @@ export function PublicSiteHeader() {
                   </Button>
                 </div>
                 <div className='grid gap-2 px-4 py-4'>
+                  <Button
+                    asChild
+                    variant='ghost'
+                    className='h-11 justify-start px-3 text-sm'
+                  >
+                    <Link to='/hire' onClick={() => setMobileOpen(false)}>
+                      Hire talent
+                    </Link>
+                  </Button>
                   <Button
                     asChild
                     variant='ghost'

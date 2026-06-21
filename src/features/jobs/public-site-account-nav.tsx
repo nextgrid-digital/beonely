@@ -176,13 +176,8 @@ export function PublicSiteAccountNav() {
       >
         Sign in
       </button>
-      <Button
-        size='sm'
-        type='button'
-        className='min-h-11 sm:min-h-9'
-        onClick={requireAuthForPostJob}
-      >
-        Post a Job
+      <Button asChild size='sm' type='button' className='min-h-11 sm:min-h-9'>
+        <Link to='/hire'>Hire talent</Link>
       </Button>
     </div>
   )

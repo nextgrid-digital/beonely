@@ -8,6 +8,7 @@ import {
 import {
   createFileRoute,
   isRedirect,
+  Link,
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
@@ -24,6 +25,7 @@ import {
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { InboxList } from '@/components/inbox/inbox-list'
 import type { InboxRowData } from '@/components/inbox/inbox-list-row'
 import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
@@ -215,8 +217,17 @@ function LandingPageContent() {
             </h1>
             <p className='text-base text-muted-foreground sm:text-lg'>
               Focused roles for developers, architects, consultants, and admins.
-              Paid listings for partners and enterprise teams—no generic noise.
+              Paid listings and concierge hiring support for partners and enterprise
+              teams—no generic noise.
             </p>
+            <div className='flex flex-col gap-3 sm:flex-row'>
+              <Button asChild size='lg' className='sm:w-auto'>
+                <Link to='/hire'>Hire ServiceNow talent</Link>
+              </Button>
+              <Button asChild size='lg' variant='outline' className='sm:w-auto'>
+                <Link to='/apply/sign-up'>Join as candidate</Link>
+              </Button>
+            </div>
           </section>
 
           <div className='min-w-0'>
