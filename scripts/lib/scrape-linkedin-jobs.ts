@@ -83,12 +83,14 @@ const SKILL_TERMS = [...SERVICENOW_JOB_SKILLS]
 const MODULE_TERMS = SERVICENOW_MODULE_KEYWORDS
 
 const CERTIFICATION_PATTERNS = SERVICENOW_CERTIFICATION_PATTERNS
+const DEFAULT_POSTED_WITHIN_SECONDS = 31 * 24 * 60 * 60
 
 export type LinkedInScrapeConfig = {
   searchTerms: string[]
   location: string
   maxPages: number
   pageSize: number
+  postedWithinSeconds: number
   timeoutMs: number
   delayMs: number
   retryMax: number
@@ -122,6 +124,8 @@ type JobPostingJsonLd = {
   description?: string
   employmentType?: string | string[]
   url?: string
+  datePosted?: string
+  validThrough?: string
   hiringOrganization?: {
     name?: string
     logo?: string | { url?: string }
@@ -154,6 +158,7 @@ type ParsedJobDetail = {
   employmentType?: string
   companyLogoUrl?: string
   companyWebsiteUrl?: string
+  postedAt?: string
 }
 
 const DEFAULT_CONFIG: LinkedInScrapeConfig = {
@@ -161,6 +166,7 @@ const DEFAULT_CONFIG: LinkedInScrapeConfig = {
   location: 'India',
   maxPages: 3,
   pageSize: 25,
+  postedWithinSeconds: DEFAULT_POSTED_WITHIN_SECONDS,
   timeoutMs: 25_000,
   delayMs: 1200,
   retryMax: 2,
@@ -176,6 +182,10 @@ export function resolveLinkedInScrapeConfigFromEnv(
     location: env.SCRAPE_LINKEDIN_LOCATION?.trim() || DEFAULT_CONFIG.location,
     maxPages: parsePositiveInt(env.SCRAPE_LINKEDIN_MAX_PAGES, DEFAULT_CONFIG.maxPages),
     pageSize: parsePositiveInt(env.SCRAPE_LINKEDIN_PAGE_SIZE, DEFAULT_CONFIG.pageSize),
+    postedWithinSeconds: parsePositiveInt(
+      env.SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS,
+      DEFAULT_CONFIG.postedWithinSeconds
+    ),
     timeoutMs: parsePositiveInt(env.SCRAPE_LINKEDIN_TIMEOUT_MS, DEFAULT_CONFIG.timeoutMs),
     delayMs: parsePositiveInt(env.SCRAPE_LINKEDIN_DELAY_MS, DEFAULT_CONFIG.delayMs),
     retryMax: parseNonNegativeInt(env.SCRAPE_LINKEDIN_RETRY_MAX, DEFAULT_CONFIG.retryMax),
@@ -440,6 +450,75 @@ function findTagContentByClass(html: string, classPattern: RegExp): string {
   return match?.[2]?.trim() ?? ''
 }
 
+function capturePostedText(html: string): string {
+  return stripHtmlToText(findTagContentByClass(html, /posted-time-ago__text/))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function parseRelativeLinkedInPostedAt(text: string, now = new Date()): string | null {
+  const value = text.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (!value) return null
+  if (/\b(now|today|moments?|minutes?)\b/.test(value)) return now.toISOString()
+
+  const match = value.match(/\b(\d+)\s+(hour|day|week|month|year)s?\s+ago\b/)
+  if (!match) return null
+
+  const amount = Number.parseInt(match[1] ?? '', 10)
+  if (!Number.isFinite(amount) || amount < 0) return null
+
+  const unit = match[2]
+  const d = new Date(now)
+  if (unit === 'hour') d.setHours(d.getHours() - amount)
+  else if (unit === 'day') d.setDate(d.getDate() - amount)
+  else if (unit === 'week') d.setDate(d.getDate() - amount * 7)
+  else if (unit === 'month') d.setDate(d.getDate() - amount * 30)
+  else if (unit === 'year') d.setFullYear(d.getFullYear() - amount)
+  else return null
+
+  return d.toISOString()
+}
+
+export function parseLinkedInPostedAt(
+  input: { jsonLdDatePosted?: string; postedText?: string },
+  now = new Date()
+): string | null {
+  const jsonLdDate = input.jsonLdDatePosted?.trim()
+  if (jsonLdDate) {
+    const timestamp = Date.parse(jsonLdDate)
+    if (Number.isFinite(timestamp)) return new Date(timestamp).toISOString()
+  }
+  return parseRelativeLinkedInPostedAt(input.postedText ?? '', now)
+}
+
+export function isWithinPostedWindow(
+  postedAt: string | null | undefined,
+  postedWithinSeconds: number,
+  now = new Date()
+): boolean {
+  if (!postedAt) return false
+  const postedTs = Date.parse(postedAt)
+  if (!Number.isFinite(postedTs)) return false
+  const ageMs = now.getTime() - postedTs
+  return ageMs >= 0 && ageMs <= postedWithinSeconds * 1000
+}
+
+export function isStillAcceptingApplications(
+  html: string,
+  jsonLdValidThrough?: string
+): boolean {
+  const validThrough = jsonLdValidThrough?.trim()
+  if (validThrough) {
+    const timestamp = Date.parse(validThrough)
+    if (Number.isFinite(timestamp) && timestamp <= Date.now()) return false
+  }
+
+  const text = stripHtmlToText(html).toLowerCase()
+  return !/(\bno longer accepting applications\b|\bnot accepting applications\b|\bapplications are no longer accepted\b|\bthis job is no longer accepting\b|\bjob is no longer available\b|\bjob has expired\b)/i.test(
+    text
+  )
+}
+
 function findDivInnerHtmlByClass(html: string, classPattern: RegExp): string {
   const tagPattern = new RegExp(
     `<div[^>]*class=["'][^"']*${classPattern.source}[^"']*["'][^>]*>`,
@@ -648,6 +727,7 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
   const jobDescription = stripHtmlToText(descriptionRaw)
 
   if (!jobTitle || !companyName || !jobDescription) return null
+  if (!isStillAcceptingApplications(html, jsonLd?.validThrough)) return null
 
   const idFromJson = extractLinkedInJobId(jsonLd?.url ?? '')
   const normalizedJobId = idFromJson || jobId
@@ -662,6 +742,10 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
     companyLogoFromMarkup ||
     companyLogoFromMeta ||
     buildFaviconUrlForCompanyWebsite(companyWebsiteFromJsonLd)
+  const postedAt = parseLinkedInPostedAt({
+    jsonLdDatePosted: jsonLd?.datePosted,
+    postedText: capturePostedText(html),
+  })
 
   return {
     jobId: normalizedJobId,
@@ -672,14 +756,21 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
     employmentType: employmentTypeRaw,
     companyLogoUrl,
     companyWebsiteUrl: companyWebsiteFromJsonLd,
+    postedAt: postedAt ?? undefined,
   }
 }
 
-function buildSearchUrl(query: string, location: string, start: number): string {
+function buildSearchUrl(
+  query: string,
+  location: string,
+  start: number,
+  postedWithinSeconds: number
+): string {
   const params = new URLSearchParams({
     keywords: query,
     location,
     start: String(start),
+    f_TPR: `r${postedWithinSeconds}`,
   })
   return `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?${params.toString()}`
 }
@@ -749,6 +840,11 @@ function sleep(ms: number): Promise<void> {
 
 function stableSortJobs(jobs: IngestLinkedInJobInput[]): IngestLinkedInJobInput[] {
   return [...jobs].sort((a, b) => {
+    const aPosted = Date.parse(a.posted_at ?? '')
+    const bPosted = Date.parse(b.posted_at ?? '')
+    if (Number.isFinite(aPosted) && Number.isFinite(bPosted) && aPosted !== bPosted) {
+      return bPosted - aPosted
+    }
     const byId = (a.external_id ?? '').localeCompare(b.external_id ?? '')
     if (byId !== 0) return byId
     return a.apply_url.localeCompare(b.apply_url)
@@ -768,6 +864,7 @@ function buildIngestInputFromParsed(job: ParsedJobDetail): IngestLinkedInJobInpu
     location: job.location,
     apply_url: canonicalLinkedInApplyUrl(job.jobId),
     job_description: job.jobDescription,
+    posted_at: job.postedAt,
     employment_type: normalizeEmploymentType(job.employmentType ?? signalText),
     experience_level: normalizeExperienceLevel(signalText),
     work_mode: workMode,
@@ -805,7 +902,12 @@ export async function scrapeLinkedInJobs(
   for (const term of config.searchTerms) {
     for (let page = 0; page < config.maxPages; page++) {
       const start = page * config.pageSize
-      const url = buildSearchUrl(term, config.location, start)
+      const url = buildSearchUrl(
+        term,
+        config.location,
+        start,
+        config.postedWithinSeconds
+      )
       summary.searchRequests += 1
 
       try {
@@ -866,6 +968,11 @@ export async function scrapeLinkedInJobs(
 
       const parsed = parseLinkedInJobDetailHtml(jobId, html)
       if (!parsed) {
+        summary.filteredOut += 1
+        continue
+      }
+
+      if (!isWithinPostedWindow(parsed.postedAt, config.postedWithinSeconds)) {
         summary.filteredOut += 1
         continue
       }

@@ -7,11 +7,14 @@ import {
   extractLinkedInJobId,
   isIndiaOrIndiaRemoteJob,
   isServiceNowRelated,
+  isStillAcceptingApplications,
+  isWithinPostedWindow,
   normalizeEmploymentType,
   normalizeExperienceLevel,
   normalizeJobType,
   normalizeWorkMode,
   parseLinkedInJobDetailHtml,
+  parseLinkedInPostedAt,
   scrapeLinkedInJobs,
   type LinkedInScrapeConfig,
 } from './scrape-linkedin-jobs'
@@ -30,6 +33,7 @@ const baseConfig: LinkedInScrapeConfig = {
   location: 'India',
   maxPages: 1,
   pageSize: 25,
+  postedWithinSeconds: 31 * 24 * 60 * 60,
   timeoutMs: 5_000,
   delayMs: 0,
   retryMax: 1,
@@ -95,6 +99,22 @@ describe('filters', () => {
       })
     ).toBe(false)
   })
+
+  it('parses LinkedIn posted text and rejects stale or closed listings', () => {
+    const now = new Date('2026-06-21T00:00:00.000Z')
+    const twoWeeksAgo = parseLinkedInPostedAt({ postedText: '2 weeks ago' }, now)
+    expect(twoWeeksAgo).toBe('2026-06-07T00:00:00.000Z')
+    expect(isWithinPostedWindow(twoWeeksAgo, 31 * 24 * 60 * 60, now)).toBe(true)
+
+    const stale = parseLinkedInPostedAt({ postedText: '2 months ago' }, now)
+    expect(isWithinPostedWindow(stale, 31 * 24 * 60 * 60, now)).toBe(false)
+
+    expect(
+      isStillAcceptingApplications(
+        '<p>This job is no longer accepting applications.</p>'
+      )
+    ).toBe(false)
+  })
 })
 
 describe('parseLinkedInJobDetailHtml', () => {
@@ -106,6 +126,7 @@ describe('parseLinkedInJobDetailHtml', () => {
         "@type": "JobPosting",
         "title": "ServiceNow Developer",
         "description": "<p>Build workflows</p><ul><li>ITSM</li></ul>",
+        "datePosted": "2026-06-10",
         "employmentType": "FULL_TIME",
         "url": "https://www.linkedin.com/jobs/view/3333333333",
         "hiringOrganization": {"name": "Acme Corp"},
@@ -121,6 +142,7 @@ describe('parseLinkedInJobDetailHtml', () => {
     expect(parsed?.location).toContain('Pune')
     expect(parsed?.jobDescription).toContain('Build workflows')
     expect(parsed?.jobDescription).toContain('ITSM')
+    expect(parsed?.postedAt).toBe('2026-06-10T00:00:00.000Z')
   })
 
   it('extracts company logo from top-card markup when available', () => {
@@ -131,6 +153,7 @@ describe('parseLinkedInJobDetailHtml', () => {
       <h2 class="top-card-layout__title">ServiceNow Developer</h2>
       <a class="topcard__org-name-link">Acme Corp</a>
       <span class="topcard__flavor--bullet">Remote, India</span>
+      <span class="posted-time-ago__text topcard__flavor--metadata">2 weeks ago</span>
       <div class="show-more-less-html__markup"><p>ServiceNow ITSM implementation role.</p></div>
     `
 
@@ -148,6 +171,7 @@ describe('parseLinkedInJobDetailHtml', () => {
         "@type": "JobPosting",
         "title": "ServiceNow Consultant",
         "description": "ServiceNow CSM role for India region.",
+        "datePosted": "2026-06-12",
         "url": "https://www.linkedin.com/jobs/view/8888888888",
         "hiringOrganization": {
           "name": "Example Co",
@@ -187,6 +211,7 @@ describe('scrapeLinkedInJobs', () => {
             "@type":"JobPosting",
             "title":"ServiceNow ITSM Developer",
             "description":"<p>ServiceNow ITSM role in India</p>",
+            "datePosted":"2026-06-12",
             "employmentType":"FULL_TIME",
             "url":"https://www.linkedin.com/jobs/view/1111111111",
             "hiringOrganization":{"name":"Alpha"},
@@ -203,6 +228,7 @@ describe('scrapeLinkedInJobs', () => {
             "@type":"JobPosting",
             "title":"Frontend Engineer",
             "description":"<p>React role in Berlin</p>",
+            "datePosted":"2026-06-12",
             "employmentType":"FULL_TIME",
             "url":"https://www.linkedin.com/jobs/view/2222222222",
             "hiringOrganization":{"name":"Beta"},
@@ -222,6 +248,7 @@ describe('scrapeLinkedInJobs', () => {
 
     expect(result.jobs).toHaveLength(1)
     expect(result.jobs[0].external_id).toBe('linkedin-1111111111')
+    expect(result.jobs[0].posted_at).toBe('2026-06-12T00:00:00.000Z')
     expect(result.summary.uniqueJobIds).toBe(2)
     expect(result.summary.jobsKept).toBe(1)
     expect(result.summary.filteredOut).toBeGreaterThanOrEqual(1)
@@ -246,6 +273,7 @@ describe('scrapeLinkedInJobs', () => {
             "@type":"JobPosting",
             "title":"ServiceNow Consultant",
             "description":"<p>ServiceNow CSM role, Remote India</p>",
+            "datePosted":"2026-06-12",
             "employmentType":"CONTRACT",
             "url":"https://www.linkedin.com/jobs/view/4444444444",
             "hiringOrganization":{"name":"Gamma"},

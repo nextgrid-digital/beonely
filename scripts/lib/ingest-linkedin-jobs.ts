@@ -38,6 +38,7 @@ export type IngestLinkedInJobInput = {
   location?: string
   apply_url: string
   job_description: string
+  posted_at?: string
   employment_type?: string
   experience_level?: string
   work_mode?: string
@@ -126,6 +127,14 @@ export function listingExpiresAtIso(daysFromNow = 90): string {
   return d.toISOString()
 }
 
+function normalizeIsoDate(raw: string | undefined): string | undefined {
+  const trimmed = raw?.trim()
+  if (!trimmed) return undefined
+  const timestamp = Date.parse(trimmed)
+  if (!Number.isFinite(timestamp)) return undefined
+  return new Date(timestamp).toISOString()
+}
+
 export function buildIngestJobRow(
   job: IngestLinkedInJobInput,
   recruiter: { id: string; email: string; name: string }
@@ -141,6 +150,7 @@ export function buildIngestJobRow(
     company_logo: normalizeCompanyLogoUrl(job.company_logo),
     company_website: normalizeCompanyWebsiteUrl(job.company_website),
     job_description: job.job_description.trim(),
+    created_at: normalizeIsoDate(job.posted_at),
     location: (job.location ?? '').trim() || 'Location TBD',
     employment_type: pickEnum(job.employment_type, EMPLOYMENT_TYPES, 'full_time'),
     experience_level: pickEnum(
@@ -195,6 +205,7 @@ export function parseIngestJobsFile(raw: string): IngestLinkedInJobInput[] {
       location: row.location != null ? String(row.location) : undefined,
       apply_url,
       job_description,
+      posted_at: row.posted_at != null ? String(row.posted_at) : undefined,
       employment_type:
         row.employment_type != null
           ? String(row.employment_type)

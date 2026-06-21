@@ -65,6 +65,7 @@ describe('buildIngestJobRow', () => {
         company_website: 'https://acme.example/careers?utm=foo',
         apply_url: 'https://www.linkedin.com/jobs/view/1',
         job_description: 'Full text',
+        posted_at: '2026-06-12',
         employment_type: 'contract',
         experience_level: 'senior',
         work_mode: 'remote',
@@ -75,6 +76,7 @@ describe('buildIngestJobRow', () => {
     expect(row.source_kind).toBe('linkedin_import')
     expect(row.approval_status).toBe('approved')
     expect(row.payment_status).toBe('paid')
+    expect(row.created_at).toBe('2026-06-12T00:00:00.000Z')
     expect(row.listing_expires_at).toBeTruthy()
     expect(row.employment_type).toBe('contract')
     expect(row.company_logo).toBe('https://cdn.example.com/logo.svg')
@@ -108,11 +110,13 @@ describe('parseIngestJobsFile', () => {
           company_name: 'Partner',
           apply_url: 'https://www.linkedin.com/jobs/view/1',
           job_description: 'Desc',
+          posted_at: '2026-06-12T10:00:00.000Z',
         },
       ])
     )
     expect(jobs).toHaveLength(1)
     expect(jobs[0].job_title).toBe('Architect')
+    expect(jobs[0].posted_at).toBe('2026-06-12T10:00:00.000Z')
   })
 
   it('parses optional company metadata fields', () => {

@@ -184,30 +184,32 @@ async function main() {
         existingWebsite: existing.company_website,
         incomingWebsite: row.company_website,
       })
+      const updatePayload = {
+        job_title: row.job_title,
+        company_name: row.company_name,
+        job_description: row.job_description,
+        location: row.location,
+        employment_type: row.employment_type,
+        experience_level: row.experience_level,
+        work_mode: row.work_mode,
+        job_type: row.job_type,
+        apply_url: row.apply_url,
+        approval_status: row.approval_status,
+        payment_status: row.payment_status,
+        listing_expires_at: row.listing_expires_at,
+        company_logo: companyLogo,
+        company_website: companyWebsite,
+        skills: row.skills,
+        modules: row.modules,
+        certifications: row.certifications,
+        source_kind: row.source_kind,
+        updated_at: new Date().toISOString(),
+        ...(row.created_at ? { created_at: row.created_at } : {}),
+      }
 
       const { error: updateErr } = await sb
         .from('jobs')
-        .update({
-          job_title: row.job_title,
-          company_name: row.company_name,
-          job_description: row.job_description,
-          location: row.location,
-          employment_type: row.employment_type,
-          experience_level: row.experience_level,
-          work_mode: row.work_mode,
-          job_type: row.job_type,
-          apply_url: row.apply_url,
-          approval_status: row.approval_status,
-          payment_status: row.payment_status,
-          listing_expires_at: row.listing_expires_at,
-          company_logo: companyLogo,
-          company_website: companyWebsite,
-          skills: row.skills,
-          modules: row.modules,
-          certifications: row.certifications,
-          source_kind: row.source_kind,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', existing.id)
 
       if (updateErr) {
