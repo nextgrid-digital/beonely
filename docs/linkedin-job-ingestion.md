@@ -48,8 +48,15 @@ Run scrape + ingest locally:
 pnpm scrape:linkedin && pnpm ingest:jobs
 ```
 
-Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, and refresh `listing_expires_at` (+90 days).
+Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, the displayed posted date (`created_at`), and `listing_expires_at`.
 When present, `company_logo` and `company_website` are normalized to valid `http(s)` URLs. Existing non-empty logos are preserved unless a better non-favicon logo is discovered.
+
+### Posted date and freshness window
+
+- The scraper reads LinkedIn's `datePosted` (JSON-LD) and the topcard "posted X ago" text and writes the resolved date to `posted_at` in the JSON payload.
+- The search query is constrained with LinkedIn's `f_TPR=r<seconds>` window (`SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS`, default ~31 days), and each listing is re-checked against the same window; anything older is skipped.
+- Listings that are **no longer accepting applications** (closed marker or an elapsed `validThrough`) are dropped during parsing.
+- On ingest, `created_at` is set to `posted_at` (the date the board displays and sorts by). The 1-month window on the live feed is enforced by the daily freshness sweep below (and by dropping rows that age out of the scrape payload).
 
 Run the full daily job maintenance locally:
 
@@ -62,8 +69,10 @@ Stale cleanup policy (`pnpm sync:jobs`):
 
 - checks imported jobs currently live in Supabase but missing from the latest scrape payload
 - expires every active imported row missing from the latest scrape payload
-- does not hard-delete rows
-- skips stale cleanup when the latest source payload cannot be read
+- **freshness sweep:** expires any live imported row older than `JOBS_SYNC_MAX_AGE_DAYS` (default `30`) so nothing more than a month old stays on the feed
+- **liveness recheck:** unless `JOBS_SYNC_CHECK_APPLY_URLS=0`, HTTP-checks each live row's `apply_url` and expires ones returning `404/410` or "no longer accepting applications"
+- does not hard-delete rows (soft-expire via `listing_expires_at = now()`)
+- skips the missing-from-payload check when the latest source payload cannot be read
 
 ### JSON schema (`data/linkedin-jobs.json`)
 
@@ -79,6 +88,7 @@ Each array element:
   "location": "Remote, India",
   "apply_url": "https://www.linkedin.com/jobs/view/1234567890",
   "job_description": "Full posting text…",
+  "posted_at": "2026-06-10T00:00:00.000Z",
   "employment_type": "full_time",
   "experience_level": "mid",
   "work_mode": "remote",
@@ -90,7 +100,7 @@ Each array element:
 ```
 
 `job_slug` is optional; otherwise derived from `external_id` or `apply_url`.
-`company_logo` and `company_website` are optional.
+`company_logo`, `company_website`, and `posted_at` are optional. `posted_at` (ISO 8601) becomes the listing's `created_at` (the displayed posted date the board sorts by).
 
 ### Scraper tuning env vars (optional)
 
@@ -101,6 +111,7 @@ Each array element:
 | `SCRAPE_LINKEDIN_TIMEOUT_MS` | Request timeout per HTTP request | `25000` |
 | `SCRAPE_LINKEDIN_DELAY_MS` | Delay between outbound requests | `1200` |
 | `SCRAPE_LINKEDIN_RETRY_MAX` | Retry count for transient failures | `2` |
+| `SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS` | Only keep listings posted within this many seconds | `2678400` (31 days) |
 | `SCRAPE_LINKEDIN_OUTPUT_FILE` | Output JSON path for scrape results | `data/linkedin-jobs.json` |
 
 ### Daily sync stale-check tuning (optional)
@@ -108,6 +119,10 @@ Each array element:
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `JOBS_SYNC_SUMMARY_FILE` | Full sync summary JSON output path | unset |
+| `JOBS_SYNC_MAX_AGE_DAYS` | Expire live imported rows older than this many days | `30` |
+| `JOBS_SYNC_CHECK_APPLY_URLS` | Set `0` to skip the apply-url liveness recheck | `1` (on) |
+| `JOBS_SYNC_APPLY_CHECK_LIMIT` | Max live rows to liveness-check per run | `250` |
+| `JOBS_SYNC_APPLY_CHECK_DELAY_MS` | Delay between apply-url checks | `800` |
 
 ### System recruiter (`INGEST_RECRUITER_ID`)
 

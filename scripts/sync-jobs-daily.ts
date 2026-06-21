@@ -17,6 +17,21 @@ import {
   type IngestLinkedInJobInput,
 } from './lib/ingest-linkedin-jobs'
 import { buildCanonicalApplyUrlSet } from './lib/prune-linkedin-jobs'
+import { checkLinkedInApplyUrl } from './lib/check-linkedin-apply-urls'
+
+const FRESHNESS_DAYS = parsePositiveIntEnv('JOBS_SYNC_MAX_AGE_DAYS', 30)
+const CHECK_APPLY_URLS = process.env.JOBS_SYNC_CHECK_APPLY_URLS !== '0'
+const APPLY_CHECK_LIMIT = parsePositiveIntEnv('JOBS_SYNC_APPLY_CHECK_LIMIT', 250)
+const APPLY_CHECK_DELAY_MS = parsePositiveIntEnv('JOBS_SYNC_APPLY_CHECK_DELAY_MS', 800)
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const value = Number.parseInt(process.env[name] ?? '', 10)
+  return Number.isFinite(value) && value > 0 ? value : fallback
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 type ScrapeSummary = {
   jobsWritten?: number
@@ -56,6 +71,10 @@ type DailySyncSummary = {
     skipped: number
     checkErrors: number
     updateErrors: number
+    /** Live imported rows expired for being older than the freshness window. */
+    agedOut: number
+    /** Live imported rows expired because their LinkedIn page is gone/closed. */
+    deadLinks: number
   }
   errors: string[]
   generatedAt: string
@@ -114,6 +133,89 @@ function resolveJobsFilePath(): string {
   return explicit ? resolve(explicit) : DEFAULT_LINKEDIN_JOBS_FILE
 }
 
+type SupabaseLike = ReturnType<typeof createClient>
+
+/**
+ * Expire live imported rows that are (1) older than the freshness window, or
+ * (2) whose LinkedIn page is gone/closed. Soft-expire only (keeps rows).
+ */
+async function runFreshnessAndLivenessSweeps(
+  sb: SupabaseLike,
+  summary: DailySyncSummary,
+  errors: string[]
+): Promise<void> {
+  // 1) Freshness sweep: expire anything posted more than FRESHNESS_DAYS ago.
+  const nowIso = new Date().toISOString()
+  const cutoffIso = new Date(
+    Date.now() - FRESHNESS_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString()
+
+  const { data: agedRows, error: agedError } = await sb
+    .from('jobs')
+    .update({ listing_expires_at: nowIso, updated_at: nowIso })
+    .eq('source_kind', 'linkedin_import')
+    .lt('created_at', cutoffIso)
+    .or(`listing_expires_at.is.null,listing_expires_at.gt.${nowIso}`)
+    .select('id')
+
+  if (agedError) {
+    summary.stale.updateErrors++
+    errors.push(`age_out_sweep_failed:${agedError.message}`)
+  } else {
+    summary.stale.agedOut = agedRows?.length ?? 0
+    if (summary.stale.agedOut > 0) {
+      console.info(
+        '[jobs-sync] expired imported listings older than freshness window',
+        JSON.stringify({ days: FRESHNESS_DAYS, count: summary.stale.agedOut })
+      )
+    }
+  }
+
+  if (!CHECK_APPLY_URLS) return
+
+  // 2) Liveness recheck: HTTP-verify each remaining live row's apply_url.
+  const liveNowIso = new Date().toISOString()
+  const { data: liveRows, error: liveError } = await sb
+    .from('jobs')
+    .select('id, apply_url, listing_expires_at')
+    .eq('source_kind', 'linkedin_import')
+    .or(`listing_expires_at.is.null,listing_expires_at.gt.${liveNowIso}`)
+    .limit(APPLY_CHECK_LIMIT)
+
+  if (liveError) {
+    summary.stale.checkErrors++
+    errors.push(`liveness_fetch_failed:${liveError.message}`)
+    return
+  }
+
+  const deadIds: string[] = []
+  for (const row of liveRows ?? []) {
+    const result = await checkLinkedInApplyUrl(row.apply_url)
+    if (!result.live) {
+      deadIds.push(row.id)
+      console.info(
+        '[jobs-sync] apply url not accepting applications',
+        JSON.stringify({ url: result.url, reason: result.reason, status: result.status })
+      )
+    }
+    await sleep(APPLY_CHECK_DELAY_MS)
+  }
+
+  if (deadIds.length > 0) {
+    const expireIso = new Date().toISOString()
+    const { error: expireError } = await sb
+      .from('jobs')
+      .update({ listing_expires_at: expireIso, updated_at: expireIso })
+      .in('id', deadIds)
+    if (expireError) {
+      summary.stale.updateErrors++
+      errors.push(`expire_dead_links_failed:${expireError.message}`)
+    } else {
+      summary.stale.deadLinks = deadIds.length
+    }
+  }
+}
+
 async function main() {
   const scrapeSummaryPath = getScrapeSummaryPath()
   const ingestSummaryPath = getIngestSummaryPath()
@@ -131,6 +233,8 @@ async function main() {
       skipped: 0,
       checkErrors: 0,
       updateErrors: 0,
+      agedOut: 0,
+      deadLinks: 0,
     },
     errors,
     generatedAt: new Date().toISOString(),
@@ -257,6 +361,14 @@ async function main() {
           }
         }
       }
+    }
+
+    try {
+      await runFreshnessAndLivenessSweeps(sb, summary, errors)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      errors.push(`freshness_liveness_sweep_failed:${message}`)
+      summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     }
   }
 
