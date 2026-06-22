@@ -2,13 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const mockInsertSingle = vi.fn()
-const mockInsert = vi.fn(() => ({
-  select: vi.fn(() => ({
-    single: mockInsertSingle,
-  })),
-}))
-const mockFrom = vi.fn(() => ({ insert: mockInsert }))
+const mockInsertSelect = vi.fn(() => ({ single: mockInsertSingle }))
+const mockHiringInsert = vi.fn(() => ({ select: mockInsertSelect }))
+const mockLogInsert = vi.fn(async () => ({ error: null }))
+const mockFrom = vi.fn((table: string) => {
+  if (table === 'hiring_requests') {
+    return { insert: mockHiringInsert }
+  }
+  if (table === 'email_send_log') {
+    return { insert: mockLogInsert }
+  }
+  throw new Error(`unexpected_table:${table}`)
+})
 const mockRateLimit = vi.fn(async () => undefined)
+const mockSendTransactionalEmail = vi.fn(async () => ({ skipped: true as const }))
 
 vi.mock('../_lib/rate-limit.js', () => ({
   rateLimitOrThrow: mockRateLimit,
@@ -21,6 +28,10 @@ vi.mock('../_lib/supabase.js', () => ({
       from: mockFrom,
     },
   })),
+}))
+
+vi.mock('../_lib/resend.js', () => ({
+  sendTransactionalEmail: mockSendTransactionalEmail,
 }))
 
 function mockRes() {
@@ -47,23 +58,27 @@ describe('api/hiring-request', () => {
     mockInsertSingle.mockReset()
     mockInsertSingle.mockResolvedValue({ data: { id: 'req_123' }, error: null })
     mockFrom.mockClear()
-    mockInsert.mockClear()
+    mockHiringInsert.mockClear()
+    mockInsertSelect.mockClear()
+    mockLogInsert.mockClear()
     mockRateLimit.mockClear()
+    mockSendTransactionalEmail.mockClear()
+    mockSendTransactionalEmail.mockResolvedValue({ skipped: true })
   })
 
   it('rejects non-POST methods', async () => {
-    const { default: handler } = await import('../hiring-request.js')
+    const { handle } = await import('../_handlers/marketing/hiring-request.js')
     const res = mockRes()
-    await handler({ method: 'GET' } as VercelRequest, res)
+    await handle({ method: 'GET' } as VercelRequest, res)
     expect(res.statusCode).toBe(405)
     expect(res.body).toEqual({ error: 'method_not_allowed' })
   })
 
-  it('stores a valid hiring request', async () => {
-    const { default: handler } = await import('../hiring-request.js')
+  it('stores a valid hiring request and logs internal notifications', async () => {
+    const { handle } = await import('../_handlers/marketing/hiring-request.js')
     const res = mockRes()
 
-    await handler(
+    await handle(
       {
         method: 'POST',
         headers: { 'x-forwarded-for': '127.0.0.1' },
@@ -90,7 +105,7 @@ describe('api/hiring-request', () => {
     expect(res.body).toEqual({ ok: true, id: 'req_123' })
     expect(mockRateLimit).toHaveBeenCalledWith('hiring-request:127.0.0.1')
     expect(mockFrom).toHaveBeenCalledWith('hiring_requests')
-    expect(mockInsert).toHaveBeenCalledWith(
+    expect(mockHiringInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         company_name: 'Acme',
         contact_name: 'Abin Panda',
@@ -101,5 +116,7 @@ describe('api/hiring-request', () => {
         source: 'hire_page',
       })
     )
+    expect(mockSendTransactionalEmail).toHaveBeenCalledTimes(2)
+    expect(mockLogInsert).toHaveBeenCalledTimes(2)
   })
 })

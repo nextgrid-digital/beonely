@@ -53,6 +53,20 @@ describe('api/marketing router', () => {
     expect(res.body).toBe('Missing unsubscribe token.')
   })
 
+  it('dispatches hiring-request through the shared router', async () => {
+    const { default: handler } = await import('../marketing.js')
+    const res = mockRes()
+    await handler(
+      {
+        method: 'GET',
+        query: { route: 'hiring-request' },
+      } as unknown as VercelRequest,
+      res
+    )
+    expect(res.statusCode).toBe(405)
+    expect(res.body).toEqual({ error: 'method_not_allowed' })
+  })
+
   it('rejects subscribe without POST', async () => {
     const { default: handler } = await import('../marketing.js')
     const res = mockRes()

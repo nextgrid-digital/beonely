@@ -61,6 +61,10 @@
       "destination": "/api/marketing?route=marketing-consent"
     },
     {
+      "source": "/api/hiring-request",
+      "destination": "/api/marketing?route=hiring-request"
+    },
+    {
       "source": "/api/og/job",
       "destination": "/api/og-job"
     },
