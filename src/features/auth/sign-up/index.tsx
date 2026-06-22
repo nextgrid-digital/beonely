@@ -15,9 +15,13 @@ import { AuthLayout } from '../auth-layout'
 import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
-  const { intent } = useSearch({ from: '/(auth)/sign-up' })
+  const { intent, redirect } = useSearch({ from: '/(auth)/sign-up' })
   const title =
     intent === undefined ? 'Create an account' : signUpCardTitle(intent)
+  const signInSearch = {
+    ...(intent ? { intent } : {}),
+    ...(redirect ? { redirect } : {}),
+  }
 
   return (
     <AuthLayout>
@@ -31,6 +35,7 @@ export function SignUp() {
                 Already have an account?{' '}
                 <Link
                   to='/sign-in'
+                  search={signInSearch}
                   className='underline underline-offset-4 hover:text-primary'
                 >
                   Sign In
@@ -41,7 +46,7 @@ export function SignUp() {
                 {signUpCardDescription(intent)} Already have an account?{' '}
                 <Link
                   to='/sign-in'
-                  search={{ intent }}
+                  search={signInSearch}
                   className='underline underline-offset-4 hover:text-primary'
                 >
                   Sign in
@@ -49,6 +54,7 @@ export function SignUp() {
                 {' · '}
                 <Link
                   to='/sign-up'
+                  search={redirect ? { redirect } : {}}
                   className='underline underline-offset-4 hover:text-primary'
                 >
                   Other account type
@@ -58,7 +64,7 @@ export function SignUp() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SignUpForm intent={intent} />
+          <SignUpForm intent={intent} redirectTo={redirect} />
         </CardContent>
         <CardFooter>
           <p className='px-2 text-center text-sm text-muted-foreground sm:px-8'>

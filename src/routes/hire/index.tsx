@@ -1,5 +1,6 @@
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, UserPlus } from 'lucide-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { currentPathWithSearch } from '@/lib/auth/redirect-path'
 import { Button } from '@/components/ui/button'
 import { HiringRequestForm } from '@/features/jobs/hiring-request-form'
 import {
@@ -13,6 +14,8 @@ export const Route = createFileRoute('/hire/')({
 })
 
 function HirePage() {
+  const currentRedirect = currentPathWithSearch()
+
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
       <PublicSiteHeader />
@@ -41,7 +44,10 @@ function HirePage() {
                 </a>
               </Button>
               <Button asChild size='lg' variant='outline' className='min-w-[13rem]'>
-                <Link to='/hire/sign-up'>
+                <Link
+                  to='/hire/sign-up'
+                  search={currentRedirect ? { redirect: currentRedirect } : {}}
+                >
                   Create recruiter account
                   <UserPlus className='size-4' aria-hidden />
                 </Link>
@@ -77,7 +83,10 @@ function HirePage() {
                 </li>
               </ul>
               <Button asChild className='mt-6 w-full sm:w-auto'>
-                <Link to='/hire/sign-up'>
+                <Link
+                  to='/hire/sign-up'
+                  search={currentRedirect ? { redirect: currentRedirect } : {}}
+                >
                   Start posting
                   <ArrowRight className='size-4' aria-hidden />
                 </Link>

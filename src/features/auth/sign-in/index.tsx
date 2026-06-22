@@ -53,7 +53,10 @@ export function SignIn() {
                 {signInCardDescription(intent)}{' '}
                 <Link
                   to='/sign-up'
-                  search={{ intent }}
+                  search={{
+                    ...(intent ? { intent } : {}),
+                    ...(redirect ? { redirect } : {}),
+                  }}
                   className='text-nowrap underline underline-offset-4 hover:text-primary'
                 >
                   Sign up

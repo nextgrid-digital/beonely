@@ -223,6 +223,51 @@ describe('SignUpForm intent navigation', () => {
       })
     )
   })
+
+  it('preserves redirect when provided', async () => {
+    signUp.mockResolvedValue({
+      data: { user: { email: 'a@b.com' }, session: null },
+      error: null,
+    })
+    const screenIntent = await render(
+      <SignUpForm intent='candidate' redirectTo='/jobs/servicenow-dev?source=hero' />
+    )
+    const email = screenIntent.getByRole('textbox', { name: /^Email$/i })
+    const linkedin = screenIntent.getByRole('textbox', {
+      name: /LinkedIn profile URL/i,
+    })
+    const phone = screenIntent.getByRole('textbox', { name: /^Phone number$/i })
+    const pw = screenIntent.getByLabelText(/^Password$/i)
+    const cpw = screenIntent.getByLabelText(/^Confirm Password$/i)
+    const btn = screenIntent.getByRole('button', { name: /^Create Account$/i })
+    await userEvent.fill(email, 'a@b.com')
+    await userEvent.fill(linkedin, 'https://www.linkedin.com/in/example')
+    await userEvent.fill(phone, '+1 555 123 4567')
+    await userEvent.fill(pw, '1234567')
+    await userEvent.fill(cpw, '1234567')
+    await userEvent.click(btn)
+
+    await vi.waitFor(() => expect(signUp).toHaveBeenCalledOnce())
+    expect(signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          emailRedirectTo: expect.stringContaining(
+            '/sign-in?intent=candidate&redirect=%2Fjobs%2Fservicenow-dev%3Fsource%3Dhero'
+          ),
+        }),
+      })
+    )
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        to: '/sign-in',
+        replace: true,
+        search: {
+          intent: 'candidate',
+          redirect: '/jobs/servicenow-dev?source=hero',
+        },
+      })
+    )
+  })
 })
 
 describe('SignUpForm with onSuccess', () => {

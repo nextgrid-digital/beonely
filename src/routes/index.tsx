@@ -19,6 +19,7 @@ import {
   PUBLIC_FEED_PAGE_SIZE,
 } from '@/lib/jobs/fetch-public-jobs-feed'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
+import { currentPathWithSearch } from '@/lib/auth/redirect-path'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -185,6 +186,7 @@ function LandingPageContent() {
     () => feedQuery.data?.pages.flatMap((page) => page.rows.map(jobToRow)) ?? [],
     [feedQuery.data]
   )
+  const currentRedirect = currentPathWithSearch()
 
   const isLoading = feedQuery.isLoading
   const refetching = feedQuery.isFetching && !feedQuery.isFetchingNextPage
@@ -225,7 +227,12 @@ function LandingPageContent() {
                 <Link to='/hire'>Hire ServiceNow talent</Link>
               </Button>
               <Button asChild size='lg' variant='outline' className='sm:w-auto'>
-                <Link to='/apply/sign-up'>Join as candidate</Link>
+                <Link
+                  to='/apply/sign-up'
+                  search={currentRedirect ? { redirect: currentRedirect } : {}}
+                >
+                  Join as candidate
+                </Link>
               </Button>
             </div>
           </section>

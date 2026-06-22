@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Loader2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import { signUpAuthDataFields } from '@/lib/auth/user-account-type'
 import {
@@ -15,7 +16,6 @@ import {
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
 import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
-import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -83,6 +83,8 @@ interface SignUpFormProps extends React.HTMLAttributes<HTMLFormElement> {
   onSuccess?: (info: SignUpSuccessInfo) => void | Promise<void>
   /** Persona entry point — forwarded to post-confirmation sign-in URL. */
   intent?: SignInIntent
+  /** In-app path to return to after confirmation/sign-in (must start with '/'). */
+  redirectTo?: string
 }
 
 async function persistCandidateJobSeekerRow(opts: {
@@ -136,6 +138,7 @@ export function SignUpForm({
   className,
   onSuccess,
   intent,
+  redirectTo,
   ...props
 }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -174,8 +177,17 @@ export function SignUpForm({
     setIsLoading(true)
     try {
       const sb = getSupabaseBrowserClient()
-      const origin = publicSiteOrigin()
-      const redirect = origin ? `${origin}/sign-in` : undefined
+      const preservedRedirect = sanitizeRedirectPath(redirectTo)
+      const signInUrl =
+        typeof window === 'undefined'
+          ? undefined
+          : new URL('/sign-in', window.location.origin)
+      if (signInUrl && intent) {
+        signInUrl.searchParams.set('intent', intent)
+      }
+      if (signInUrl && preservedRedirect) {
+        signInUrl.searchParams.set('redirect', preservedRedirect)
+      }
 
       let candidateMeta: CandidateSignUpFields | undefined
       if (intent === 'candidate') {
@@ -190,7 +202,7 @@ export function SignUpForm({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: redirect,
+          emailRedirectTo: signInUrl?.toString(),
           captchaToken: turnstileToken ?? undefined,
           data: {
             ...(candidateMeta ?? {}),
@@ -276,7 +288,10 @@ export function SignUpForm({
       void navigate({
         to: '/sign-in',
         replace: true,
-        search: intent ? { intent } : {},
+        search: {
+          ...(intent ? { intent } : {}),
+          ...(preservedRedirect ? { redirect: preservedRedirect } : {}),
+        },
       })
     } finally {
       setIsLoading(false)

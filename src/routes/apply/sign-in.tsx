@@ -1,11 +1,29 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { sameOriginReferrerPath } from '@/lib/auth/redirect-path'
+
+function IntentEntryRedirect({
+  intent,
+}: {
+  intent: 'candidate' | 'recruiter'
+}) {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const redirect = sameOriginReferrerPath()
+    void navigate({
+      to: '/sign-in',
+      search: {
+        intent,
+        ...(redirect ? { redirect } : {}),
+      },
+      replace: true,
+    })
+  }, [intent, navigate])
+
+  return null
+}
 
 export const Route = createFileRoute('/apply/sign-in')({
-  beforeLoad: () => {
-    throw redirect({
-      to: '/sign-in',
-      search: { intent: 'candidate' },
-    })
-  },
-  component: () => null,
+  component: () => <IntentEntryRedirect intent='candidate' />,
 })
