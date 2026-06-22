@@ -4,6 +4,7 @@ import {
   signInCardDescription,
   signInCardTitle,
 } from '@/lib/auth/sign-in-intent'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   Card,
   CardContent,
@@ -24,9 +25,8 @@ export function SignIn() {
     if (!raw) return
     const type = new URLSearchParams(raw).get('type')
     if (type !== 'recovery') return
-    window.location.replace(
-      `${window.location.origin}/reset-password${window.location.hash}`
-    )
+    const origin = publicSiteOrigin() || window.location.origin
+    window.location.replace(`${origin}/reset-password${window.location.hash}`)
   }, [])
 
   const title = intent === undefined ? 'Sign in' : signInCardTitle(intent)

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -45,10 +46,8 @@ export function ForgotPasswordForm({
     setIsLoading(true)
     try {
       const sb = getSupabaseBrowserClient()
-      const redirect =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/reset-password`
-          : undefined
+      const origin = publicSiteOrigin()
+      const redirect = origin ? `${origin}/reset-password` : undefined
       const { error } = await sb.auth.resetPasswordForEmail(data.email, {
         redirectTo: redirect,
       })

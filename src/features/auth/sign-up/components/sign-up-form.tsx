@@ -15,6 +15,7 @@ import {
 import { defaultResumeStructured } from '@/lib/candidate/resume-structured-schema'
 import { dispatchLifecycleEmail } from '@/lib/email/admin-email-api'
 import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -173,10 +174,8 @@ export function SignUpForm({
     setIsLoading(true)
     try {
       const sb = getSupabaseBrowserClient()
-      const redirect =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/sign-in`
-          : undefined
+      const origin = publicSiteOrigin()
+      const redirect = origin ? `${origin}/sign-in` : undefined
 
       let candidateMeta: CandidateSignUpFields | undefined
       if (intent === 'candidate') {

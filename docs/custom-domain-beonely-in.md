@@ -26,6 +26,13 @@ If nameservers still point at parking DNS (`dns-parking.com`), the site will not
 
 The repo also defines an edge redirect in [`vercel.json`](../vercel.json) for `www.beonely.in` → `https://beonely.in` (belt-and-suspenders when both hostnames hit the deployment).
 
+### Canonical-host redirect (covers the `*.vercel.app` alias)
+
+[`middleware.ts`](../middleware.ts) performs a production-only 308 redirect from any non-canonical host (notably the `*.vercel.app` deployment alias) to the host in `VITE_PUBLIC_SITE_URL` (default `beonely.in`). This guarantees sign-in, sign-out, and every other navigation stay on `https://beonely.in` even if a user lands on the raw deployment URL.
+
+- Gated on `VERCEL_ENV === 'production'`, so preview deployments keep loading on their own `*.vercel.app` URLs.
+- Requires `VITE_PUBLIC_SITE_URL` to be set in the Production environment (it both renders canonical links and derives the redirect target).
+
 ## Environment variables (Production)
 
 | Variable | Value |
@@ -49,4 +56,7 @@ curl -sI https://www.beonely.in/jobs | head -5
 
 curl -sI https://beonely.in/ | head -5
 # Expect: HTTP/2 200
+
+curl -sI https://<your-prod-deployment>.vercel.app/ | head -5
+# Expect: HTTP/2 308, location: https://beonely.in/
 ```

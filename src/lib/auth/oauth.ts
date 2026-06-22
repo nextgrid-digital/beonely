@@ -1,4 +1,5 @@
 import type { SignInIntent } from '@/lib/auth/sign-in-intent'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -26,7 +27,10 @@ export async function signInWithGoogle(
     return { error: 'Google sign-in is only available in the browser.' }
   }
 
-  const callbackUrl = new URL('/auth/callback', window.location.origin)
+  const callbackUrl = new URL(
+    '/auth/callback',
+    publicSiteOrigin() || window.location.origin
+  )
   if (options.intent) {
     callbackUrl.searchParams.set('intent', options.intent)
   }

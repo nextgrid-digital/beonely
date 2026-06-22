@@ -1,11 +1,7 @@
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import type { JobRow } from '@/lib/supabase/database.types'
 
-export function publicSiteOrigin(): string {
-  const fromEnv = import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined
-  if (fromEnv?.trim()) return fromEnv.trim().replace(/\/$/, '')
-  if (typeof window !== 'undefined') return window.location.origin
-  return ''
-}
+export { publicSiteOrigin }
 
 export function publicJobUrl(jobSlug: string): string {
   const origin = publicSiteOrigin()
