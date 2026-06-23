@@ -7,6 +7,11 @@ type SitemapJobRow = {
   listing_expires_at: string | null
 }
 
+type StaticSitemapEntry = {
+  path: string
+  lastmod?: string
+}
+
 function escapeXml (s: string) {
   return s
     .replace(/&/g, '&amp;')
@@ -46,15 +51,33 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       process.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
       'https://beonely.example.com'
 
+    const staticUrls: StaticSitemapEntry[] = [
+      { path: '/' },
+      { path: '/hire' },
+      { path: '/hire/faq' },
+      { path: '/hire/contract-servicenow-talent' },
+      { path: '/hire/remote-servicenow-talent' },
+      { path: '/hire/servicenow-developers' },
+      { path: '/hire/servicenow-architects' },
+      { path: '/hire/servicenow-consultants' },
+      { path: '/hire/servicenow-admins' },
+      { path: '/changelog' },
+    ]
+
     const urls = jobs.map((j) => {
       const loc = `${site}/jobs/${escapeXml(j.job_slug)}`
       const lastmod = (j.updated_at as string)?.slice(0, 10) ?? ''
       return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
     })
 
+    const staticXml = staticUrls.map((entry) => {
+      const loc = `${site}${entry.path}`
+      return `<url><loc>${loc}</loc>${entry.lastmod ? `<lastmod>${entry.lastmod}</lastmod>` : ''}</url>`
+    })
+
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>${site}/</loc></url>
+${staticXml.join('\n')}
 ${urls.join('\n')}
 </urlset>`
 

@@ -12,6 +12,7 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router'
+import { Helmet } from 'react-helmet-async'
 import { publishedJobsFilterSchema } from '@/lib/jobs/fetch-published-jobs'
 import {
   fetchPublicJobsCount,
@@ -20,6 +21,7 @@ import {
 } from '@/lib/jobs/fetch-public-jobs-feed'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import { currentPathWithSearch } from '@/lib/auth/redirect-path'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -187,6 +189,17 @@ function LandingPageContent() {
     [feedQuery.data]
   )
   const currentRedirect = currentPathWithSearch()
+  const canonical = `${publicSiteOrigin()}/`
+  const description =
+    'Focused ServiceNow jobs, recruiter listings, and concierge hiring support for teams that need developers, architects, consultants, and admins.'
+  const ogImage = `${publicSiteOrigin()}/images/beonely-logo.svg`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Beonely',
+    url: canonical,
+    description,
+  }
 
   const isLoading = feedQuery.isLoading
   const refetching = feedQuery.isFetching && !feedQuery.isFetchingNextPage
@@ -194,6 +207,21 @@ function LandingPageContent() {
 
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
+      <Helmet>
+        <title>Beonely | ServiceNow jobs and hiring</title>
+        <meta name='description' content={description} />
+        <link rel='canonical' href={canonical} />
+        <meta property='og:title' content='Beonely | ServiceNow jobs and hiring' />
+        <meta property='og:description' content={description} />
+        <meta property='og:url' content={canonical} />
+        <meta property='og:type' content='website' />
+        <meta property='og:image' content={ogImage} />
+        <meta name='twitter:card' content='summary_large_image' />
+        <meta name='twitter:title' content='Beonely | ServiceNow jobs and hiring' />
+        <meta name='twitter:description' content={description} />
+        <meta name='twitter:image' content={ogImage} />
+      </Helmet>
+      <script type='application/ld+json'>{JSON.stringify(jsonLd)}</script>
       <PublicSiteHeader />
       <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <main

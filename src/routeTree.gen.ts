@@ -22,6 +22,13 @@ import { Route as StaffSignInRouteImport } from './routes/staff/sign-in'
 import { Route as JobsSlugRouteImport } from './routes/jobs/$slug'
 import { Route as HireSignUpRouteImport } from './routes/hire/sign-up'
 import { Route as HireSignInRouteImport } from './routes/hire/sign-in'
+import { Route as HireServicenowDevelopersRouteImport } from './routes/hire/servicenow-developers'
+import { Route as HireServicenowConsultantsRouteImport } from './routes/hire/servicenow-consultants'
+import { Route as HireServicenowArchitectsRouteImport } from './routes/hire/servicenow-architects'
+import { Route as HireServicenowAdminsRouteImport } from './routes/hire/servicenow-admins'
+import { Route as HireRemoteServicenowTalentRouteImport } from './routes/hire/remote-servicenow-talent'
+import { Route as HireFaqRouteImport } from './routes/hire/faq'
+import { Route as HireContractServicenowTalentRouteImport } from './routes/hire/contract-servicenow-talent'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApplySignUpRouteImport } from './routes/apply/sign-up'
 import { Route as ApplySignInRouteImport } from './routes/apply/sign-in'
@@ -143,6 +150,46 @@ const HireSignInRoute = HireSignInRouteImport.update({
   path: '/hire/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HireServicenowDevelopersRoute =
+  HireServicenowDevelopersRouteImport.update({
+    id: '/hire/servicenow-developers',
+    path: '/hire/servicenow-developers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const HireServicenowConsultantsRoute =
+  HireServicenowConsultantsRouteImport.update({
+    id: '/hire/servicenow-consultants',
+    path: '/hire/servicenow-consultants',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const HireServicenowArchitectsRoute =
+  HireServicenowArchitectsRouteImport.update({
+    id: '/hire/servicenow-architects',
+    path: '/hire/servicenow-architects',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const HireServicenowAdminsRoute = HireServicenowAdminsRouteImport.update({
+  id: '/hire/servicenow-admins',
+  path: '/hire/servicenow-admins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HireRemoteServicenowTalentRoute =
+  HireRemoteServicenowTalentRouteImport.update({
+    id: '/hire/remote-servicenow-talent',
+    path: '/hire/remote-servicenow-talent',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const HireFaqRoute = HireFaqRouteImport.update({
+  id: '/hire/faq',
+  path: '/hire/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HireContractServicenowTalentRoute =
+  HireContractServicenowTalentRouteImport.update({
+    id: '/hire/contract-servicenow-talent',
+    path: '/hire/contract-servicenow-talent',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -485,6 +532,13 @@ export interface FileRoutesByFullPath {
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/hire/contract-servicenow-talent': typeof HireContractServicenowTalentRoute
+  '/hire/faq': typeof HireFaqRoute
+  '/hire/remote-servicenow-talent': typeof HireRemoteServicenowTalentRoute
+  '/hire/servicenow-admins': typeof HireServicenowAdminsRoute
+  '/hire/servicenow-architects': typeof HireServicenowArchitectsRoute
+  '/hire/servicenow-consultants': typeof HireServicenowConsultantsRoute
+  '/hire/servicenow-developers': typeof HireServicenowDevelopersRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -550,6 +604,13 @@ export interface FileRoutesByTo {
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/hire/contract-servicenow-talent': typeof HireContractServicenowTalentRoute
+  '/hire/faq': typeof HireFaqRoute
+  '/hire/remote-servicenow-talent': typeof HireRemoteServicenowTalentRoute
+  '/hire/servicenow-admins': typeof HireServicenowAdminsRoute
+  '/hire/servicenow-architects': typeof HireServicenowArchitectsRoute
+  '/hire/servicenow-consultants': typeof HireServicenowConsultantsRoute
+  '/hire/servicenow-developers': typeof HireServicenowDevelopersRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -622,6 +683,13 @@ export interface FileRoutesById {
   '/apply/sign-in': typeof ApplySignInRoute
   '/apply/sign-up': typeof ApplySignUpRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/hire/contract-servicenow-talent': typeof HireContractServicenowTalentRoute
+  '/hire/faq': typeof HireFaqRoute
+  '/hire/remote-servicenow-talent': typeof HireRemoteServicenowTalentRoute
+  '/hire/servicenow-admins': typeof HireServicenowAdminsRoute
+  '/hire/servicenow-architects': typeof HireServicenowArchitectsRoute
+  '/hire/servicenow-consultants': typeof HireServicenowConsultantsRoute
+  '/hire/servicenow-developers': typeof HireServicenowDevelopersRoute
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
@@ -694,6 +762,13 @@ export interface FileRouteTypes {
     | '/apply/sign-in'
     | '/apply/sign-up'
     | '/auth/callback'
+    | '/hire/contract-servicenow-talent'
+    | '/hire/faq'
+    | '/hire/remote-servicenow-talent'
+    | '/hire/servicenow-admins'
+    | '/hire/servicenow-architects'
+    | '/hire/servicenow-consultants'
+    | '/hire/servicenow-developers'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -759,6 +834,13 @@ export interface FileRouteTypes {
     | '/apply/sign-in'
     | '/apply/sign-up'
     | '/auth/callback'
+    | '/hire/contract-servicenow-talent'
+    | '/hire/faq'
+    | '/hire/remote-servicenow-talent'
+    | '/hire/servicenow-admins'
+    | '/hire/servicenow-architects'
+    | '/hire/servicenow-consultants'
+    | '/hire/servicenow-developers'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -830,6 +912,13 @@ export interface FileRouteTypes {
     | '/apply/sign-in'
     | '/apply/sign-up'
     | '/auth/callback'
+    | '/hire/contract-servicenow-talent'
+    | '/hire/faq'
+    | '/hire/remote-servicenow-talent'
+    | '/hire/servicenow-admins'
+    | '/hire/servicenow-architects'
+    | '/hire/servicenow-consultants'
+    | '/hire/servicenow-developers'
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
@@ -898,6 +987,13 @@ export interface RootRouteChildren {
   ApplySignInRoute: typeof ApplySignInRoute
   ApplySignUpRoute: typeof ApplySignUpRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  HireContractServicenowTalentRoute: typeof HireContractServicenowTalentRoute
+  HireFaqRoute: typeof HireFaqRoute
+  HireRemoteServicenowTalentRoute: typeof HireRemoteServicenowTalentRoute
+  HireServicenowAdminsRoute: typeof HireServicenowAdminsRoute
+  HireServicenowArchitectsRoute: typeof HireServicenowArchitectsRoute
+  HireServicenowConsultantsRoute: typeof HireServicenowConsultantsRoute
+  HireServicenowDevelopersRoute: typeof HireServicenowDevelopersRoute
   HireSignInRoute: typeof HireSignInRoute
   HireSignUpRoute: typeof HireSignUpRoute
   StaffSignInRoute: typeof StaffSignInRoute
@@ -995,6 +1091,55 @@ declare module '@tanstack/react-router' {
       path: '/hire/sign-in'
       fullPath: '/hire/sign-in'
       preLoaderRoute: typeof HireSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/servicenow-developers': {
+      id: '/hire/servicenow-developers'
+      path: '/hire/servicenow-developers'
+      fullPath: '/hire/servicenow-developers'
+      preLoaderRoute: typeof HireServicenowDevelopersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/servicenow-consultants': {
+      id: '/hire/servicenow-consultants'
+      path: '/hire/servicenow-consultants'
+      fullPath: '/hire/servicenow-consultants'
+      preLoaderRoute: typeof HireServicenowConsultantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/servicenow-architects': {
+      id: '/hire/servicenow-architects'
+      path: '/hire/servicenow-architects'
+      fullPath: '/hire/servicenow-architects'
+      preLoaderRoute: typeof HireServicenowArchitectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/servicenow-admins': {
+      id: '/hire/servicenow-admins'
+      path: '/hire/servicenow-admins'
+      fullPath: '/hire/servicenow-admins'
+      preLoaderRoute: typeof HireServicenowAdminsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/remote-servicenow-talent': {
+      id: '/hire/remote-servicenow-talent'
+      path: '/hire/remote-servicenow-talent'
+      fullPath: '/hire/remote-servicenow-talent'
+      preLoaderRoute: typeof HireRemoteServicenowTalentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/faq': {
+      id: '/hire/faq'
+      path: '/hire/faq'
+      fullPath: '/hire/faq'
+      preLoaderRoute: typeof HireFaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/contract-servicenow-talent': {
+      id: '/hire/contract-servicenow-talent'
+      path: '/hire/contract-servicenow-talent'
+      fullPath: '/hire/contract-servicenow-talent'
+      preLoaderRoute: typeof HireContractServicenowTalentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -1600,6 +1745,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApplySignInRoute: ApplySignInRoute,
   ApplySignUpRoute: ApplySignUpRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  HireContractServicenowTalentRoute: HireContractServicenowTalentRoute,
+  HireFaqRoute: HireFaqRoute,
+  HireRemoteServicenowTalentRoute: HireRemoteServicenowTalentRoute,
+  HireServicenowAdminsRoute: HireServicenowAdminsRoute,
+  HireServicenowArchitectsRoute: HireServicenowArchitectsRoute,
+  HireServicenowConsultantsRoute: HireServicenowConsultantsRoute,
+  HireServicenowDevelopersRoute: HireServicenowDevelopersRoute,
   HireSignInRoute: HireSignInRoute,
   HireSignUpRoute: HireSignUpRoute,
   StaffSignInRoute: StaffSignInRoute,

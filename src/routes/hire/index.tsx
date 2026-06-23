@@ -1,8 +1,11 @@
 import { ArrowRight, BriefcaseBusiness, CheckCircle2, UserPlus } from 'lucide-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { Helmet } from 'react-helmet-async'
 import { currentPathWithSearch } from '@/lib/auth/redirect-path'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import { Button } from '@/components/ui/button'
 import { HiringRequestForm } from '@/features/jobs/hiring-request-form'
+import { hiringRoleGuides } from '@/features/jobs/hiring-guides'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
@@ -15,9 +18,42 @@ export const Route = createFileRoute('/hire/')({
 
 function HirePage() {
   const currentRedirect = currentPathWithSearch()
+  const canonical = `${publicSiteOrigin()}/hire`
+  const description =
+    'Hire ServiceNow developers, architects, consultants, and admins through paid listings or a curated shortlist request on Beonely.'
+  const ogImage = `${publicSiteOrigin()}/images/beonely-logo.svg`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'Beonely ServiceNow hiring',
+    serviceType: 'ServiceNow recruiting and shortlisting',
+    provider: {
+      '@type': 'Organization',
+      name: 'Beonely',
+      url: publicSiteOrigin(),
+    },
+    areaServed: 'Global',
+    url: canonical,
+    description,
+  }
 
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
+      <Helmet>
+        <title>Hire ServiceNow talent | Beonely</title>
+        <meta name='description' content={description} />
+        <link rel='canonical' href={canonical} />
+        <meta property='og:title' content='Hire ServiceNow talent | Beonely' />
+        <meta property='og:description' content={description} />
+        <meta property='og:url' content={canonical} />
+        <meta property='og:type' content='website' />
+        <meta property='og:image' content={ogImage} />
+        <meta name='twitter:card' content='summary_large_image' />
+        <meta name='twitter:title' content='Hire ServiceNow talent | Beonely' />
+        <meta name='twitter:description' content={description} />
+        <meta name='twitter:image' content={ogImage} />
+      </Helmet>
+      <script type='application/ld+json'>{JSON.stringify(jsonLd)}</script>
       <PublicSiteHeader />
       <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <main
@@ -126,6 +162,39 @@ function HirePage() {
                 </a>
               </Button>
             </article>
+          </section>
+
+          <section className='rounded-2xl border bg-muted/40 p-6 sm:p-8'>
+            <div className='flex flex-col gap-6 md:flex-row md:items-end md:justify-between'>
+              <div className='max-w-2xl'>
+                <p className='text-sm font-medium text-muted-foreground'>Employer-intent pages</p>
+                <h2 className='mt-2 text-2xl font-semibold tracking-tight'>
+                  Explore role-specific ServiceNow hiring paths
+                </h2>
+                <p className='mt-3 text-sm leading-6 text-muted-foreground sm:text-base'>
+                  These pages are built for employer-intent search and answer-engine traffic,
+                  so hiring teams can land on a narrower path before they post or request a
+                  shortlist.
+                </p>
+              </div>
+              <Button asChild variant='outline'>
+                <Link to='/hire/faq'>Read the ServiceNow hiring FAQ</Link>
+              </Button>
+            </div>
+            <div className='mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+              {hiringRoleGuides.map((guide) => (
+                <Link
+                  key={guide.path}
+                  to={guide.path}
+                  className='rounded-2xl border bg-background p-5 text-sm transition hover:border-foreground/30 hover:shadow-sm'
+                >
+                  <div className='font-semibold text-foreground'>{guide.title}</div>
+                  <p className='mt-2 line-clamp-3 leading-6 text-muted-foreground'>
+                    {guide.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
           </section>
 
           <section id='hiring-request-form'>

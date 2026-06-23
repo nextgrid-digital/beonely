@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Helmet } from 'react-helmet-async'
+import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
@@ -64,8 +66,35 @@ export const Route = createFileRoute('/changelog')({
 })
 
 function ChangelogPage() {
+  const canonical = `${publicSiteOrigin()}/changelog`
+  const description =
+    'Track Beonely product updates across ServiceNow job discovery, recruiter workflows, and candidate experience improvements.'
+  const ogImage = `${publicSiteOrigin()}/images/beonely-logo.svg`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Beonely product updates',
+    url: canonical,
+    description,
+  }
+
   return (
     <div className='flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background'>
+      <Helmet>
+        <title>Beonely product updates | Changelog</title>
+        <meta name='description' content={description} />
+        <link rel='canonical' href={canonical} />
+        <meta property='og:title' content='Beonely product updates | Changelog' />
+        <meta property='og:description' content={description} />
+        <meta property='og:url' content={canonical} />
+        <meta property='og:type' content='website' />
+        <meta property='og:image' content={ogImage} />
+        <meta name='twitter:card' content='summary_large_image' />
+        <meta name='twitter:title' content='Beonely product updates | Changelog' />
+        <meta name='twitter:description' content={description} />
+        <meta name='twitter:image' content={ogImage} />
+      </Helmet>
+      <script type='application/ld+json'>{JSON.stringify(jsonLd)}</script>
       <PublicSiteHeader />
       <div className='flex min-w-0 flex-1 flex-col pt-14'>
         <main
