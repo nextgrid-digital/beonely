@@ -1,5 +1,10 @@
 import { rewrite } from '@vercel/functions'
 
+// The middleware (edge) compilation unit has no Node typings, but Vercel
+// injects `process.env` at runtime. Declare a minimal shape so env reads
+// type-check without pulling @types/node into the edge build.
+declare const process: { env: Record<string, string | undefined> }
+
 const BOT_UA =
   /bot|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|Pinterest|Embedly|Quora|TelegramBot|vkShare/i
 
