@@ -45,16 +45,23 @@ export default function middleware(request: Request) {
     return
   }
 
-  const match = url.pathname.match(/^\/jobs\/([^/]+)\/?$/)
-  if (!match?.[1]) {
-    return
+  const jobMatch = url.pathname.match(/^\/jobs\/([^/]+)\/?$/)
+  if (jobMatch?.[1]) {
+    return rewriteToShare(request, '/api/share/job', jobMatch[1])
   }
 
-  const slug = decodeURIComponent(match[1])
+  const portfolioMatch = url.pathname.match(/^\/p\/([^/]+)\/?$/)
+  if (portfolioMatch?.[1]) {
+    return rewriteToShare(request, '/api/share/portfolio', portfolioMatch[1])
+  }
+}
+
+/** Internally rewrite a bot request to a server-rendered OG meta endpoint. */
+function rewriteToShare (request: Request, pathname: string, rawSlug: string) {
+  const slug = decodeURIComponent(rawSlug)
   const shareUrl = new URL(request.url)
-  shareUrl.pathname = '/api/share/job'
+  shareUrl.pathname = pathname
   shareUrl.search = ''
   shareUrl.searchParams.set('slug', slug)
-
   return rewrite(shareUrl)
 }

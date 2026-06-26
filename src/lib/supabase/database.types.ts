@@ -354,7 +354,10 @@ export type Database = {
           marketing_opt_in_at: string | null
           phone: string | null
           notification_opt_in: boolean
+          portfolio_published_at: string | null
           portfolio_url: string | null
+          public_slug: string | null
+          is_public: boolean
           resume_markdown: string | null
           resume_source: Database['public']['Enums']['resume_source']
           resume_storage_path: string | null
@@ -373,7 +376,10 @@ export type Database = {
           marketing_opt_in_at?: string | null
           phone?: string | null
           notification_opt_in?: boolean
+          portfolio_published_at?: string | null
           portfolio_url?: string | null
+          public_slug?: string | null
+          is_public?: boolean
           resume_markdown?: string | null
           resume_source?: Database['public']['Enums']['resume_source']
           resume_storage_path?: string | null
@@ -392,7 +398,10 @@ export type Database = {
           marketing_opt_in_at?: string | null
           phone?: string | null
           notification_opt_in?: boolean
+          portfolio_published_at?: string | null
           portfolio_url?: string | null
+          public_slug?: string | null
+          is_public?: boolean
           resume_markdown?: string | null
           resume_source?: Database['public']['Enums']['resume_source']
           resume_storage_path?: string | null
@@ -699,6 +708,8 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      is_portfolio_slug_available: { Args: { p_slug: string }; Returns: boolean }
+      get_public_portfolio: { Args: { p_slug: string }; Returns: Json }
     }
     Enums: {
       application_status: 'new' | 'reviewed' | 'shortlisted' | 'rejected'
@@ -916,3 +927,5 @@ export type ProfileRow = {
 
 export type JobRow = Database['public']['Tables']['jobs']['Row']
 export type RecruiterRow = Database['public']['Tables']['recruiters']['Row']
+export type JobSeekerProfileRow =
+  Database['public']['Tables']['job_seeker_profiles']['Row']

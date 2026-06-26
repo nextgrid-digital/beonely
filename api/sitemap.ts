@@ -7,6 +7,11 @@ type SitemapJobRow = {
   listing_expires_at: string | null
 }
 
+type SitemapPortfolioRow = {
+  public_slug: string | null
+  updated_at: string | null
+}
+
 type StaticSitemapEntry = {
   path: string
   lastmod?: string
@@ -41,11 +46,18 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       .eq('approval_status', 'approved')
       .eq('payment_status', 'paid')
 
+    const { data: portfoliosRaw } = await sb
+      .from('job_seeker_profiles')
+      .select('public_slug, updated_at')
+      .eq('is_public', true)
+      .not('public_slug', 'is', null)
+
     const now = Date.now()
     const jobs = ((jobsRaw ?? []) as SitemapJobRow[]).filter(
       (j) =>
         !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
     )
+    const portfolios = (portfoliosRaw ?? []) as SitemapPortfolioRow[]
 
     const site =
       process.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
@@ -70,6 +82,16 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
     })
 
+    const portfolioUrls = portfolios
+      .filter((p): p is { public_slug: string; updated_at: string | null } =>
+        Boolean(p.public_slug)
+      )
+      .map((p) => {
+        const loc = `${site}/p/${escapeXml(p.public_slug)}`
+        const lastmod = (p.updated_at as string)?.slice(0, 10) ?? ''
+        return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
+      })
+
     const staticXml = staticUrls.map((entry) => {
       const loc = `${site}${entry.path}`
       return `<url><loc>${loc}</loc>${entry.lastmod ? `<lastmod>${entry.lastmod}</lastmod>` : ''}</url>`
@@ -79,6 +101,7 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticXml.join('\n')}
 ${urls.join('\n')}
+${portfolioUrls.join('\n')}
 </urlset>`
 
     res.setHeader('Content-Type', 'application/xml')

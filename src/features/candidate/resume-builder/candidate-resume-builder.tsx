@@ -31,6 +31,7 @@ import {
   PUBLIC_SITE_BREADCRUMB_LIST,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
+import { PortfolioPublishPanel } from '@/features/candidate/portfolio-publish-panel'
 import { ReadCvResumePreview } from './read-cv-resume-preview'
 
 export type CandidateResumeBuilderProps = {
@@ -42,6 +43,10 @@ export type CandidateResumeBuilderProps = {
     linkedin_url?: string | null
     phone?: string | null
     notification_opt_in?: boolean
+    full_name?: string | null
+    public_slug?: string | null
+    is_public?: boolean | null
+    portfolio_published_at?: string | null
   } | null
   accountProfile: AccountResumePrefill
 }
@@ -205,6 +210,15 @@ export function CandidateResumeBuilder({
           )
         }
       />
+
+      {!editing ? (
+        <PortfolioPublishPanel
+          userId={userId}
+          profileRow={profileRow}
+          name={draft.general.name}
+          headline={draft.general.jobTitle}
+        />
+      ) : null}
 
       <div id='resume' className='bg-white font-sans text-slate-900'>
         <ReadCvResumePreview

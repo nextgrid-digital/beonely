@@ -137,7 +137,7 @@ export function JobDetailView({
             </div>
             <JobAboutCard job={job} />
           </div>
-          <div className='space-y-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm @2xl:sticky @2xl:top-0 @2xl:self-start'>
+          <div className='space-y-4 bg-card p-4 text-card-foreground @2xl:sticky @2xl:top-0 @2xl:self-start'>
             <JobMetaBadges job={job} includeLocation={false} />
             <div className='border-t border-border pt-4'>
               <JobCompanyCard job={job} />

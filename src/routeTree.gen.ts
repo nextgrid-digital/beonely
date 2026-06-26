@@ -13,12 +13,14 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ChangelogRouteImport } from './routes/changelog'
+import { Route as PRouteRouteImport } from './routes/p/route'
 import { Route as JobsRouteRouteImport } from './routes/jobs/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as HireIndexRouteImport } from './routes/hire/index'
 import { Route as StaffSignInRouteImport } from './routes/staff/sign-in'
+import { Route as PSlugRouteImport } from './routes/p/$slug'
 import { Route as JobsSlugRouteImport } from './routes/jobs/$slug'
 import { Route as HireSignUpRouteImport } from './routes/hire/sign-up'
 import { Route as HireSignInRouteImport } from './routes/hire/sign-in'
@@ -106,6 +108,11 @@ const ChangelogRoute = ChangelogRouteImport.update({
   path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PRouteRoute = PRouteRouteImport.update({
+  id: '/p',
+  path: '/p',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JobsRouteRoute = JobsRouteRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -134,6 +141,11 @@ const StaffSignInRoute = StaffSignInRouteImport.update({
   id: '/staff/sign-in',
   path: '/staff/sign-in',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PRouteRoute,
 } as any)
 const JobsSlugRoute = JobsSlugRouteImport.update({
   id: '/$slug',
@@ -510,6 +522,7 @@ const AuthenticatedAdminEmailCampaignsCampaignIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jobs': typeof JobsRouteRouteWithChildren
+  '/p': typeof PRouteRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -542,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
   '/hire/': typeof HireIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -586,6 +600,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/p': typeof PRouteRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -614,6 +629,7 @@ export interface FileRoutesByTo {
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
   '/hire': typeof HireIndexRoute
   '/jobs': typeof JobsIndexRoute
@@ -661,6 +677,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/jobs': typeof JobsRouteRouteWithChildren
+  '/p': typeof PRouteRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -693,6 +710,7 @@ export interface FileRoutesById {
   '/hire/sign-in': typeof HireSignInRoute
   '/hire/sign-up': typeof HireSignUpRoute
   '/jobs/$slug': typeof JobsSlugRoute
+  '/p/$slug': typeof PSlugRoute
   '/staff/sign-in': typeof StaffSignInRoute
   '/hire/': typeof HireIndexRoute
   '/jobs/': typeof JobsIndexRoute
@@ -740,6 +758,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/jobs'
+    | '/p'
     | '/changelog'
     | '/privacy'
     | '/terms'
@@ -772,6 +791,7 @@ export interface FileRouteTypes {
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
+    | '/p/$slug'
     | '/staff/sign-in'
     | '/hire/'
     | '/jobs/'
@@ -816,6 +836,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/p'
     | '/changelog'
     | '/privacy'
     | '/terms'
@@ -844,6 +865,7 @@ export interface FileRouteTypes {
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
+    | '/p/$slug'
     | '/staff/sign-in'
     | '/hire'
     | '/jobs'
@@ -890,6 +912,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/jobs'
+    | '/p'
     | '/changelog'
     | '/privacy'
     | '/terms'
@@ -922,6 +945,7 @@ export interface FileRouteTypes {
     | '/hire/sign-in'
     | '/hire/sign-up'
     | '/jobs/$slug'
+    | '/p/$slug'
     | '/staff/sign-in'
     | '/hire/'
     | '/jobs/'
@@ -969,6 +993,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   JobsRouteRoute: typeof JobsRouteRouteWithChildren
+  PRouteRoute: typeof PRouteRouteWithChildren
   ChangelogRoute: typeof ChangelogRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
@@ -1030,6 +1055,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p': {
+      id: '/p'
+      path: '/p'
+      fullPath: '/p'
+      preLoaderRoute: typeof PRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs': {
       id: '/jobs'
       path: '/jobs'
@@ -1071,6 +1103,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/staff/sign-in'
       preLoaderRoute: typeof StaffSignInRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof PRouteRoute
     }
     '/jobs/$slug': {
       id: '/jobs/$slug'
@@ -1723,10 +1762,22 @@ const JobsRouteRouteWithChildren = JobsRouteRoute._addFileChildren(
   JobsRouteRouteChildren,
 )
 
+interface PRouteRouteChildren {
+  PSlugRoute: typeof PSlugRoute
+}
+
+const PRouteRouteChildren: PRouteRouteChildren = {
+  PSlugRoute: PSlugRoute,
+}
+
+const PRouteRouteWithChildren =
+  PRouteRoute._addFileChildren(PRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   JobsRouteRoute: JobsRouteRouteWithChildren,
+  PRouteRoute: PRouteRouteWithChildren,
   ChangelogRoute: ChangelogRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
