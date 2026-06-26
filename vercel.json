@@ -19,12 +19,6 @@
     "api/og-job.tsx": {
       "maxDuration": 60
     },
-    "api/og-portfolio.tsx": {
-      "maxDuration": 60
-    },
-    "api/portfolio-preview.ts": {
-      "maxDuration": 30
-    },
     "api/razorpay-webhook.ts": {
       "maxDuration": 60
     },
@@ -80,11 +74,11 @@
     },
     {
       "source": "/api/og/portfolio",
-      "destination": "/api/og-portfolio"
+      "destination": "/api/og-job?type=portfolio"
     },
     {
       "source": "/api/share/portfolio",
-      "destination": "/api/portfolio-preview?mode=share"
+      "destination": "/api/job-preview?mode=share&type=portfolio"
     },
     {
       "source": "/api/cron/weekly-digest",
