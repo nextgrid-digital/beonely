@@ -94,10 +94,13 @@ export function CandidateResumeBuilder({
       toast.success('Profile saved')
     },
     onError: (e) => {
-      if ((e as Error).message === 'missing_email') {
+      const message = e instanceof Error ? e.message : ''
+      if (message === 'missing_email') {
         toast.error('Your account needs an email address to save your profile.')
       } else {
-        toast.error('Could not save profile')
+        toast.error(
+          message ? `Could not save profile: ${message}` : 'Could not save profile'
+        )
       }
     },
   })

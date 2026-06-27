@@ -38,14 +38,34 @@ export async function persistCandidateProfileDraft(
     phone: derived.phone.trim() || null,
   }
 
-  if (opts.profileRow?.id) {
+  // Resolve the target row defensively. The passed-in `profileRow` can be
+  // stale, null, or loaded by a query that did not select `id` (e.g. cached as
+  // null, or a row auto-created by metadata sync after this prop was read).
+  // Relying on it alone caused a blind INSERT that collides with the row's
+  // unique email constraint (409). Always confirm via `user_id` first.
+  let targetId = opts.profileRow?.id ?? null
+  let notificationOptIn = opts.profileRow?.notification_opt_in ?? true
+  if (!targetId) {
+    const { data: existing, error: lookupError } = await sb
+      .from('job_seeker_profiles')
+      .select('id, notification_opt_in')
+      .eq('user_id', opts.userId)
+      .maybeSingle()
+    if (lookupError) throw lookupError
+    if (existing?.id) {
+      targetId = existing.id
+      notificationOptIn = existing.notification_opt_in ?? true
+    }
+  }
+
+  if (targetId) {
     const { error } = await sb
       .from('job_seeker_profiles')
       .update({
         ...resumePayload,
-        notification_opt_in: opts.profileRow.notification_opt_in ?? true,
+        notification_opt_in: notificationOptIn,
       })
-      .eq('id', opts.profileRow.id)
+      .eq('id', targetId)
     if (error) throw error
     return
   }
