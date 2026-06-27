@@ -11,8 +11,11 @@ import {
   type ResumeSection,
   type ResumeStructuredV1,
 } from '@/lib/candidate/resume-structured-schema'
+import { SERVICENOW_JOB_MODULES } from '@/lib/jobs/servicenow-job-taxonomy'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ResumeCertificatesSection } from './resume-certificates-section'
+import { ResumeChipSection } from './resume-chip-section'
 import { ResumeRichTextField } from './resume-rich-text-field'
 
 function isHttpHref(href: string): boolean {
@@ -72,10 +75,27 @@ const emptyItem = (): ResumeContentItem => ({
   subTitle: '',
   date: '',
   description: '',
+  fileUrl: '',
 })
 
 function isEducationSection(section: ResumeSection): boolean {
   return section.title.trim().toLowerCase() === 'education'
+}
+
+/** Modules render as chip pickers; Certifications render as uploaded files. */
+function isChipSection(section: ResumeSection): boolean {
+  return section.title.trim().toLowerCase().includes('module')
+}
+
+function isCertificateSection(section: ResumeSection): boolean {
+  return section.title.trim().toLowerCase().includes('certificat')
+}
+
+function chipSuggestionsFor(section: ResumeSection): readonly string[] {
+  if (section.title.trim().toLowerCase().includes('module')) {
+    return SERVICENOW_JOB_MODULES
+  }
+  return []
 }
 
 /** College, state, country — or legacy company/location/subTitle when newer fields are empty. */
@@ -97,6 +117,7 @@ type SectionBlockProps = {
   sectionIndex: number
   mode: 'view' | 'edit'
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
+  onUploadCertificate?: (file: File) => Promise<string>
 }
 
 function ReadCvContentSection({
@@ -104,9 +125,25 @@ function ReadCvContentSection({
   sectionIndex,
   mode,
   onDraftChange,
+  onUploadCertificate,
 }: SectionBlockProps) {
   const edit = mode === 'edit' && onDraftChange
   const isEducation = isEducationSection(section)
+  const isChips = isChipSection(section)
+  const isCertificates = isCertificateSection(section)
+
+  // Hide an empty chip/certificate section in view mode so the public page never
+  // shows a bare "Modules"/"Certifications" heading with nothing underneath.
+  if (!edit && isChips && section.items.every((i) => !i.title.trim())) {
+    return null
+  }
+  if (
+    !edit &&
+    isCertificates &&
+    section.items.every((i) => !i.title.trim() && !i.fileUrl.trim())
+  ) {
+    return null
+  }
 
   return (
     <section className='group/section my-14 text-sm text-slate-900'>
@@ -146,6 +183,23 @@ function ReadCvContentSection({
           </Button>
         ) : null}
       </div>
+      {isCertificates ? (
+        <ResumeCertificatesSection
+          items={section.items}
+          sectionIndex={sectionIndex}
+          mode={mode}
+          onDraftChange={onDraftChange}
+          onUpload={onUploadCertificate}
+        />
+      ) : isChips ? (
+        <ResumeChipSection
+          items={section.items}
+          sectionIndex={sectionIndex}
+          suggestions={chipSuggestionsFor(section)}
+          mode={mode}
+          onDraftChange={onDraftChange}
+        />
+      ) : (
       <div className='flex flex-col gap-6'>
         {section.items.map((item, itemIndex) => (
           <div className='group/item flex' key={itemIndex}>
@@ -433,6 +487,7 @@ function ReadCvContentSection({
           </Button>
         ) : null}
       </div>
+      )}
     </section>
   )
 }
@@ -445,6 +500,8 @@ export type ReadCvResumePreviewProps = {
   headerAvatarInputId?: string
   mode?: 'view' | 'edit'
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
+  /** Uploads a certificate file (edit mode) and resolves to its public URL. */
+  onUploadCertificate?: (file: File) => Promise<string>
   /** Used when adding a contact row in edit mode. */
   userEmail?: string
 }
@@ -458,6 +515,7 @@ export function ReadCvResumePreview({
   headerAvatarInputId,
   mode = 'view',
   onDraftChange,
+  onUploadCertificate,
   userEmail = '',
 }: ReadCvResumePreviewProps) {
   const { general, sections } = data
@@ -600,8 +658,52 @@ export function ReadCvResumePreview({
           sectionIndex={index}
           mode={effectiveMode}
           onDraftChange={onDraftChange}
+          onUploadCertificate={onUploadCertificate}
         />
       ))}
+      {edit && onDraftChange ? (
+        <div className='my-8 flex flex-wrap gap-2'>
+          {!sections.some((s) =>
+            s.title.trim().toLowerCase().includes('module')
+          ) ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                onDraftChange((d) => ({
+                  ...d,
+                  sections: [...d.sections, { title: 'Modules', items: [] }],
+                }))
+              }
+            >
+              <Plus className='mr-1 size-4' />
+              Add modules
+            </Button>
+          ) : null}
+          {!sections.some((s) =>
+            s.title.trim().toLowerCase().includes('certificat')
+          ) ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                onDraftChange((d) => ({
+                  ...d,
+                  sections: [
+                    ...d.sections,
+                    { title: 'Certifications', items: [] },
+                  ],
+                }))
+              }
+            >
+              <Plus className='mr-1 size-4' />
+              Add certifications
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       <section className='my-14 text-sm'>
         <div className='mb-6 flex items-center justify-between gap-2'>
           <h3 className='font-medium'>Contact</h3>

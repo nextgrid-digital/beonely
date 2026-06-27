@@ -38,6 +38,8 @@ const resumeContentItemSchema = z.object({
   subTitle: z.string().default(''),
   date: z.string(),
   description: z.string(),
+  /** Public URL of an uploaded file (certificate image/PDF) for certificate sections. */
+  fileUrl: z.string().default(''),
 })
 
 const resumeSectionSchema = z.object({
@@ -60,7 +62,7 @@ export type ResumeContentItem = z.infer<typeof resumeContentItemSchema>
 export const PROFILE_AVATAR_PLACEHOLDER_URL =
   'https://placehold.co/80x80/e2e8f0/64748b/png?text=Photo'
 
-/** Default section order: skills, work, education, courses, certificates; Contact is rendered after sections in preview. */
+/** Default section order: skills, modules, work, education, courses, certifications; Contact is rendered after sections in preview. Modules is a chip section; Certifications holds uploaded named files. */
 export function defaultResumeStructured(): ResumeStructuredV1 {
   return {
     schemaVersion: 1,
@@ -102,6 +104,10 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
               '• Skill or domain one\n• Skill or domain two\n• Tools, frameworks, or certifications',
           },
         ],
+      },
+      {
+        title: 'Modules',
+        items: [],
       },
       {
         title: 'Work experience',
@@ -163,20 +169,8 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
         ],
       },
       {
-        title: 'Certificates',
-        items: [
-          {
-            title: 'Certificate name',
-            company: 'Issuing organization',
-            location: '',
-            college: '',
-            state: '',
-            country: '',
-            subTitle: '',
-            date: 'Year',
-            description: 'Credential ID or notes (optional).',
-          },
-        ],
+        title: 'Certifications',
+        items: [],
       },
     ],
   }

@@ -27,7 +27,7 @@ function sectionMatches (title: string, needle: string): boolean {
   return title.trim().toLowerCase().includes(needle)
 }
 
-/** Up to `max` short chips: certificate names first, then skill bullets. */
+/** Up to `max` short chips: certification/module names first, then skill bullets. */
 export function portfolioOgChips (
   portfolio: PublicPortfolio,
   max = 3
@@ -43,7 +43,12 @@ export function portfolioOgChips (
   }
 
   for (const section of portfolio.resume.sections) {
-    if (!sectionMatches(section.title, 'certificat')) continue
+    if (
+      !sectionMatches(section.title, 'certificat') &&
+      !sectionMatches(section.title, 'module')
+    ) {
+      continue
+    }
     for (const item of section.items) {
       const title = typeof item.title === 'string' ? item.title : ''
       pushUnique(title)

@@ -21,6 +21,7 @@ import {
   uploadCandidateAvatar,
   validateCandidateAvatarFile,
 } from '@/lib/candidate/upload-candidate-avatar'
+import { uploadCandidateCertificate } from '@/lib/candidate/upload-candidate-certificate'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -31,7 +32,7 @@ import {
   PUBLIC_SITE_BREADCRUMB_LIST,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
-import { PortfolioPublishPanel } from '@/features/candidate/portfolio-publish-panel'
+import { PortfolioPublishButton } from '@/features/candidate/portfolio-publish-button'
 import { ReadCvResumePreview } from './read-cv-resume-preview'
 
 export type CandidateResumeBuilderProps = {
@@ -148,6 +149,14 @@ export function CandidateResumeBuilder({
     }
   }
 
+  const uploadCertificate = async (file: File): Promise<string> => {
+    if (!getSupabaseConfigured()) {
+      throw new Error('Connect Supabase to upload a certificate.')
+    }
+    const sb = getSupabaseBrowserClient()
+    return uploadCandidateCertificate(sb, userId, file)
+  }
+
   const profilePhotoUploadLabel = (
     <span
       className='inline-flex items-center justify-center rounded-md border-0 bg-white/95 px-2 py-1 text-[10px] font-medium text-slate-900 shadow-sm sm:text-xs'
@@ -199,32 +208,32 @@ export function CandidateResumeBuilder({
               {saveResume.isPending ? 'Saving…' : 'Save profile'}
             </Button>
           ) : (
-            <Button
-              type='button'
-              size='sm'
-              variant='outline'
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
+            <>
+              <PortfolioPublishButton
+                userId={userId}
+                profileRow={profileRow}
+                name={draft.general.name}
+                headline={draft.general.jobTitle}
+              />
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </Button>
+            </>
           )
         }
       />
-
-      {!editing ? (
-        <PortfolioPublishPanel
-          userId={userId}
-          profileRow={profileRow}
-          name={draft.general.name}
-          headline={draft.general.jobTitle}
-        />
-      ) : null}
 
       <div id='resume' className='bg-white font-sans text-slate-900'>
         <ReadCvResumePreview
           data={draft}
           mode={editing ? 'edit' : 'view'}
           onDraftChange={editing ? setDraft : undefined}
+          onUploadCertificate={editing ? uploadCertificate : undefined}
           userEmail={userEmail}
           headerAvatarInputId={editing ? avatarInputId : undefined}
           headerAvatarAction={editing ? profilePhotoUploadLabel : undefined}
