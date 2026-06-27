@@ -28,7 +28,7 @@ export function PublicSiteStickySubheader({
   actions?: ReactNode
 }) {
   return (
-    <div className='sticky top-14 z-40 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 motion-reduce:transition-none'>
+    <div className='sticky top-14 z-40 -mx-4 -mt-2 mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 motion-reduce:transition-none'>
       <nav aria-label='Breadcrumb' className='min-w-0'>
         {breadcrumb}
       </nav>
