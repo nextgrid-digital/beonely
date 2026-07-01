@@ -84,6 +84,7 @@ const MODULE_TERMS = SERVICENOW_MODULE_KEYWORDS
 
 const CERTIFICATION_PATTERNS = SERVICENOW_CERTIFICATION_PATTERNS
 const DEFAULT_POSTED_WITHIN_SECONDS = 31 * 24 * 60 * 60
+const DEFAULT_MAX_APPLICANTS = 100
 
 export type LinkedInScrapeConfig = {
   searchTerms: string[]
@@ -91,6 +92,7 @@ export type LinkedInScrapeConfig = {
   maxPages: number
   pageSize: number
   postedWithinSeconds: number
+  maxApplicants: number
   timeoutMs: number
   delayMs: number
   retryMax: number
@@ -167,6 +169,7 @@ const DEFAULT_CONFIG: LinkedInScrapeConfig = {
   maxPages: 3,
   pageSize: 25,
   postedWithinSeconds: DEFAULT_POSTED_WITHIN_SECONDS,
+  maxApplicants: DEFAULT_MAX_APPLICANTS,
   timeoutMs: 25_000,
   delayMs: 1200,
   retryMax: 2,
@@ -185,6 +188,10 @@ export function resolveLinkedInScrapeConfigFromEnv(
     postedWithinSeconds: parsePositiveInt(
       env.SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS,
       DEFAULT_CONFIG.postedWithinSeconds
+    ),
+    maxApplicants: parsePositiveInt(
+      env.SCRAPE_LINKEDIN_MAX_APPLICANTS,
+      DEFAULT_CONFIG.maxApplicants
     ),
     timeoutMs: parsePositiveInt(env.SCRAPE_LINKEDIN_TIMEOUT_MS, DEFAULT_CONFIG.timeoutMs),
     delayMs: parsePositiveInt(env.SCRAPE_LINKEDIN_DELAY_MS, DEFAULT_CONFIG.delayMs),
@@ -456,6 +463,36 @@ function capturePostedText(html: string): string {
     .trim()
 }
 
+function captureApplicantText(html: string): string {
+  return stripHtmlToText(findTagContentByClass(html, /num-applicants__caption/))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function parseLinkedInApplicantCount(text: string): number | null {
+  const value = text.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (!value || !value.includes('applicant')) return null
+
+  if (/\bover\s+(\d[\d,]*)\s+applicants?\b/.test(value)) {
+    const amount = Number.parseInt(
+      value.match(/\bover\s+(\d[\d,]*)\s+applicants?\b/)?.[1]?.replace(/,/g, '') ?? '',
+      10
+    )
+    return Number.isFinite(amount) ? amount + 1 : null
+  }
+
+  const match = value.match(/\b(\d[\d,]*)\s+applicants?\b/)
+  if (!match) return null
+
+  const amount = Number.parseInt(match[1]?.replace(/,/g, '') ?? '', 10)
+  return Number.isFinite(amount) ? amount : null
+}
+
+export function isWithinApplicantLimit(html: string, maxApplicants: number): boolean {
+  const applicantCount = parseLinkedInApplicantCount(captureApplicantText(html))
+  return applicantCount == null || applicantCount <= maxApplicants
+}
+
 function parseRelativeLinkedInPostedAt(text: string, now = new Date()): string | null {
   const value = text.toLowerCase().replace(/\s+/g, ' ').trim()
   if (!value) return null
@@ -675,7 +712,11 @@ function findCompanyLogoFromMarkup(html: string): string | undefined {
   return undefined
 }
 
-export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJobDetail | null {
+export function parseLinkedInJobDetailHtml(
+  jobId: string,
+  html: string,
+  options: { maxApplicants?: number } = {}
+): ParsedJobDetail | null {
   const jsonLd = parseJobPostingJsonLd(html)
 
   const metaTitle = captureAttrValue(
@@ -728,6 +769,7 @@ export function parseLinkedInJobDetailHtml(jobId: string, html: string): ParsedJ
 
   if (!jobTitle || !companyName || !jobDescription) return null
   if (!isStillAcceptingApplications(html, jsonLd?.validThrough)) return null
+  if (!isWithinApplicantLimit(html, options.maxApplicants ?? DEFAULT_MAX_APPLICANTS)) return null
 
   const idFromJson = extractLinkedInJobId(jsonLd?.url ?? '')
   const normalizedJobId = idFromJson || jobId
@@ -966,7 +1008,9 @@ export async function scrapeLinkedInJobs(
         logger,
       })
 
-      const parsed = parseLinkedInJobDetailHtml(jobId, html)
+      const parsed = parseLinkedInJobDetailHtml(jobId, html, {
+        maxApplicants: config.maxApplicants,
+      })
       if (!parsed) {
         summary.filteredOut += 1
         continue

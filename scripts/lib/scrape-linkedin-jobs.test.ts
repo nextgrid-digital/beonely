@@ -9,11 +9,13 @@ import {
   isServiceNowRelated,
   isStillAcceptingApplications,
   isWithinPostedWindow,
+  isWithinApplicantLimit,
   normalizeEmploymentType,
   normalizeExperienceLevel,
   normalizeJobType,
   normalizeWorkMode,
   parseLinkedInJobDetailHtml,
+  parseLinkedInApplicantCount,
   parseLinkedInPostedAt,
   scrapeLinkedInJobs,
   type LinkedInScrapeConfig,
@@ -34,6 +36,7 @@ const baseConfig: LinkedInScrapeConfig = {
   maxPages: 1,
   pageSize: 25,
   postedWithinSeconds: 31 * 24 * 60 * 60,
+  maxApplicants: 100,
   timeoutMs: 5_000,
   delayMs: 0,
   retryMax: 1,
@@ -115,6 +118,27 @@ describe('filters', () => {
       )
     ).toBe(false)
   })
+
+  it('parses applicant counts and rejects roles over the limit', () => {
+    expect(parseLinkedInApplicantCount('37 applicants')).toBe(37)
+    expect(parseLinkedInApplicantCount('Over 100 applicants')).toBe(101)
+    expect(parseLinkedInApplicantCount('Over 1,200 applicants')).toBe(1201)
+    expect(parseLinkedInApplicantCount('')).toBeNull()
+
+    expect(
+      isWithinApplicantLimit(
+        '<figcaption class="num-applicants__caption">100 applicants</figcaption>',
+        100
+      )
+    ).toBe(true)
+    expect(
+      isWithinApplicantLimit(
+        '<figcaption class="num-applicants__caption">Over 100 applicants</figcaption>',
+        100
+      )
+    ).toBe(false)
+    expect(isWithinApplicantLimit('<p>No applicant count shown</p>', 100)).toBe(true)
+  })
 })
 
 describe('parseLinkedInJobDetailHtml', () => {
@@ -154,6 +178,7 @@ describe('parseLinkedInJobDetailHtml', () => {
       <a class="topcard__org-name-link">Acme Corp</a>
       <span class="topcard__flavor--bullet">Remote, India</span>
       <span class="posted-time-ago__text topcard__flavor--metadata">2 weeks ago</span>
+      <figcaption class="num-applicants__caption">42 applicants</figcaption>
       <div class="show-more-less-html__markup"><p>ServiceNow ITSM implementation role.</p></div>
     `
 
@@ -188,6 +213,19 @@ describe('parseLinkedInJobDetailHtml', () => {
     expect(parsed?.companyLogoUrl).toBe(
       'https://www.google.com/s2/favicons?domain=example.com&sz=128'
     )
+  })
+
+  it('rejects jobs with more than 100 applicants', () => {
+    const html = `
+      <h2 class="top-card-layout__title">ServiceNow Developer</h2>
+      <a class="topcard__org-name-link">Acme Corp</a>
+      <span class="topcard__flavor--bullet">Remote, India</span>
+      <span class="posted-time-ago__text topcard__flavor--metadata">3 days ago</span>
+      <figcaption class="num-applicants__caption">Over 100 applicants</figcaption>
+      <div class="show-more-less-html__markup"><p>ServiceNow ITSM implementation role.</p></div>
+    `
+
+    expect(parseLinkedInJobDetailHtml('7777777777', html)).toBeNull()
   })
 })
 
