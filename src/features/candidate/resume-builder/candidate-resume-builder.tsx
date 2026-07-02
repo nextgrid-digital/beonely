@@ -5,8 +5,9 @@
 import { useId, useState, type ChangeEventHandler } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronRight, Globe, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { publicPortfolioUrl } from '@/lib/candidate/portfolio-share-url'
 import { persistCandidateProfileDraft } from '@/lib/candidate/persist-candidate-profile-draft'
 import {
   type AccountResumePrefill,
@@ -172,6 +173,9 @@ export function CandidateResumeBuilder({
     </span>
   )
 
+  const publicSlug = profileRow?.public_slug?.trim() ?? ''
+  const publicUrl = publicSlug ? publicPortfolioUrl(publicSlug) : null
+
   return (
     <div className='w-full pt-2'>
       <input
@@ -218,6 +222,25 @@ export function CandidateResumeBuilder({
                 name={draft.general.name}
                 headline={draft.general.jobTitle}
               />
+              {publicUrl ? (
+                <Button asChild type='button' size='sm' variant='outline'>
+                  <a href={publicUrl} target='_blank' rel='noopener noreferrer'>
+                    <Globe className='size-3.5' aria-hidden />
+                    Profile link
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  disabled
+                  title='Publish your profile to open its public Beonely link.'
+                >
+                  <Globe className='size-3.5' aria-hidden />
+                  Profile link
+                </Button>
+              )}
               <Button
                 type='button'
                 size='sm'
