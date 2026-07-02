@@ -177,6 +177,10 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
   const goProfileOrApply = useCallback(
     async (authProfile: ProfileRow | null) => {
       try {
+        if (!beonely) {
+          openExternalApply()
+          return
+        }
         if (!getSupabaseConfigured()) return
         const sb = getSupabaseBrowserClient()
         const { data: authUserRes } = await sb.auth.getUser()
@@ -187,12 +191,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           authProfile?.role === 'recruiter' ||
           authProfile?.role === 'admin'
         ) {
-          if (beonely) {
-            toast.message(recruiterApplyRedirectMessage)
-            void navigate({ to: '/recruiter' })
-            return
-          }
-          openExternalApply()
+          toast.message(recruiterApplyRedirectMessage)
+          void navigate({ to: '/recruiter' })
           return
         }
 
@@ -206,52 +206,44 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
           })
           return
         }
-        if (beonely) {
-          const full = await fetchJobSeekerSnapshotRow(authUser.id)
-          if (!full) {
-            toast.error('Complete your profile first')
-            return
-          }
-          const { error } = await submitBeonelyApplication({
-            sb,
-            job,
-            authUser,
-            jobSeekerRow: {
-              email: full.email,
-              full_name: full.full_name,
-              phone: full.phone,
-              linkedin_url: full.linkedin_url,
-              portfolio_url: full.portfolio_url,
-              resume_structured: full.resume_structured,
-              resume_storage_path: full.resume_storage_path,
-            },
-          })
-          if (error) {
-            toast.error(error)
-            return
-          }
-          const token = session?.access_token
-          if (token) {
-            try {
-              await apiPost(
-                '/api/notify-application',
-                { job_id: job.id },
-                token
-              )
-            } catch {
-              /* best-effort */
-            }
-          }
-          toast.success('Application sent to the employer')
-          void qc.invalidateQueries({
-            queryKey: ['beonely-application', authUser.id, job.id],
-          })
-          void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
-          void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
-          void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
+        const full = await fetchJobSeekerSnapshotRow(authUser.id)
+        if (!full) {
+          toast.error('Complete your profile first')
           return
         }
-        openExternalApply()
+        const { error } = await submitBeonelyApplication({
+          sb,
+          job,
+          authUser,
+          jobSeekerRow: {
+            email: full.email,
+            full_name: full.full_name,
+            phone: full.phone,
+            linkedin_url: full.linkedin_url,
+            portfolio_url: full.portfolio_url,
+            resume_structured: full.resume_structured,
+            resume_storage_path: full.resume_storage_path,
+          },
+        })
+        if (error) {
+          toast.error(error)
+          return
+        }
+        const token = session?.access_token
+        if (token) {
+          try {
+            await apiPost('/api/notify-application', { job_id: job.id }, token)
+          } catch {
+            /* best-effort */
+          }
+        }
+        toast.success('Application sent to the employer')
+        void qc.invalidateQueries({
+          queryKey: ['beonely-application', authUser.id, job.id],
+        })
+        void qc.invalidateQueries({ queryKey: ['beonely-applications'] })
+        void qc.invalidateQueries({ queryKey: ['recruiter-jobs'] })
+        void qc.invalidateQueries({ queryKey: ['job-applicants', job.id] })
       } catch (error) {
         toast.error(applyFlowErrorMessage(error))
       }
@@ -261,6 +253,10 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
 
   const handleApplyClick = useCallback(async () => {
     try {
+      if (!beonely) {
+        openExternalApply()
+        return
+      }
       if (!user) {
         setAuthKey((k) => k + 1)
         setAuthOpen(true)
@@ -268,12 +264,8 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
       }
       if (!getSupabaseConfigured()) return
       if (profile?.role === 'recruiter' || profile?.role === 'admin') {
-        if (beonely) {
-          toast.message(recruiterApplyRedirectMessage)
-          void navigate({ to: '/recruiter' })
-          return
-        }
-        openExternalApply()
+        toast.message(recruiterApplyRedirectMessage)
+        void navigate({ to: '/recruiter' })
         return
       }
       const sb = getSupabaseBrowserClient()
@@ -287,21 +279,17 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
         })
         return
       }
-      if (beonely) {
-        applyBeonelyMutate()
-        return
-      }
-      openExternalApply()
+      applyBeonelyMutate()
     } catch (error) {
       toast.error(applyFlowErrorMessage(error))
     }
   }, [
+    beonely,
+    openExternalApply,
     user,
     profile,
     navigate,
-    openExternalApply,
     job.job_slug,
-    beonely,
     applyBeonelyMutate,
   ])
 
