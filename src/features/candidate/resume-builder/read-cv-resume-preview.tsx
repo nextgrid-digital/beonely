@@ -22,7 +22,6 @@ function isHttpHref(href: string): boolean {
   return /^https?:\/\//i.test(href.trim())
 }
 
-/** External link arrow (from ibelick/nextjs-resume Contact row). */
 function ExternalArrowIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -54,9 +53,9 @@ function ProfileHeaderAvatar({
     <img
       alt={name}
       src={broken ? PROFILE_AVATAR_PLACEHOLDER_URL : avatarUrl}
-      width={80}
-      height={80}
-      className='size-20 rounded-full object-cover'
+      width={144}
+      height={144}
+      className='size-28 rounded-full object-cover md:size-36'
       onError={() => setBroken(true)}
     />
   )
@@ -82,13 +81,17 @@ function isEducationSection(section: ResumeSection): boolean {
   return section.title.trim().toLowerCase() === 'education'
 }
 
-/** Modules render as chip pickers; Certifications render as uploaded files. */
 function isChipSection(section: ResumeSection): boolean {
   return section.title.trim().toLowerCase().includes('module')
 }
 
 function isCertificateSection(section: ResumeSection): boolean {
   return section.title.trim().toLowerCase().includes('certificat')
+}
+
+function isSkillsSection(section: ResumeSection): boolean {
+  const t = section.title.trim().toLowerCase()
+  return t.includes('skill') || t.includes('proficien')
 }
 
 function chipSuggestionsFor(section: ResumeSection): readonly string[] {
@@ -98,7 +101,6 @@ function chipSuggestionsFor(section: ResumeSection): readonly string[] {
   return []
 }
 
-/** College, state, country — or legacy company/location/subTitle when newer fields are empty. */
 function educationMetaLine(item: ResumeContentItem): string | null {
   const modern = [item.college, item.state, item.country]
     .map((s) => s.trim())
@@ -110,6 +112,33 @@ function educationMetaLine(item: ResumeContentItem): string | null {
   if (legacy.length > 0) return legacy.join(', ')
   const st = item.subTitle.trim()
   return st || null
+}
+
+function sectionDisplayLabel(section: ResumeSection): string {
+  const t = section.title.trim().toLowerCase()
+  if (t.includes('skill') || t.includes('proficien')) return 'Tools'
+  if (t.includes('work')) return 'Experience'
+  if (t.includes('course')) return 'Courses'
+  return section.title
+}
+
+function skillPillsFromSection(section: ResumeSection): string[] {
+  const tokens = new Set<string>()
+  for (const item of section.items) {
+    const fromTitle = item.title
+      .split(/,|\n|•/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+    const fromDescription = item.description
+      .replace(/<[^>]+>/g, '\n')
+      .split(/,|\n|•/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+    for (const token of [...fromTitle, ...fromDescription]) {
+      if (token.length > 1) tokens.add(token)
+    }
+  }
+  return [...tokens]
 }
 
 type SectionBlockProps = {
@@ -131,9 +160,8 @@ function ReadCvContentSection({
   const isEducation = isEducationSection(section)
   const isChips = isChipSection(section)
   const isCertificates = isCertificateSection(section)
+  const isSkills = isSkillsSection(section)
 
-  // Hide an empty chip/certificate section in view mode so the public page never
-  // shows a bare "Modules"/"Certifications" heading with nothing underneath.
   if (!edit && isChips && section.items.every((i) => !i.title.trim())) {
     return null
   }
@@ -145,43 +173,71 @@ function ReadCvContentSection({
     return null
   }
 
+  if (!edit && isSkills) {
+    const pills = skillPillsFromSection(section)
+    if (pills.length === 0) return null
+    return (
+      <section className='my-16 text-slate-900'>
+        <div className='mb-6 border-b border-slate-200 pb-3'>
+          <h3 className='text-[13px] font-medium tracking-[0.14em] uppercase text-slate-900'>
+            {sectionDisplayLabel(section)}
+          </h3>
+        </div>
+        <div className='flex flex-wrap gap-3'>
+          {pills.map((pill) => (
+            <span
+              key={pill}
+              className='inline-flex items-center rounded-full bg-slate-100 px-4 py-2 text-[15px] font-medium text-slate-700'
+            >
+              {pill}
+            </span>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className='group/section my-14 text-sm text-slate-900'>
-      <div className='mb-6 flex items-start justify-between gap-2'>
-        {edit ? (
-          <Input
-            aria-label='Section title'
-            value={section.title}
-            onChange={(e) => {
-              const v = e.target.value
-              onDraftChange((d) => {
-                const sections = [...d.sections]
-                sections[sectionIndex] = { ...sections[sectionIndex], title: v }
-                return { ...d, sections }
-              })
-            }}
-            className={`${INLINE} mb-0 text-base font-medium`}
-          />
-        ) : (
-          <h3 className='mb-0 font-medium'>{section.title}</h3>
-        )}
-        {edit ? (
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
-            className='shrink-0 text-destructive opacity-0 transition-opacity group-hover/section:opacity-100'
-            aria-label='Remove section'
-            onClick={() =>
-              onDraftChange((d) => ({
-                ...d,
-                sections: d.sections.filter((_, j) => j !== sectionIndex),
-              }))
-            }
-          >
-            <Trash2 className='size-4' />
-          </Button>
-        ) : null}
+    <section className='group/section my-16 text-slate-900'>
+      <div className='mb-6 border-b border-slate-200 pb-3'>
+        <div className='flex items-start justify-between gap-2'>
+          {edit ? (
+            <Input
+              aria-label='Section title'
+              value={section.title}
+              onChange={(e) => {
+                const v = e.target.value
+                onDraftChange((d) => {
+                  const sections = [...d.sections]
+                  sections[sectionIndex] = { ...sections[sectionIndex], title: v }
+                  return { ...d, sections }
+                })
+              }}
+              className={`${INLINE} mb-0 text-[13px] font-medium tracking-[0.14em] uppercase text-slate-900`}
+            />
+          ) : (
+            <h3 className='text-[13px] font-medium tracking-[0.14em] uppercase text-slate-900'>
+              {sectionDisplayLabel(section)}
+            </h3>
+          )}
+          {edit ? (
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='shrink-0 text-destructive opacity-0 transition-opacity group-hover/section:opacity-100'
+              aria-label='Remove section'
+              onClick={() =>
+                onDraftChange((d) => ({
+                  ...d,
+                  sections: d.sections.filter((_, j) => j !== sectionIndex),
+                }))
+              }
+            >
+              <Trash2 className='size-4' />
+            </Button>
+          ) : null}
+        </div>
       </div>
       {isCertificates ? (
         <ResumeCertificatesSection
@@ -200,49 +256,24 @@ function ReadCvContentSection({
           onDraftChange={onDraftChange}
         />
       ) : (
-      <div className='flex flex-col gap-6'>
-        {section.items.map((item, itemIndex) => (
-          <div className='group/item flex' key={itemIndex}>
-            <div className='mr-8 w-full max-w-[100px] shrink-0 text-slate-400'>
-              {edit ? (
-                <Input
-                  aria-label='Date range'
-                  placeholder='Date'
-                  value={item.date}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    onDraftChange((d) => {
-                      const sections = [...d.sections]
-                      const items = [...sections[sectionIndex].items]
-                      items[itemIndex] = { ...items[itemIndex], date: v }
-                      sections[sectionIndex] = {
-                        ...sections[sectionIndex],
-                        items,
-                      }
-                      return { ...d, sections }
-                    })
-                  }}
-                  className={`${INLINE} text-sm text-slate-400`}
-                />
-              ) : item.date ? (
-                item.date
-              ) : (
-                ''
-              )}
-            </div>
-            <div className='flex min-w-0 flex-1 flex-col'>
-              {edit ? (
-                <>
+        <div className='flex flex-col gap-12'>
+          {section.items.map((item, itemIndex) => (
+            <div
+              className='group/item grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8'
+              key={itemIndex}
+            >
+              <div className='text-[18px] leading-tight text-slate-400'>
+                {edit ? (
                   <Input
-                    aria-label='Title'
-                    placeholder='Title'
-                    value={item.title}
+                    aria-label='Date range'
+                    placeholder='Date'
+                    value={item.date}
                     onChange={(e) => {
                       const v = e.target.value
                       onDraftChange((d) => {
                         const sections = [...d.sections]
                         const items = [...sections[sectionIndex].items]
-                        items[itemIndex] = { ...items[itemIndex], title: v }
+                        items[itemIndex] = { ...items[itemIndex], date: v }
                         sections[sectionIndex] = {
                           ...sections[sectionIndex],
                           items,
@@ -250,243 +281,271 @@ function ReadCvContentSection({
                         return { ...d, sections }
                       })
                     }}
-                    className={`${INLINE} font-medium`}
+                    className={`${INLINE} text-[18px] text-slate-400`}
                   />
-                  <div className='mt-0.5 flex flex-col gap-0'>
+                ) : (
+                  item.date || ''
+                )}
+              </div>
+              <div className='min-w-0'>
+                {edit ? (
+                  <>
+                    <Input
+                      aria-label='Title'
+                      placeholder='Title'
+                      value={item.title}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        onDraftChange((d) => {
+                          const sections = [...d.sections]
+                          const items = [...sections[sectionIndex].items]
+                          items[itemIndex] = { ...items[itemIndex], title: v }
+                          sections[sectionIndex] = {
+                            ...sections[sectionIndex],
+                            items,
+                          }
+                          return { ...d, sections }
+                        })
+                      }}
+                      className={`${INLINE} text-[18px] font-semibold text-slate-900`}
+                    />
+                    <div className='mt-2 flex flex-col gap-0'>
+                      {isEducation ? (
+                        <div className='flex min-w-0 flex-row flex-wrap items-center gap-x-2 text-[16px] text-slate-600'>
+                          <Input
+                            aria-label='College or university'
+                            placeholder='College'
+                            value={item.college}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              onDraftChange((d) => {
+                                const sections = [...d.sections]
+                                const items = [...sections[sectionIndex].items]
+                                items[itemIndex] = {
+                                  ...items[itemIndex],
+                                  college: v,
+                                }
+                                sections[sectionIndex] = {
+                                  ...sections[sectionIndex],
+                                  items,
+                                }
+                                return { ...d, sections }
+                              })
+                            }}
+                            className={`${INLINE} min-w-0 flex-1 basis-0 text-[16px] text-slate-600`}
+                          />
+                          <span className='shrink-0 text-slate-500' aria-hidden>
+                            ,
+                          </span>
+                          <Input
+                            aria-label='State or region'
+                            placeholder='State'
+                            value={item.state}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              onDraftChange((d) => {
+                                const sections = [...d.sections]
+                                const items = [...sections[sectionIndex].items]
+                                items[itemIndex] = {
+                                  ...items[itemIndex],
+                                  state: v,
+                                }
+                                sections[sectionIndex] = {
+                                  ...sections[sectionIndex],
+                                  items,
+                                }
+                                return { ...d, sections }
+                              })
+                            }}
+                            className={`${INLINE} min-w-0 flex-1 basis-0 text-[16px] text-slate-600`}
+                          />
+                          <span className='shrink-0 text-slate-500' aria-hidden>
+                            ,
+                          </span>
+                          <Input
+                            aria-label='Country'
+                            placeholder='Country'
+                            value={item.country}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              onDraftChange((d) => {
+                                const sections = [...d.sections]
+                                const items = [...sections[sectionIndex].items]
+                                items[itemIndex] = {
+                                  ...items[itemIndex],
+                                  country: v,
+                                }
+                                sections[sectionIndex] = {
+                                  ...sections[sectionIndex],
+                                  items,
+                                }
+                                return { ...d, sections }
+                              })
+                            }}
+                            className={`${INLINE} min-w-0 flex-1 basis-0 text-[16px] text-slate-600`}
+                          />
+                        </div>
+                      ) : (
+                        <div className='flex min-w-0 flex-row flex-wrap items-center gap-x-2 text-[16px] text-slate-700'>
+                          <Input
+                            aria-label='Company'
+                            placeholder='Company'
+                            value={item.company}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              onDraftChange((d) => {
+                                const sections = [...d.sections]
+                                const items = [...sections[sectionIndex].items]
+                                items[itemIndex] = {
+                                  ...items[itemIndex],
+                                  company: v,
+                                }
+                                sections[sectionIndex] = {
+                                  ...sections[sectionIndex],
+                                  items,
+                                }
+                                return { ...d, sections }
+                              })
+                            }}
+                            className={`${INLINE} min-w-0 flex-1 basis-0 text-[16px] text-slate-700`}
+                          />
+                          <span className='shrink-0 text-slate-500' aria-hidden>
+                            |
+                          </span>
+                          <Input
+                            aria-label='Location'
+                            placeholder='City, region, or Remote'
+                            value={item.location}
+                            onChange={(e) => {
+                              const v = e.target.value
+                              onDraftChange((d) => {
+                                const sections = [...d.sections]
+                                const items = [...sections[sectionIndex].items]
+                                items[itemIndex] = {
+                                  ...items[itemIndex],
+                                  location: v,
+                                }
+                                sections[sectionIndex] = {
+                                  ...sections[sectionIndex],
+                                  items,
+                                }
+                                return { ...d, sections }
+                              })
+                            }}
+                            className={`${INLINE} min-w-0 flex-1 basis-0 text-[16px] text-slate-700`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {!isEducation ? (
+                      <div className='mt-4'>
+                        <ResumeRichTextField
+                          value={item.description}
+                          editable
+                          onChange={(html) =>
+                            onDraftChange((d) => {
+                              const sections = [...d.sections]
+                              const items = [...sections[sectionIndex].items]
+                              items[itemIndex] = {
+                                ...items[itemIndex],
+                                description: html,
+                              }
+                              sections[sectionIndex] = {
+                                ...sections[sectionIndex],
+                                items,
+                              }
+                              return { ...d, sections }
+                            })
+                          }
+                        />
+                      </div>
+                    ) : null}
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      className='mt-3 w-fit text-destructive opacity-0 group-hover/item:opacity-100'
+                      onClick={() =>
+                        onDraftChange((d) => {
+                          const sections = [...d.sections]
+                          const items = sections[sectionIndex].items.filter(
+                            (_, j) => j !== itemIndex
+                          )
+                          sections[sectionIndex] = {
+                            ...sections[sectionIndex],
+                            items,
+                          }
+                          return { ...d, sections }
+                        })
+                      }
+                    >
+                      Remove entry
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {item.title ? (
+                      <h4 className='text-[18px] font-semibold leading-tight text-slate-900'>
+                        {item.title}
+                      </h4>
+                    ) : null}
                     {isEducation ? (
-                      <div className='flex min-w-0 flex-row flex-wrap items-center gap-x-2 text-sm text-slate-600'>
-                        <Input
-                          aria-label='College or university'
-                          placeholder='College'
-                          value={item.college}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            onDraftChange((d) => {
-                              const sections = [...d.sections]
-                              const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = {
-                                ...items[itemIndex],
-                                college: v,
-                              }
-                              sections[sectionIndex] = {
-                                ...sections[sectionIndex],
-                                items,
-                              }
-                              return { ...d, sections }
-                            })
-                          }}
-                          className={`${INLINE} min-w-0 flex-1 basis-0 text-sm text-slate-600`}
-                        />
-                        <span className='shrink-0 text-slate-500' aria-hidden>
-                          ,
-                        </span>
-                        <Input
-                          aria-label='State or region'
-                          placeholder='State'
-                          value={item.state}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            onDraftChange((d) => {
-                              const sections = [...d.sections]
-                              const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = {
-                                ...items[itemIndex],
-                                state: v,
-                              }
-                              sections[sectionIndex] = {
-                                ...sections[sectionIndex],
-                                items,
-                              }
-                              return { ...d, sections }
-                            })
-                          }}
-                          className={`${INLINE} min-w-0 flex-1 basis-0 text-sm text-slate-600`}
-                        />
-                        <span className='shrink-0 text-slate-500' aria-hidden>
-                          ,
-                        </span>
-                        <Input
-                          aria-label='Country'
-                          placeholder='Country'
-                          value={item.country}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            onDraftChange((d) => {
-                              const sections = [...d.sections]
-                              const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = {
-                                ...items[itemIndex],
-                                country: v,
-                              }
-                              sections[sectionIndex] = {
-                                ...sections[sectionIndex],
-                                items,
-                              }
-                              return { ...d, sections }
-                            })
-                          }}
-                          className={`${INLINE} min-w-0 flex-1 basis-0 text-sm text-slate-600`}
-                        />
-                      </div>
-                    ) : (
-                      <div className='flex min-w-0 flex-row flex-wrap items-center gap-x-2 text-sm text-slate-600'>
-                        <Input
-                          aria-label='Company'
-                          placeholder='Company'
-                          value={item.company}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            onDraftChange((d) => {
-                              const sections = [...d.sections]
-                              const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = {
-                                ...items[itemIndex],
-                                company: v,
-                              }
-                              sections[sectionIndex] = {
-                                ...sections[sectionIndex],
-                                items,
-                              }
-                              return { ...d, sections }
-                            })
-                          }}
-                          className={`${INLINE} min-w-0 flex-1 basis-0 text-sm text-slate-600`}
-                        />
-                        <span className='shrink-0 text-slate-500' aria-hidden>
-                          ,
-                        </span>
-                        <Input
-                          aria-label='Location'
-                          placeholder='City, region, or Remote'
-                          value={item.location}
-                          onChange={(e) => {
-                            const v = e.target.value
-                            onDraftChange((d) => {
-                              const sections = [...d.sections]
-                              const items = [...sections[sectionIndex].items]
-                              items[itemIndex] = {
-                                ...items[itemIndex],
-                                location: v,
-                              }
-                              sections[sectionIndex] = {
-                                ...sections[sectionIndex],
-                                items,
-                              }
-                              return { ...d, sections }
-                            })
-                          }}
-                          className={`${INLINE} min-w-0 flex-1 basis-0 text-sm text-slate-600`}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  {!isEducation ? (
-                    <div className='mt-2'>
-                      <ResumeRichTextField
-                        value={item.description}
-                        editable
-                        onChange={(html) =>
-                          onDraftChange((d) => {
-                            const sections = [...d.sections]
-                            const items = [...sections[sectionIndex].items]
-                            items[itemIndex] = {
-                              ...items[itemIndex],
-                              description: html,
-                            }
-                            sections[sectionIndex] = {
-                              ...sections[sectionIndex],
-                              items,
-                            }
-                            return { ...d, sections }
-                          })
-                        }
-                      />
-                    </div>
-                  ) : null}
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='mt-1 w-fit text-destructive opacity-0 group-hover/item:opacity-100'
-                    onClick={() =>
-                      onDraftChange((d) => {
-                        const sections = [...d.sections]
-                        const items = sections[sectionIndex].items.filter(
-                          (_, j) => j !== itemIndex
-                        )
-                        sections[sectionIndex] = {
-                          ...sections[sectionIndex],
-                          items,
-                        }
-                        return { ...d, sections }
-                      })
-                    }
-                  >
-                    Remove entry
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {item.title ? (
-                    <h4 className='font-medium'>{item.title}</h4>
-                  ) : null}
-                  {isEducation ? (
-                    educationMetaLine(item) ? (
-                      <div className='mt-0.5 flex flex-col gap-0 text-sm text-slate-600'>
-                        <p className='m-0'>{educationMetaLine(item)}</p>
-                      </div>
-                    ) : null
-                  ) : item.company.trim() ||
-                    item.location.trim() ||
-                    item.subTitle.trim() ? (
-                    <div className='mt-0.5 flex flex-col gap-0 text-sm text-slate-600'>
-                      {item.company.trim() || item.location.trim() ? (
-                        <p className='m-0'>
-                          {[item.company.trim(), item.location.trim()]
-                            .filter(Boolean)
-                            .join(', ')}
+                      educationMetaLine(item) ? (
+                        <p className='mt-2 text-[16px] leading-7 text-slate-700'>
+                          {educationMetaLine(item)}
                         </p>
-                      ) : item.subTitle.trim() ? (
-                        <p className='m-0'>{item.subTitle}</p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {!isEducation && item.description?.trim() ? (
-                    <div className='mt-2'>
-                      <ResumeRichTextField
-                        value={item.description}
-                        editable={false}
-                        onChange={() => {}}
-                      />
-                    </div>
-                  ) : null}
-                </>
-              )}
+                      ) : null
+                    ) : item.company.trim() ||
+                      item.location.trim() ||
+                      item.subTitle.trim() ? (
+                      <div className='mt-2 text-[16px] leading-7 text-slate-700'>
+                        {item.company.trim() || item.location.trim() ? (
+                          <p className='m-0'>
+                            {[item.company.trim(), item.location.trim()]
+                              .filter(Boolean)
+                              .join(' | ')}
+                          </p>
+                        ) : item.subTitle.trim() ? (
+                          <p className='m-0'>{item.subTitle}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {!isEducation && item.description?.trim() ? (
+                      <div className='mt-4 text-[16px] leading-8 text-slate-500'>
+                        <ResumeRichTextField
+                          value={item.description}
+                          editable={false}
+                          onChange={() => {}}
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        {edit ? (
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            className='w-fit'
-            onClick={() =>
-              onDraftChange((d) => {
-                const sections = [...d.sections]
-                sections[sectionIndex] = {
-                  ...sections[sectionIndex],
-                  items: [...sections[sectionIndex].items, emptyItem()],
-                }
-                return { ...d, sections }
-              })
-            }
-          >
-            <Plus className='mr-1 size-4' />
-            Add entry
-          </Button>
-        ) : null}
-      </div>
+          ))}
+          {edit ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='w-fit'
+              onClick={() =>
+                onDraftChange((d) => {
+                  const sections = [...d.sections]
+                  sections[sectionIndex] = {
+                    ...sections[sectionIndex],
+                    items: [...sections[sectionIndex].items, emptyItem()],
+                  }
+                  return { ...d, sections }
+                })
+              }
+            >
+              <Plus className='mr-1 size-4' />
+              Add entry
+            </Button>
+          ) : null}
+        </div>
       )}
     </section>
   )
@@ -494,21 +553,14 @@ function ReadCvContentSection({
 
 export type ReadCvResumePreviewProps = {
   data: ResumeStructuredV1
-  /** Overlay content on the header avatar in edit mode (e.g. "Upload"). */
   headerAvatarAction?: ReactNode
-  /** `id` of the hidden file input; enables clicking the full avatar overlay to pick a file. */
   headerAvatarInputId?: string
   mode?: 'view' | 'edit'
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
-  /** Uploads a certificate file (edit mode) and resolves to its public URL. */
   onUploadCertificate?: (file: File) => Promise<string>
-  /** Used when adding a contact row in edit mode. */
   userEmail?: string
 }
 
-/**
- * Read.cv-inspired profile layout; same structure in view and edit (inline fields + rich text).
- */
 export function ReadCvResumePreview({
   data,
   headerAvatarAction,
@@ -528,16 +580,17 @@ export function ReadCvResumePreview({
 
   return (
     <main
-      className={`relative mx-auto min-h-0 max-w-[800px] px-6 pb-12 font-sans font-light text-slate-900 sm:pb-16 ${edit ? 'ring-2 ring-slate-200/80 ring-offset-4 ring-offset-white' : ''}`}
+      className={`relative mx-auto min-h-0 max-w-[1100px] px-6 pb-16 pt-6 font-sans text-slate-900 sm:px-10 sm:pb-24 ${edit ? 'ring-2 ring-slate-200/80 ring-offset-4 ring-offset-white' : ''}`}
     >
       {edit ? (
-        <p className='mb-4 text-center text-xs font-medium tracking-widest text-slate-400 uppercase'>
+        <p className='mb-6 text-center text-xs font-medium tracking-[0.2em] text-slate-400 uppercase'>
           Editing
         </p>
       ) : null}
-      <section className='flex items-start gap-4'>
-        <div className='flex w-20 shrink-0 flex-col items-center self-start'>
-          <div className='group/avatar relative size-20 shrink-0 overflow-hidden rounded-full'>
+
+      <section className='flex flex-col gap-6 md:flex-row md:items-center md:gap-9'>
+        <div className='flex shrink-0 items-start'>
+          <div className='group/avatar relative overflow-hidden rounded-full'>
             <ProfileHeaderAvatar
               key={general.avatar}
               avatarUrl={general.avatar}
@@ -553,7 +606,7 @@ export function ReadCvResumePreview({
             ) : null}
           </div>
         </div>
-        <div className='min-w-0 flex-1 pt-0.5'>
+        <div className='min-w-0 flex-1'>
           {edit && onDraftChange ? (
             <>
               <Input
@@ -565,7 +618,7 @@ export function ReadCvResumePreview({
                     general: { ...d.general, name: e.target.value },
                   }))
                 }
-                className={`${INLINE} mb-0.5 text-xl font-medium`}
+                className={`${INLINE} mb-1 text-[2.25rem] leading-none font-semibold text-slate-900 sm:text-[2.75rem]`}
               />
               <Input
                 aria-label='Professional title'
@@ -576,7 +629,7 @@ export function ReadCvResumePreview({
                     general: { ...d.general, jobTitle: e.target.value },
                   }))
                 }
-                className={`${INLINE} text-sm text-slate-600`}
+                className={`${INLINE} text-[1.25rem] leading-tight text-slate-600 sm:text-[1.65rem]`}
               />
               <Input
                 aria-label='Location'
@@ -588,10 +641,10 @@ export function ReadCvResumePreview({
                     general: { ...d.general, location: e.target.value },
                   }))
                 }
-                className={`${INLINE} mt-0.5 text-sm text-slate-600`}
+                className={`${INLINE} mt-2 text-[16px] text-slate-500`}
               />
               {general.website.trim() ? (
-                <span className='mt-0.5 block text-sm text-slate-500'>
+                <span className='mt-2 block text-[15px] text-slate-500'>
                   <a
                     href={general.website}
                     {...(isHttpHref(general.website)
@@ -606,13 +659,17 @@ export function ReadCvResumePreview({
             </>
           ) : (
             <>
-              <h1 className='mb-0.5 text-xl font-medium'>{general.name}</h1>
-              <p className='text-sm text-slate-600'>{general.jobTitle}</p>
+              <h1 className='text-[2.25rem] leading-none font-semibold text-slate-900 sm:text-[2.75rem]'>
+                {general.name}
+              </h1>
+              <p className='mt-2 text-[1.25rem] leading-tight text-slate-600 sm:text-[1.65rem]'>
+                {general.jobTitle}
+              </p>
               {general.location.trim() ? (
-                <p className='text-sm text-slate-600'>{general.location}</p>
+                <p className='mt-2 text-[16px] text-slate-500'>{general.location}</p>
               ) : null}
               {general.website ? (
-                <span className='text-sm text-slate-500'>
+                <span className='mt-2 block text-[15px] text-slate-500'>
                   <a
                     href={general.website}
                     {...(isHttpHref(general.website)
@@ -628,8 +685,13 @@ export function ReadCvResumePreview({
           )}
         </div>
       </section>
-      <section className='my-9 text-sm'>
-        <h3 className='mb-1 font-medium'>Professional summary</h3>
+
+      <section className='my-16 text-slate-900'>
+        <div className='mb-6 border-b border-slate-200 pb-3'>
+          <h3 className='text-[13px] font-medium tracking-[0.14em] uppercase text-slate-900'>
+            About
+          </h3>
+        </div>
         {edit && onDraftChange ? (
           <ResumeRichTextField
             value={general.about}
@@ -642,7 +704,7 @@ export function ReadCvResumePreview({
             }
           />
         ) : (
-          <div className='text-slate-600'>
+          <div className='text-[18px] leading-9 text-slate-600'>
             <ResumeRichTextField
               value={general.about}
               editable={false}
@@ -651,6 +713,7 @@ export function ReadCvResumePreview({
           </div>
         )}
       </section>
+
       {sections.map((content, index) => (
         <ReadCvContentSection
           key={index}
@@ -661,6 +724,7 @@ export function ReadCvResumePreview({
           onUploadCertificate={onUploadCertificate}
         />
       ))}
+
       {edit && onDraftChange ? (
         <div className='my-8 flex flex-wrap gap-2'>
           {!sections.some((s) =>
@@ -704,59 +768,62 @@ export function ReadCvResumePreview({
           ) : null}
         </div>
       ) : null}
-      <section className='my-14 text-sm'>
-        <div className='mb-6 flex items-center justify-between gap-2'>
-          <h3 className='font-medium'>Contact</h3>
-          {edit && onDraftChange ? (
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={() =>
-                onDraftChange((d) => ({
-                  ...d,
-                  general: {
-                    ...d.general,
-                    contacts: [
-                      ...d.general.contacts,
-                      {
-                        label: 'Link',
-                        value: userEmail || 'you@example.com',
-                        href: `mailto:${userEmail || 'you@example.com'}`,
-                      },
-                    ],
-                  },
-                }))
-              }
-            >
-              <Plus className='mr-1 size-4' />
-              Add row
-            </Button>
-          ) : null}
+
+      <section className='my-16 text-slate-900'>
+        <div className='mb-6 border-b border-slate-200 pb-3'>
+          <div className='flex items-center justify-between gap-2'>
+            <h3 className='text-[13px] font-medium tracking-[0.14em] uppercase text-slate-900'>
+              Contact
+            </h3>
+            {edit && onDraftChange ? (
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() =>
+                  onDraftChange((d) => ({
+                    ...d,
+                    general: {
+                      ...d.general,
+                      contacts: [
+                        ...d.general.contacts,
+                        {
+                          label: 'Link',
+                          value: userEmail || 'you@example.com',
+                          href: `mailto:${userEmail || 'you@example.com'}`,
+                        },
+                      ],
+                    },
+                  }))
+                }
+              >
+                <Plus className='mr-1 size-4' />
+                Add row
+              </Button>
+            ) : null}
+          </div>
         </div>
-        <div className='flex flex-col gap-6'>
+        <div className='flex flex-col gap-8'>
           {general.contacts.map((contact, index) => {
             const external = isHttpHref(contact.href)
             if (edit && onDraftChange) {
               return (
-                <div className='flex flex-wrap items-start gap-2' key={index}>
-                  <div className='mr-8 flex w-full max-w-[100px] shrink-0 flex-col gap-1'>
-                    <Input
-                      aria-label='Contact label'
-                      placeholder='Label'
-                      value={contact.label}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        onDraftChange((d) => {
-                          const contacts = [...d.general.contacts]
-                          contacts[index] = { ...contacts[index], label: v }
-                          return { ...d, general: { ...d.general, contacts } }
-                        })
-                      }}
-                      className={`${INLINE} text-sm text-slate-400`}
-                    />
-                  </div>
-                  <div className='flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center'>
+                <div className='grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8' key={index}>
+                  <Input
+                    aria-label='Contact label'
+                    placeholder='Label'
+                    value={contact.label}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      onDraftChange((d) => {
+                        const contacts = [...d.general.contacts]
+                        contacts[index] = { ...contacts[index], label: v }
+                        return { ...d, general: { ...d.general, contacts } }
+                      })
+                    }}
+                    className={`${INLINE} text-[18px] text-slate-400`}
+                  />
+                  <div className='flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center'>
                     <Input
                       aria-label='Contact display text'
                       placeholder='Display text'
@@ -769,7 +836,7 @@ export function ReadCvResumePreview({
                           return { ...d, general: { ...d.general, contacts } }
                         })
                       }}
-                      className={`${INLINE} min-w-0 flex-1 text-sm`}
+                      className={`${INLINE} min-w-0 flex-1 text-[18px] text-slate-900`}
                     />
                     <div className='flex flex-1 gap-2 sm:max-w-[55%]'>
                       <Input
@@ -812,17 +879,20 @@ export function ReadCvResumePreview({
               )
             }
             return (
-              <div className='flex' key={index}>
-                <div className='mr-8 w-full max-w-[100px] shrink-0 text-slate-400'>
+              <div
+                className='grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8'
+                key={index}
+              >
+                <div className='text-[18px] leading-tight text-slate-400'>
                   {contact.label}
                 </div>
-                <div className='flex min-w-0 flex-1 flex-col'>
+                <div className='min-w-0'>
                   <a
                     href={contact.href}
                     {...(external
                       ? { target: '_blank', rel: 'noopener noreferrer' }
                       : {})}
-                    className='inline-flex items-center gap-1 break-all hover:underline'
+                    className='inline-flex items-center gap-1 break-all text-[18px] font-medium text-slate-900 hover:underline'
                   >
                     {contact.value}
                     {external ? <ExternalArrowIcon /> : null}
