@@ -21,12 +21,14 @@ import {
 } from '@/lib/jobs/fetch-public-jobs-feed'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
 import { currentPathWithSearch } from '@/lib/auth/redirect-path'
+import { getPostAuthPath } from '@/lib/auth/post-auth-path'
 import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { InboxList } from '@/components/inbox/inbox-list'
@@ -123,6 +125,7 @@ function LandingPage() {
 }
 
 function LandingPageContent() {
+  const { user, profile } = useAuth()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const { setup, peek } = search
@@ -189,6 +192,8 @@ function LandingPageContent() {
     [feedQuery.data]
   )
   const currentRedirect = currentPathWithSearch()
+  const candidateHomeTarget = user ? getPostAuthPath(profile) : '/apply/sign-up'
+  const candidateHomeLabel = user ? 'Go to profile' : 'Join as candidate'
   const canonical = `${publicSiteOrigin()}/`
   const description =
     'Focused ServiceNow jobs, recruiter listings, and concierge hiring support for teams that need developers, architects, consultants, and admins.'
@@ -256,10 +261,14 @@ function LandingPageContent() {
               </Button>
               <Button asChild size='lg' variant='outline' className='sm:w-auto'>
                 <Link
-                  to='/apply/sign-up'
-                  search={currentRedirect ? { redirect: currentRedirect } : {}}
+                  to={candidateHomeTarget}
+                  search={
+                    user || !currentRedirect
+                      ? undefined
+                      : { redirect: currentRedirect }
+                  }
                 >
-                  Join as candidate
+                  {candidateHomeLabel}
                 </Link>
               </Button>
             </div>
