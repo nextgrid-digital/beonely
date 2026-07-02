@@ -96,7 +96,12 @@ function CandidateProfilePage() {
   }
 
   const userMeta = user.user_metadata as
-    | { linkedin_url?: unknown; phone?: unknown }
+    | {
+        linkedin_url?: unknown
+        phone?: unknown
+        full_name?: unknown
+        name?: unknown
+      }
     | undefined
   const metaLinkedin =
     typeof userMeta?.linkedin_url === 'string'
@@ -104,18 +109,24 @@ function CandidateProfilePage() {
       : null
   const metaPhone =
     typeof userMeta?.phone === 'string' ? userMeta.phone.trim() : null
+  const metaFullName =
+    typeof userMeta?.full_name === 'string' && userMeta.full_name.trim()
+      ? userMeta.full_name.trim()
+      : typeof userMeta?.name === 'string' && userMeta.name.trim()
+        ? userMeta.name.trim()
+        : null
 
   const accountResumePrefill: AccountResumePrefill = profileQuery.data
     ? {
         email: profileQuery.data.email,
-        full_name: profileQuery.data.full_name,
+        full_name: profileQuery.data.full_name?.trim() || metaFullName,
         phone: profileQuery.data.phone,
         linkedin_url: profileQuery.data.linkedin_url,
         portfolio_url: profileQuery.data.portfolio_url,
       }
     : {
         email: user.email ?? '',
-        full_name: null,
+        full_name: metaFullName,
         phone: metaPhone,
         linkedin_url: metaLinkedin,
         portfolio_url: null,
