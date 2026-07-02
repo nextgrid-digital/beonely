@@ -1,7 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const publicSupabaseUrl = 'https://qxqkfgiyuqoxthpnsmyo.supabase.co'
+const publicSupabaseAnonKey =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4cWtmZ2l5dXFveHRocG5zbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTA3NTksImV4cCI6MjA5MzcyNjc1OX0.tqy5XgQLzks5VONW-wxNit78Xb5cAioQNTEN973sSU4'
+
+const url =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ||
+  publicSupabaseUrl
+const anonKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() ||
+  publicSupabaseAnonKey
 
 export function getSupabaseConfigured(): boolean {
   return Boolean(url && anonKey)
