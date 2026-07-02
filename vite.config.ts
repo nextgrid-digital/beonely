@@ -17,11 +17,14 @@ function vercelSupabaseClientDefine(): Record<string, string> | undefined {
   const anon = (
     process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY
   )?.trim()
+
   if (!url || !anon) {
-    throw new Error(
-      'Vercel build missing Supabase client env. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or use the Supabase+Vercel integration (SUPABASE_URL + SUPABASE_ANON_KEY). Never expose the service role key as VITE_*. See docs/vercel-environment.md'
+    console.warn(
+      'Vercel build missing Supabase client env. The app will build, but Supabase-backed pages will show the existing setup-required state until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or SUPABASE_URL and SUPABASE_ANON_KEY, are configured. Never expose the service role key as VITE_*. See docs/vercel-environment.md'
     )
+    return undefined
   }
+
   const define: Record<string, string> = {}
   if (!process.env.VITE_SUPABASE_URL?.trim()) {
     define['import.meta.env.VITE_SUPABASE_URL'] = JSON.stringify(url)
