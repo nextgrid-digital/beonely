@@ -15,6 +15,7 @@ interface InboxFilterPillsProps<T extends string> {
   /** Shared layout id for the animated active background; unique per surface. */
   layoutId: string
   className?: string
+  paddingClassName?: string
 }
 
 export function InboxFilterPills<T extends string>({
@@ -23,6 +24,7 @@ export function InboxFilterPills<T extends string>({
   onChange,
   layoutId,
   className,
+  paddingClassName = 'px-4',
 }: InboxFilterPillsProps<T>) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showLeftFade, setShowLeftFade] = useState(false)
@@ -63,7 +65,10 @@ export function InboxFilterPills<T extends string>({
     <div className={cn('relative max-w-full min-w-0 overflow-hidden', className)}>
       <div
         ref={scrollRef}
-        className='flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-4 whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+        className={cn(
+          'flex gap-2 overflow-x-auto overscroll-x-contain pb-4 whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+          paddingClassName
+        )}
       >
         {pills.map((pill) => {
           const isActive = activeId === pill.id
@@ -74,16 +79,16 @@ export function InboxFilterPills<T extends string>({
               aria-pressed={isActive}
               onClick={() => onChange(pill.id)}
               className={cn(
-                'relative inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'relative inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isActive
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  ? 'border-border bg-background text-foreground shadow-xs'
+                  : 'border-transparent text-muted-foreground hover:border-border/60 hover:bg-muted/50 hover:text-foreground'
               )}
             >
               {isActive ? (
                 <motion.span
                   layoutId={layoutId}
-                  className='absolute inset-0 rounded-md bg-muted'
+                  className='absolute inset-0 rounded-md border border-border bg-background shadow-xs'
                   transition={{ type: 'spring', stiffness: 480, damping: 38 }}
                 />
               ) : null}

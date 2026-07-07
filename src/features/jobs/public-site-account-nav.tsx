@@ -1,20 +1,20 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react'
-import { displayFromUser } from '@/lib/auth/display-name'
-import { getPostAuthPath } from '@/lib/auth/post-auth-path'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Briefcase, ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
+import { displayFromUser } from "@/lib/auth/display-name";
+import { getPostAuthPath } from "@/lib/auth/post-auth-path";
 import {
   PROFILE_AVATAR_PLACEHOLDER_URL,
   resumeStructuredEnvelopeSchema,
-} from '@/lib/candidate/resume-structured-schema'
+} from "@/lib/candidate/resume-structured-schema";
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
-} from '@/lib/supabase/client'
-import { useAuth } from '@/context/auth-provider'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+} from "@/lib/supabase/client";
+import { useAuth } from "@/context/auth-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,59 +22,61 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { SignOutDialog } from '@/components/sign-out-dialog'
-import { usePublicSiteAuth } from '@/features/jobs/public-site-auth-provider'
+} from "@/components/ui/dropdown-menu";
+import { SignOutDialog } from "@/components/sign-out-dialog";
+import { usePublicSiteAuth } from "@/features/jobs/public-site-auth-provider";
 
 function candidateAvatarFromResumeRow(
-  row: { resume_structured: unknown } | null | undefined
+  row: { resume_structured: unknown } | null | undefined,
 ): string | undefined {
-  if (!row) return undefined
-  const parsed = resumeStructuredEnvelopeSchema.safeParse(row.resume_structured)
-  if (!parsed.success) return undefined
-  const url = parsed.data.general.avatar?.trim()
-  if (!url || url === PROFILE_AVATAR_PLACEHOLDER_URL) return undefined
-  if (url.includes('placehold.co')) return undefined
-  return url
+  if (!row) return undefined;
+  const parsed = resumeStructuredEnvelopeSchema.safeParse(
+    row.resume_structured,
+  );
+  if (!parsed.success) return undefined;
+  const url = parsed.data.general.avatar?.trim();
+  if (!url || url === PROFILE_AVATAR_PLACEHOLDER_URL) return undefined;
+  if (url.includes("placehold.co")) return undefined;
+  return url;
 }
 
 export function PublicSiteAccountNav() {
-  const { user, loading, profile } = useAuth()
-  const { requireAuthForPostJob, openCandidateAuthModal } = usePublicSiteAuth()
-  const [signOutDialogOpen, setSignOutDialogOpen] = useState(false)
+  const { user, loading, profile } = useAuth();
+  const { requireAuthForPostJob, openCandidateAuthModal } = usePublicSiteAuth();
+  const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
 
   const candidateAvatarQuery = useQuery({
-    queryKey: ['job-seeker-profile', user?.id ?? ''],
+    queryKey: ["job-seeker-profile", user?.id ?? ""],
     enabled:
       Boolean(user?.id) &&
-      profile?.role === 'candidate' &&
+      profile?.role === "candidate" &&
       getSupabaseConfigured(),
     queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const uid = user!.id
+      const sb = getSupabaseBrowserClient();
+      const uid = user!.id;
       const { data, error } = await sb
-        .from('job_seeker_profiles')
-        .select('resume_structured')
-        .eq('user_id', uid)
-        .maybeSingle()
-      if (error) throw error
-      return data
+        .from("job_seeker_profiles")
+        .select("resume_structured")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
     },
-  })
+  });
 
   if (loading) {
     return (
-      <div className='flex items-center gap-3'>
+      <div className="flex items-center gap-3">
         <div
-          className='h-8 w-20 animate-pulse rounded-md bg-muted'
+          className="h-8 w-20 animate-pulse rounded-md bg-muted"
           aria-hidden
         />
         <div
-          className='h-8 w-24 animate-pulse rounded-md bg-muted'
+          className="h-8 w-24 animate-pulse rounded-md bg-muted"
           aria-hidden
         />
       </div>
-    )
+    );
   }
 
   if (user) {
@@ -83,18 +85,20 @@ export function PublicSiteAccountNav() {
       email,
       avatarUrl: metadataAvatarUrl,
       initials,
-    } = displayFromUser(user)
-    const resumeAvatar = candidateAvatarFromResumeRow(candidateAvatarQuery.data)
-    const avatarUrl = resumeAvatar ?? metadataAvatarUrl
+    } = displayFromUser(user);
+    const resumeAvatar = candidateAvatarFromResumeRow(
+      candidateAvatarQuery.data,
+    );
+    const avatarUrl = resumeAvatar ?? metadataAvatarUrl;
 
     return (
       <>
-        <div className='flex w-full items-center justify-start gap-2 sm:w-auto sm:justify-end'>
-          {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+        <div className="flex w-full items-center justify-start gap-2 sm:w-auto sm:justify-end">
+          {(profile?.role === "recruiter" || profile?.role === "admin") && (
             <Button
-              size='sm'
-              type='button'
-              className='min-h-11 sm:min-h-9'
+              size="sm"
+              type="button"
+              className="min-h-11 sm:min-h-9"
               onClick={requireAuthForPostJob}
             >
               Post a Job
@@ -103,29 +107,29 @@ export function PublicSiteAccountNav() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                className='min-h-11 w-fit gap-2 rounded-full pr-3 !pl-0 sm:min-h-9'
-                aria-label='User menu'
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11 w-fit gap-2 rounded-full pr-3 !pl-0 sm:min-h-9"
+                aria-label="User menu"
               >
-                <Avatar className='h-7 w-7'>
+                <Avatar className="h-7 w-7">
                   {avatarUrl ? (
                     <AvatarImage src={avatarUrl} alt={name} />
                   ) : null}
-                  <AvatarFallback className='text-xs'>
+                  <AvatarFallback className="text-xs">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <ChevronDown
-                  className='size-4 shrink-0 opacity-60'
+                  className="size-4 shrink-0 opacity-60"
                   aria-hidden
                 />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-56'>
-              <DropdownMenuLabel className='font-normal'>
-                <span className='truncate text-xs text-muted-foreground'>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <span className="truncate text-xs text-muted-foreground">
                   {email}
                 </span>
               </DropdownMenuLabel>
@@ -133,27 +137,27 @@ export function PublicSiteAccountNav() {
               <DropdownMenuItem asChild>
                 <Link
                   to={getPostAuthPath(profile)}
-                  className='flex items-center gap-2'
+                  className="flex items-center gap-2"
                 >
-                  <LayoutDashboard className='size-4 shrink-0' />
+                  <LayoutDashboard className="size-4 shrink-0" />
                   Profile
                 </Link>
               </DropdownMenuItem>
-              {(profile?.role === 'recruiter' || profile?.role === 'admin') && (
+              {(profile?.role === "recruiter" || profile?.role === "admin") && (
                 <DropdownMenuItem asChild>
-                  <Link to='/recruiter' className='flex items-center gap-2'>
-                    <Briefcase className='size-4 shrink-0' />
+                  <Link to="/recruiter" className="flex items-center gap-2">
+                    <Briefcase className="size-4 shrink-0" />
                     Recruiter
                   </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                variant='destructive'
-                className='flex items-center gap-2'
+                variant="destructive"
+                className="flex items-center gap-2"
                 onClick={() => setSignOutDialogOpen(true)}
               >
-                <LogOut className='size-4 shrink-0' />
+                <LogOut className="size-4 shrink-0" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -164,21 +168,19 @@ export function PublicSiteAccountNav() {
           onOpenChange={setSignOutDialogOpen}
         />
       </>
-    )
+    );
   }
 
   return (
-    <div className='flex w-full items-center justify-start gap-x-3 text-sm sm:w-auto sm:justify-end'>
-      <button
-        type='button'
-        className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+    <div className="flex w-full items-center justify-start gap-x-3 text-sm sm:w-auto sm:justify-end">
+      <Button
+        type="button"
+        size="sm"
+        className="min-h-11 sm:min-h-9"
         onClick={openCandidateAuthModal}
       >
         Sign in
-      </button>
-      <Button asChild size='sm' type='button' className='min-h-11 sm:min-h-9'>
-        <Link to='/hire'>Hire talent</Link>
       </Button>
     </div>
-  )
+  );
 }
