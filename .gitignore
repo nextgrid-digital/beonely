@@ -38,3 +38,7 @@ dist-ssr
 
 .tanstack/
 .env*
+
+# Python helper artifacts
+__pycache__/
+*.py[cod]

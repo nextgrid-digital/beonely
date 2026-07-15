@@ -97,7 +97,7 @@ The final verification matrix is recorded in the session DOCX. Local and GitHub 
 - `pnpm audit --prod` with no known production dependency vulnerability.
 - `git diff --check` and a repository-wide Prettier verification.
 - Focused tests for admin auth, rate limits, cron auth, raw webhooks, email relay rejection, delivery claims, campaigns, consent, unsubscribe semantics, payment fulfillment, public portfolio assets, public slugs, redirects, and trusted logos.
-- GitHub `Quality / validate` passed every step for implementation commit `00017cb67141e38054d8b0ef3f84eb04e2fb8c07`.
+- GitHub `Quality / validate` passed every step for runtime code commit `925f6c85a684c8b83985b2dea3efafc170744a6f` in 3m37s.
 
 Branch status at final verification: `codex/repository-hardening-admin-redesign` is pushed, draft PR [#2](https://github.com/nextgrid-digital/beonely/pull/2) targets `main`, and no merge was performed. `main` and `origin/main` both remained at `059af73e22925ea5a421e3a9d8d2af2ae9541c69`.
 
