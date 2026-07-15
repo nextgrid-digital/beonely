@@ -14,7 +14,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from '../sign-in/components/user-auth-form'
@@ -58,9 +57,9 @@ export function StaffSignIn() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
+          <h1 className='text-lg leading-none font-semibold tracking-tight'>
             Staff sign in
-          </CardTitle>
+          </h1>
           <CardDescription>
             Internal use only. Your email must be on the staff allowlist and
             your account must have admin access in Beonely.

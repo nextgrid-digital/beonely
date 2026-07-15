@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { SignUpForm } from './components/sign-up-form'
@@ -27,7 +26,9 @@ export function SignUp() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>{title}</CardTitle>
+          <h1 className='text-lg leading-none font-semibold tracking-tight'>
+            {title}
+          </h1>
           <CardDescription>
             {intent === undefined ? (
               <>

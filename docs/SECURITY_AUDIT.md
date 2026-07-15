@@ -1,6 +1,6 @@
 # Beonely Security Audit and Remediation Register
 
-Audit date: 11 July 2026
+Audit date: 11–15 July 2026
 Scope: application source, Vercel functions, Supabase migrations and Storage policies, payment and email integrations, dependencies, tests, build output, and administration UX.
 Status meaning: **Fixed in repository** means the source and forward migrations contain the remediation. It does not mean those migrations or environment changes have already been deployed.
 
@@ -11,11 +11,13 @@ The review found critical authorization, payment, and email-delivery risks in th
 Current source-level result:
 
 - 3 critical findings fixed in repository.
-- 10 high findings fixed in repository.
+- 13 high findings fixed in repository.
 - 12 medium findings fixed in repository.
-- 8 low/quality findings fixed in repository.
+- 10 low/quality findings fixed in repository.
 - Production dependency audit reports no known vulnerabilities.
-- Remaining items are deployment and operational validation steps, not known unfixed source vulnerabilities.
+- No known source vulnerability is intentionally left open. A legacy migration-bootstrap defect and Vercel project-access restriction still block a runnable hosted preview.
+
+The original repository audit logged 33 findings. Final branch verification added three high-severity payment-capture persistence findings and two low/quality browser-accessibility findings, for 38 findings in total.
 
 ## Severity definitions
 
@@ -46,6 +48,9 @@ Current source-level result:
 | H-08 | Campaign sends could change audience/content during retries and lacked durable per-recipient replay protection.       | Wrong audience, duplicate bulk email, or ambiguous retry state.                                                    | Recipients are snapshotted, test sends are separated from subscriber data, batches are resumable, and stable provider idempotency keys are used per campaign recipient.                                                                                | Fixed in repository |
 | H-09 | Resend delivery failures and complaints were not consistently reflected in recipient suppression.                     | Continued sending to permanent bounces/complaints, reputation damage, and consent-policy violations.               | Signed webhook events update delivery state; complaints, suppression events, and permanent bounces suppress future sends.                                                                                                                              | Fixed in repository |
 | H-10 | Admin pages queried PII and operational tables directly from the browser.                                             | A client-side guard or RLS mistake could expose cross-account data and widen every admin feature’s attack surface. | Jobs, recruiters, candidates, revenue, hiring requests, dashboards, and email administration now use explicit allowlisted server routes with minimal projections. Final RLS removes the direct admin policies.                                         | Fixed in repository |
+| H-11 | A verified provider capture could be rejected when the recruiter became disabled between checkout and capture.       | Captured funds could remain absent from the local ledger/manual-review queue while entitlement correctly remained denied. | Capture reconciliation now records the payment as paid unless already refunded, persists event timing and a unique provider ID, flags `recruiter_disabled_at_capture` for manual review, and withholds entitlement/job updates. | Fixed in repository |
+| H-12 | A captured provider payment ID already attached to another row could leave the current checkout financially unchanged. | A provider-reuse anomaly could hide captured money from reconciliation or invite duplicate entitlement.            | The current row is recorded paid unless already refunded, event timing is persisted, `provider_payment_reused` is flagged for manual review, the duplicate ID is not stored, and no entitlement is granted. | Fixed in repository |
+| H-13 | Capture arriving after a checkout became failed, closed, or otherwise non-unpaid could return review metadata without persisting the financial movement. | Captured funds could remain represented as failed/closed and escape paid/manual-review reporting.                  | The capture is persisted as paid unless already refunded, identifiers and timing are stored where safe, `capture_for_closed_checkout` is flagged for manual review, and entitlement is withheld. | Fixed in repository |
 
 ## Medium findings
 
@@ -76,39 +81,47 @@ Current source-level result:
 | L-06 | Some auth/public pages lacked optimal landmarks or included dead social links.                                  | Added the auth `main` landmark and removed placeholder social destinations.                                                                   | Fixed in repository |
 | L-07 | A router-dependent provider was mounted outside `RouterProvider`, causing a blank production build.             | Moved `AdminWorkspaceProvider` inside the root route tree; production bundle was opened and verified in a browser.                            | Fixed in repository |
 | L-08 | CI and dependency hygiene did not enforce the full quality matrix.                                              | Added a quality workflow, Node/pnpm pinning, app/API typechecks, tests, build, Knip, formatting/diff checks, and production dependency audit. | Fixed in repository |
+| L-09 | Vercel Analytics attempted to load a Vercel-only script in self-hosted/local production previews.               | A local production preview logged a script parse error and obscured whether the application console was clean.                               | The analytics component is now compiled in only for actual Vercel builds; the rebuilt local production bundle emitted no new console warning/error.     | Fixed in repository |
+| L-10 | Standalone authentication screens exposed their visible page titles as generic text instead of headings.         | Screen-reader and keyboard users had a weaker page structure and navigation experience.                                                       | Sign-in, sign-up, staff sign-in, OTP, forgot-password, and reset-password titles are now semantic level-one headings.                                    | Fixed in repository |
 
 ## Verification performed
 
-The final verification matrix is recorded in the session DOCX and should be rerun in CI. At source-review time it included:
+The final verification matrix is recorded in the session DOCX. Local and GitHub Quality verification included:
 
-- Application and API TypeScript checks.
-- ESLint across the repository.
-- Browser-component and API Vitest suites.
-- Production Vite build and direct browser startup/route inspection.
+- Application and API TypeScript checks, formatting, and production build.
+- ESLint with 0 errors and 23 nonblocking fast-refresh module-organization warnings.
+- 59 browser-component test files / 285 tests and 33 API test files / 108 tests.
+- Responsive Playwright: 22 passed with 2 expected desktop-only skips.
+- Local production-bundle inspection of home, hiring, auth, legal, changelog, unsubscribe, 404, and fail-closed admin behavior; no new console warning/error after the final fixes.
 - Knip unused-file and dependency scans.
-- `pnpm audit --prod`.
+- `pnpm audit --prod` with no known production dependency vulnerability.
 - `git diff --check` and a repository-wide Prettier verification.
 - Focused tests for admin auth, rate limits, cron auth, raw webhooks, email relay rejection, delivery claims, campaigns, consent, unsubscribe semantics, payment fulfillment, public portfolio assets, public slugs, redirects, and trusted logos.
+- GitHub `Quality / validate` passed every step for implementation commit `00017cb67141e38054d8b0ef3f84eb04e2fb8c07`.
+
+Branch status at final verification: `codex/repository-hardening-admin-redesign` is pushed, draft PR [#2](https://github.com/nextgrid-digital/beonely/pull/2) targets `main`, and no merge was performed. `main` and `origin/main` both remained at `059af73e22925ea5a421e3a9d8d2af2ae9541c69`.
 
 ## Deployment and residual operational work
 
-No known source vulnerability is intentionally left open, but these tasks require the deployment owner or a connected staging environment:
+No known source vulnerability is intentionally left open, but these release tasks require the deployment owner or a connected staging environment:
 
-1. Apply all forward Supabase migrations through `20260710300000_final_access_boundary.sql` in order to an environment that already has the recorded May migration history. The local review environment did not have a running PostgreSQL/Supabase container, so SQL was statically cross-checked but not executed against a live clone.
-2. Do not use the historical May chain to bootstrap a fresh branch database: the committed baseline has pre-existing ordering/schema assumptions that prevent a clean replay. Create and review a separate squashed bootstrap before provisioning a new database from this branch.
-3. Query `supabase_migrations.schema_migrations` for version `20260519120000` before deployment. Two historical source files used that version; the unsafe opt-in variant remains excluded, while the active `email_automations` migration must match the remote record.
-4. Back up production, check for duplicate non-null Razorpay order/payment IDs, and test anonymous/owner/admin/service-role access in staging before applying the July chain.
+1. Grant Git author `Zsw0rd` access to the Vercel project/team and redeploy the branch. Vercel rejected the check before creating any deployment or preview URL.
+2. For an existing Supabase project, back up the database/Storage metadata, pull or otherwise reconcile the remote schema and `supabase_migrations.schema_migrations`, especially duplicated historical version `20260519120000`, then stage the July forward chain through `20260710300000_final_access_boundary.sql`.
+3. Do not replay the historical May chain unchanged for a new project. GitHub’s isolated Supabase Preview failed in `20260512120000_candidate_saved_applications_storage.sql` at statement 10 because `public.job_seeker_profiles` did not exist. Create and separately review a squashed/bootstrap baseline first.
+4. Check for duplicate non-null Razorpay order/payment IDs and test anonymous/candidate/recruiter/disabled-recruiter/admin-browser/service-role access in staging before applying the July chain.
 5. Configure strong server secrets: service role, Razorpay secret/webhook secret, Resend API/webhook secret, and `CRON_SECRET`.
 6. Configure Razorpay events for capture/order payment plus the supported refund/dispute/failure lifecycle, and Resend delivery/bounce/complaint events.
 7. Reconcile legacy payment rows, especially captured payments lacking version-2 snapshots, and resolve `manual_review_reason` cases.
-8. Review any pre-existing publicly accessible certificate/resume objects and migrate or delete them; policy changes do not retract URLs already copied elsewhere.
-9. Run staging smoke tests for real provider signatures, email deliverability, cron invocation, Storage signed URLs, and admin workflows.
-10. Monitor payment manual-review queues, suppressed recipients, cron failures, and `admin_audit_log` after release.
+8. Review pre-existing publicly accessible certificate/resume objects and migrate or delete them; policy changes do not retract URLs already copied elsewhere.
+9. Run staging smoke tests for real provider signatures, email deliverability, cron invocation, Storage signed URLs, and populated admin workflows.
+10. Monitor payment manual-review queues, suppressed recipients, cron failures, provider retries, and `admin_audit_log` after release.
 
 ## Review limitations
 
 - No production or staging credentials were used.
-- A fresh Supabase database was not provisioned because the legacy May migration history requires a separately reviewed squashed bootstrap; the July hardening chain targets existing environments with matching migration history.
+- The automatic Supabase Preview did attempt a clean migration replay and failed in the legacy May chain before reaching the July hardening migrations: `relation "public.job_seeker_profiles" does not exist (SQLSTATE 42P01)` at statement 10 of `20260512120000_candidate_saved_applications_storage.sql`.
+- Vercel never created a runnable preview because Git author `Zsw0rd` lacked project/team access.
 - No remote database migration, external email, payment, refund, dispute, or webhook event was executed.
 - Provider correctness was tested through signed fixtures/mocks and source review; a staging integration test remains required.
+- Populated admin visual QA still requires a signed-in staging admin and compatible database.
 - Dependency audit results are time-sensitive and must continue to run in CI.

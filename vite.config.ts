@@ -41,6 +41,10 @@ function vercelSupabaseClientDefine(): Record<string, string> | undefined {
 }
 
 const supabaseDefine = vercelSupabaseClientDefine()
+const deploymentDefine: Record<string, string> = {
+  ...(supabaseDefine ?? {}),
+  __VERCEL_DEPLOYMENT__: JSON.stringify(process.env.VERCEL === '1'),
+}
 
 function googleVerificationMeta(value: string | undefined) {
   return {
@@ -69,7 +73,7 @@ function googleVerificationMeta(value: string | undefined) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    ...(supabaseDefine ? { define: supabaseDefine } : {}),
+    define: deploymentDefine,
     plugins: [
       googleVerificationMeta(
         process.env.VITE_GOOGLE_SITE_VERIFICATION ??

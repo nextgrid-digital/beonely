@@ -104,7 +104,7 @@ if (!rootElement.innerHTML) {
               <FontProvider>
                 <DirectionProvider>
                   <RouterProvider router={router} />
-                  <Analytics />
+                  {__VERCEL_DEPLOYMENT__ ? <Analytics /> : null}
                 </DirectionProvider>
               </FontProvider>
             </ThemeProvider>
