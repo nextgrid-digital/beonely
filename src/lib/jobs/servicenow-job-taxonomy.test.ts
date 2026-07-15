@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { defaultFormValues } from '@/features/recruiter/recruiter-job-editor-page'
 import {
   filterToKnownTaxonomy,
   sortTaxonomyLabels,
   toggleInList,
   SERVICENOW_JOB_MODULES,
 } from '@/lib/jobs/servicenow-job-taxonomy'
+import { defaultFormValues } from '@/features/recruiter/recruiter-job-editor-page'
 
 describe('servicenow-job-taxonomy', () => {
   it('toggleInList adds and removes items', () => {
@@ -15,9 +15,9 @@ describe('servicenow-job-taxonomy', () => {
   })
 
   it('sortTaxonomyLabels follows catalog order', () => {
-    expect(sortTaxonomyLabels(['CMDB', 'ITSM'], SERVICENOW_JOB_MODULES)).toEqual(
-      ['ITSM', 'CMDB']
-    )
+    expect(
+      sortTaxonomyLabels(['CMDB', 'ITSM'], SERVICENOW_JOB_MODULES)
+    ).toEqual(['ITSM', 'CMDB'])
   })
 
   it('filterToKnownTaxonomy drops unknown labels', () => {

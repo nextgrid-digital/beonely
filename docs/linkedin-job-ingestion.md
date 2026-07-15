@@ -25,14 +25,14 @@ The ingest script sets **approved + paid** automatically (no Razorpay). Admins c
 
 ## Batch ingest
 
-| Variable | Purpose |
-|----------|---------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Same service role key already on Vercel for `/api` (never `VITE_*`) |
-| `SUPABASE_URL` or `VITE_SUPABASE_URL` | Same Supabase project URL as the browser app |
-| `INGEST_RECRUITER_ID` | Optional — UUID of a **dedicated system recruiter** used only for ingest metadata. Do not use a real hiring user's recruiter row; the recruiter portal lists only `source_kind = recruiter_posted` jobs. Defaults to your first `public.recruiters` row if unset. |
-| `INGEST_JOBS_FILE` | Path to JSON array (default: `data/linkedin-jobs.json` if present) |
-| `INGEST_JOB_DESCRIPTION` | Single demo row only, when no batch file |
-| `INGEST_JOB_DESCRIPTION_FILE` | File path for demo description |
+| Variable                              | Purpose                                                                                                                                                                                                                                                           |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY`           | Same service role key already on Vercel for `/api` (never `VITE_*`)                                                                                                                                                                                               |
+| `SUPABASE_URL` or `VITE_SUPABASE_URL` | Same Supabase project URL as the browser app                                                                                                                                                                                                                      |
+| `INGEST_RECRUITER_ID`                 | Optional — UUID of a **dedicated system recruiter** used only for ingest metadata. Do not use a real hiring user's recruiter row; the recruiter portal lists only `source_kind = recruiter_posted` jobs. Defaults to your first `public.recruiters` row if unset. |
+| `INGEST_JOBS_FILE`                    | Path to JSON array (default: `data/linkedin-jobs.json` if present)                                                                                                                                                                                                |
+| `INGEST_JOB_DESCRIPTION`              | Single demo row only, when no batch file                                                                                                                                                                                                                          |
+| `INGEST_JOB_DESCRIPTION_FILE`         | File path for demo description                                                                                                                                                                                                                                    |
 
 Run locally:
 
@@ -67,12 +67,12 @@ pnpm sync:jobs
 
 Stale cleanup policy (`pnpm sync:jobs`):
 
-- checks imported jobs currently live in Supabase but missing from the latest scrape payload
-- expires every active imported row missing from the latest scrape payload
+- can check imported jobs currently live in Supabase but missing from the latest scrape payload
+- missing-from-payload expiry is disabled by default; when explicitly enabled it only runs after a complete, failure-free scrape with at least 25 results and at least 80% of the prior live count
 - **freshness sweep:** expires any live imported row older than `JOBS_SYNC_MAX_AGE_DAYS` (default `30`) so nothing more than a month old stays on the feed
 - **liveness recheck:** unless `JOBS_SYNC_CHECK_APPLY_URLS=0`, HTTP-checks each live row's `apply_url` and expires ones returning `404/410` or "no longer accepting applications"
 - does not hard-delete rows (soft-expire via `listing_expires_at = now()`)
-- skips the missing-from-payload check when the latest source payload cannot be read
+- skips the missing-from-payload check whenever source health cannot be established
 
 ### JSON schema (`data/linkedin-jobs.json`)
 
@@ -104,25 +104,26 @@ Each array element:
 
 ### Scraper tuning env vars (optional)
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `SCRAPE_LINKEDIN_MAX_PAGES` | Search pages per keyword query | `3` |
-| `SCRAPE_LINKEDIN_PAGE_SIZE` | Pagination stride (`start` offset increment) | `25` |
-| `SCRAPE_LINKEDIN_TIMEOUT_MS` | Request timeout per HTTP request | `25000` |
-| `SCRAPE_LINKEDIN_DELAY_MS` | Delay between outbound requests | `1200` |
-| `SCRAPE_LINKEDIN_RETRY_MAX` | Retry count for transient failures | `2` |
-| `SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS` | Only keep listings posted within this many seconds | `2678400` (31 days) |
-| `SCRAPE_LINKEDIN_OUTPUT_FILE` | Output JSON path for scrape results | `data/linkedin-jobs.json` |
+| Variable                                | Purpose                                            | Default                   |
+| --------------------------------------- | -------------------------------------------------- | ------------------------- |
+| `SCRAPE_LINKEDIN_MAX_PAGES`             | Search pages per keyword query                     | `3`                       |
+| `SCRAPE_LINKEDIN_PAGE_SIZE`             | Pagination stride (`start` offset increment)       | `25`                      |
+| `SCRAPE_LINKEDIN_TIMEOUT_MS`            | Request timeout per HTTP request                   | `25000`                   |
+| `SCRAPE_LINKEDIN_DELAY_MS`              | Delay between outbound requests                    | `1200`                    |
+| `SCRAPE_LINKEDIN_RETRY_MAX`             | Retry count for transient failures                 | `2`                       |
+| `SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS` | Only keep listings posted within this many seconds | `2678400` (31 days)       |
+| `SCRAPE_LINKEDIN_OUTPUT_FILE`           | Output JSON path for scrape results                | `data/linkedin-jobs.json` |
 
 ### Daily sync stale-check tuning (optional)
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `JOBS_SYNC_SUMMARY_FILE` | Full sync summary JSON output path | unset |
-| `JOBS_SYNC_MAX_AGE_DAYS` | Expire live imported rows older than this many days | `30` |
-| `JOBS_SYNC_CHECK_APPLY_URLS` | Set `0` to skip the apply-url liveness recheck | `1` (on) |
-| `JOBS_SYNC_APPLY_CHECK_LIMIT` | Max live rows to liveness-check per run | `250` |
-| `JOBS_SYNC_APPLY_CHECK_DELAY_MS` | Delay between apply-url checks | `800` |
+| Variable                          | Purpose                                               | Default   |
+| --------------------------------- | ----------------------------------------------------- | --------- |
+| `JOBS_SYNC_SUMMARY_FILE`          | Full sync summary JSON output path                    | unset     |
+| `JOBS_SYNC_ENABLE_MISSING_EXPIRY` | Set `1` to enable guarded missing-from-payload expiry | `0` (off) |
+| `JOBS_SYNC_MAX_AGE_DAYS`          | Expire live imported rows older than this many days   | `30`      |
+| `JOBS_SYNC_CHECK_APPLY_URLS`      | Set `0` to skip the apply-url liveness recheck        | `1` (on)  |
+| `JOBS_SYNC_APPLY_CHECK_LIMIT`     | Max live rows to liveness-check per run               | `250`     |
+| `JOBS_SYNC_APPLY_CHECK_DELAY_MS`  | Delay between apply-url checks                        | `800`     |
 
 ### System recruiter (`INGEST_RECRUITER_ID`)
 

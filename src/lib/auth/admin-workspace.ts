@@ -46,3 +46,15 @@ export function workspacePath(workspace: AdminWorkspace): string {
     }
   }
 }
+
+/** The URL is authoritative so staff preview survives refreshes and deep links. */
+export function workspaceFromPathname(pathname: string): AdminWorkspace {
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'admin'
+  if (pathname === '/recruiter' || pathname.startsWith('/recruiter/')) {
+    return 'recruiter'
+  }
+  if (pathname === '/candidate' || pathname.startsWith('/candidate/')) {
+    return 'candidate'
+  }
+  return 'public'
+}

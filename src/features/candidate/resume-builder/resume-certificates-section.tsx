@@ -1,10 +1,25 @@
-import { useId, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { Award, ExternalLink, Loader2, Plus, Trash2, Upload } from 'lucide-react'
+import {
+  useId,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react'
+import {
+  Award,
+  ExternalLink,
+  Loader2,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import { toast } from 'sonner'
+import { safeCandidateCertificateSignedUrl } from '@/lib/candidate/certificate-assets'
 import type {
   ResumeContentItem,
   ResumeStructuredV1,
 } from '@/lib/candidate/resume-structured-schema'
+import type { CandidateCertificateUpload } from '@/lib/candidate/upload-candidate-certificate'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -19,6 +34,7 @@ const emptyItem = (): ResumeContentItem => ({
   date: '',
   description: '',
   fileUrl: '',
+  filePath: '',
 })
 
 const INLINE =
@@ -29,8 +45,7 @@ type ResumeCertificatesSectionProps = {
   sectionIndex: number
   mode: 'view' | 'edit'
   onDraftChange?: Dispatch<SetStateAction<ResumeStructuredV1>>
-  /** Uploads a file to storage and resolves to its public URL. */
-  onUpload?: (file: File) => Promise<string>
+  onUpload?: (file: File) => Promise<CandidateCertificateUpload>
 }
 
 export function ResumeCertificatesSection({
@@ -43,13 +58,15 @@ export function ResumeCertificatesSection({
   const edit = mode === 'edit' && Boolean(onDraftChange)
 
   if (!edit) {
-    const visible = items.filter((i) => i.title.trim() || i.fileUrl.trim())
+    const visible = items.filter(
+      (i) => i.title.trim() || i.fileUrl.trim() || i.filePath.trim()
+    )
     if (visible.length === 0) return null
     return (
       <div className='flex flex-col gap-3'>
         {visible.map((item, i) => {
           const name = item.title.trim() || 'Certificate'
-          const href = item.fileUrl.trim()
+          const href = safeCandidateCertificateSignedUrl(item.fileUrl)
           return (
             <div key={i} className='flex items-center gap-2 text-sm'>
               <Award className='size-4 shrink-0 text-slate-500' aria-hidden />
@@ -61,7 +78,10 @@ export function ResumeCertificatesSection({
                   className='inline-flex items-center gap-1 font-medium text-slate-900 hover:underline'
                 >
                   {name}
-                  <ExternalLink className='size-3 shrink-0 opacity-70' aria-hidden />
+                  <ExternalLink
+                    className='size-3 shrink-0 opacity-70'
+                    aria-hidden
+                  />
                 </a>
               ) : (
                 <span className='font-medium text-slate-900'>{name}</span>
@@ -121,6 +141,7 @@ export function ResumeCertificatesSection({
           item={item}
           onNameChange={(v) => setItemField(itemIndex, { title: v })}
           onFileUrlChange={(v) => setItemField(itemIndex, { fileUrl: v })}
+          onFilePathChange={(v) => setItemField(itemIndex, { filePath: v })}
           onRemove={() => removeItem(itemIndex)}
           onUpload={onUpload}
         />
@@ -143,19 +164,21 @@ function CertificateEditRow({
   item,
   onNameChange,
   onFileUrlChange,
+  onFilePathChange,
   onRemove,
   onUpload,
 }: {
   item: ResumeContentItem
   onNameChange: (value: string) => void
   onFileUrlChange: (value: string) => void
+  onFilePathChange: (value: string) => void
   onRemove: () => void
-  onUpload?: (file: File) => Promise<string>
+  onUpload?: (file: File) => Promise<CandidateCertificateUpload>
 }) {
   const inputId = useId()
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const href = item.fileUrl.trim()
+  const href = safeCandidateCertificateSignedUrl(item.fileUrl)
 
   const onFileSelected = async (file: File | undefined) => {
     if (!file) return
@@ -165,8 +188,9 @@ function CertificateEditRow({
     }
     setUploading(true)
     try {
-      const url = await onUpload(file)
-      onFileUrlChange(url)
+      const uploaded = await onUpload(file)
+      onFilePathChange(uploaded.filePath)
+      onFileUrlChange(uploaded.fileUrl)
       toast.success('Certificate uploaded')
     } catch (err) {
       toast.error(

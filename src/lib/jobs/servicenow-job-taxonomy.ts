@@ -73,9 +73,7 @@ export const SERVICENOW_CERTIFICATION_PATTERNS: Array<
 ]
 
 export function toggleInList(list: string[], item: string): string[] {
-  return list.includes(item)
-    ? list.filter((x) => x !== item)
-    : [...list, item]
+  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item]
 }
 
 export function sortTaxonomyLabels(

@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { apiPost } from '@/lib/api-client'
+import { safePrivateResumeSignedUrl } from '@/lib/candidate/application-assets'
+import { isLinkedInProfileUrl } from '@/lib/candidate/linkedin-url'
+import { safeHttpsUrl } from '@/lib/security/safe-url'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import type { Enums, Tables } from '@/lib/supabase/database.types'
-import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
+import { useAuth } from '@/context/auth-provider'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -20,6 +24,7 @@ import type { InboxRowData } from '@/components/inbox/inbox-list-row'
 import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
 import { PeekPanel } from '@/components/peek/peek-panel'
 import { ApplicationProfileSnapshotReadonly } from '@/features/recruiter/application-profile-snapshot-readonly'
+import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
 
 type ApplicationRow = Tables<'applications'>
 type ApplicationStatus = Enums<'application_status'>
@@ -105,6 +110,12 @@ export function RecruiterJobApplicantsList() {
   }
 
   const apps = appsQuery.data ?? []
+  const linkedInUrl =
+    profileSheetApp?.linkedin_url &&
+    isLinkedInProfileUrl(profileSheetApp.linkedin_url)
+      ? profileSheetApp.linkedin_url
+      : null
+  const portfolioUrl = safeHttpsUrl(profileSheetApp?.resume_url)
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
   const rows: InboxRowData[] = apps
@@ -201,7 +212,10 @@ export function RecruiterJobApplicantsList() {
             </div>
 
             <dl className='grid gap-2 text-sm'>
-              <ContactRow label='Email' value={profileSheetApp.candidate_email} />
+              <ContactRow
+                label='Email'
+                value={profileSheetApp.candidate_email}
+              />
               <ContactRow
                 label='Phone'
                 value={profileSheetApp.candidate_phone}
@@ -210,12 +224,12 @@ export function RecruiterJobApplicantsList() {
                 label='Company'
                 value={profileSheetApp.current_company}
               />
-              {profileSheetApp.linkedin_url ? (
+              {linkedInUrl ? (
                 <div className='flex flex-wrap items-center gap-x-2'>
                   <dt className='text-muted-foreground'>LinkedIn</dt>
                   <dd>
                     <a
-                      href={profileSheetApp.linkedin_url}
+                      href={linkedInUrl}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
@@ -225,25 +239,25 @@ export function RecruiterJobApplicantsList() {
                   </dd>
                 </div>
               ) : null}
-              {profileSheetApp.resume_url ? (
+              {portfolioUrl ? (
                 <div className='flex flex-wrap items-center gap-x-2'>
-                  <dt className='text-muted-foreground'>Resume</dt>
+                  <dt className='text-muted-foreground'>Portfolio</dt>
                   <dd>
                     <a
-                      href={profileSheetApp.resume_url}
+                      href={portfolioUrl}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
                     >
-                      Open resume / portfolio
+                      Open portfolio
                     </a>
                   </dd>
                 </div>
-              ) : profileSheetApp.resume_storage_path ? (
-                <div className='flex flex-wrap items-center gap-x-2'>
-                  <dt className='text-muted-foreground'>Resume</dt>
-                  <dd className='text-muted-foreground'>Uploaded</dd>
-                </div>
+              ) : null}
+              {profileSheetApp.resume_storage_path ? (
+                <PrivateApplicationResumeLink
+                  applicationId={profileSheetApp.id}
+                />
               ) : null}
             </dl>
 
@@ -253,6 +267,56 @@ export function RecruiterJobApplicantsList() {
           </>
         ) : null}
       </PeekPanel>
+    </div>
+  )
+}
+
+function PrivateApplicationResumeLink({
+  applicationId,
+}: {
+  applicationId: string
+}) {
+  const { session } = useAuth()
+  const signedResume = useMutation({
+    mutationFn: async () => {
+      const response = await apiPost<{ url: string }>(
+        '/api/application-asset',
+        { application_id: applicationId },
+        session?.access_token
+      )
+      const url = safePrivateResumeSignedUrl(response.url)
+      if (!url) throw new Error('The resume link was invalid.')
+      return url
+    },
+    onError: () => toast.error('Could not open the uploaded resume.'),
+  })
+
+  return (
+    <div className='flex flex-wrap items-center gap-x-2'>
+      <dt className='text-muted-foreground'>Resume</dt>
+      <dd>
+        {signedResume.data ? (
+          <a
+            href={signedResume.data}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-primary underline-offset-4 hover:underline'
+          >
+            Open uploaded resume
+          </a>
+        ) : (
+          <button
+            type='button'
+            disabled={signedResume.isPending}
+            onClick={() => signedResume.mutate()}
+            className='text-primary underline-offset-4 hover:underline disabled:opacity-60'
+          >
+            {signedResume.isPending
+              ? 'Preparing secure link…'
+              : 'Open uploaded resume'}
+          </button>
+        )}
+      </dd>
     </div>
   )
 }

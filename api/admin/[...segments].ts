@@ -1,18 +1,25 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handle as handleCampaigns } from '../_handlers/admin/campaigns.js'
 import { handle as handleCampaignSend } from '../_handlers/admin/campaign-send.js'
 import { handle as handleCampaignStats } from '../_handlers/admin/campaign-stats.js'
-import { handle as handleNotifyJobStatus } from '../_handlers/admin/notify-job-status.js'
-import { handle as handleEmailPreviews } from '../_handlers/admin/email-previews.js'
-import { handle as handleEmailAutomations } from '../_handlers/admin/email-automations.js'
-import { handle as handleEmailTestSend } from '../_handlers/admin/email-test-send.js'
+import { handle as handleCampaigns } from '../_handlers/admin/campaigns.js'
+import { handle as handleCandidatesList } from '../_handlers/admin/candidates-list.js'
+import { handle as handleDashboardStats } from '../_handlers/admin/dashboard-stats.js'
 import { handle as handleEmailAnalytics } from '../_handlers/admin/email-analytics.js'
+import { handle as handleEmailAutomations } from '../_handlers/admin/email-automations.js'
 import { handle as handleEmailCampaignRecipients } from '../_handlers/admin/email-campaign-recipients.js'
-import { handle as handleHiringRequests } from '../_handlers/admin/hiring-requests.js'
+import { handle as handleEmailPreviews } from '../_handlers/admin/email-previews.js'
 import {
   handle as handleEmailTemplates,
   handleDuplicate as handleEmailTemplatesDuplicate,
 } from '../_handlers/admin/email-templates.js'
+import { handle as handleEmailTestSend } from '../_handlers/admin/email-test-send.js'
+import { handle as handleHiringRequests } from '../_handlers/admin/hiring-requests.js'
+import { handle as handleJobsList } from '../_handlers/admin/jobs-list.js'
+import { handle as handleJobs } from '../_handlers/admin/jobs.js'
+import { handle as handleNotifyJobStatus } from '../_handlers/admin/notify-job-status.js'
+import { handle as handleRecruitersList } from '../_handlers/admin/recruiters-list.js'
+import { handle as handleRecruiters } from '../_handlers/admin/recruiters.js'
+import { handle as handleRevenueList } from '../_handlers/admin/revenue-list.js'
 
 type AdminRouteHandler = (
   req: VercelRequest,
@@ -31,13 +38,18 @@ const ROUTES: Record<string, AdminRouteHandler> = {
   'email/campaign-recipients': handleEmailCampaignRecipients,
   'email/templates': handleEmailTemplates,
   'hiring-requests': handleHiringRequests,
+  jobs: handleJobs,
+  recruiters: handleRecruiters,
+  'directory/candidates': handleCandidatesList,
+  'directory/recruiters': handleRecruitersList,
+  'jobs-list': handleJobsList,
+  'revenue-list': handleRevenueList,
+  'dashboard-stats': handleDashboardStats,
 }
 
 const ADMIN_API_PREFIX = '/api/admin'
 
-function routeKeyFromSegments (
-  segments: string | string[] | undefined
-): string {
+function routeKeyFromSegments(segments: string | string[] | undefined): string {
   if (segments == null) return ''
   if (Array.isArray(segments)) return segments.map(String).join('/')
   const value = String(segments)
@@ -46,7 +58,7 @@ function routeKeyFromSegments (
 }
 
 /** Pathname after /api/admin/ — reliable when query.segments is missing on Vercel. */
-export function routeKeyFromRequest (req: VercelRequest): string {
+export function routeKeyFromRequest(req: VercelRequest): string {
   const fromQuery = routeKeyFromSegments(req.query.segments)
   if (fromQuery) return fromQuery
 
@@ -55,7 +67,7 @@ export function routeKeyFromRequest (req: VercelRequest): string {
   return pathname.slice(ADMIN_API_PREFIX.length).replace(/^\//, '')
 }
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const key = routeKeyFromRequest(req)
   if (key === 'email/templates/duplicate') {
     return handleEmailTemplatesDuplicate(req, res)

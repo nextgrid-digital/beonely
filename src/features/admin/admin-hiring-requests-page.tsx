@@ -1,21 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   updateAdminHiringRequest,
   type HiringRequestRow,
 } from '@/lib/hiring-requests'
 import { useAuth } from '@/context/auth-provider'
-import { useAdminHiringRequests } from '@/features/admin/hooks/use-admin-hiring-requests'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { useAdminHiringRequests } from '@/features/admin/hooks/use-admin-hiring-requests'
 
 type DraftState = {
   status: HiringRequestRow['status']
@@ -23,7 +29,10 @@ type DraftState = {
   internal_notes: string
 }
 
-const STATUS_OPTIONS: Array<{ value: HiringRequestRow['status']; label: string }> = [
+const STATUS_OPTIONS: Array<{
+  value: HiringRequestRow['status']
+  label: string
+}> = [
   { value: 'new', label: 'New' },
   { value: 'contacted', label: 'Contacted' },
   { value: 'qualified', label: 'Qualified' },
@@ -53,24 +62,8 @@ export function AdminHiringRequestsPage() {
   const { session } = useAuth()
   const token = session?.access_token
   const qc = useQueryClient()
-  const requests = query.data ?? []
+  const requests = useMemo(() => query.data ?? [], [query.data])
   const [drafts, setDrafts] = useState<Record<string, DraftState>>({})
-
-  useEffect(() => {
-    setDrafts((current) => {
-      const next = { ...current }
-      for (const request of requests) {
-        if (!next[request.id]) {
-          next[request.id] = {
-            status: request.status,
-            assigned_to_email: request.assigned_to_email ?? '',
-            internal_notes: request.internal_notes ?? '',
-          }
-        }
-      }
-      return next
-    })
-  }, [requests])
 
   const saveMutation = useMutation({
     mutationFn: async (input: {
@@ -84,8 +77,10 @@ export function AdminHiringRequestsPage() {
       return updateAdminHiringRequest(token, input)
     },
     onSuccess: (updated) => {
-      qc.setQueryData(['admin-hiring-requests'], (prev: HiringRequestRow[] | undefined) =>
-        (prev ?? []).map((row) => (row.id === updated.id ? updated : row))
+      qc.setQueriesData<HiringRequestRow[]>(
+        { queryKey: ['admin-hiring-requests'] },
+        (prev) =>
+          (prev ?? []).map((row) => (row.id === updated.id ? updated : row))
       )
       setDrafts((current) => ({
         ...current,
@@ -123,12 +118,25 @@ export function AdminHiringRequestsPage() {
     )
   }
 
-  if (query.error) {
+  if (query.isError) {
     return (
       <Alert variant='destructive'>
+        <AlertCircle className='size-4' aria-hidden />
         <AlertTitle>Could not load hiring requests</AlertTitle>
-        <AlertDescription>
-          {query.error instanceof Error ? query.error.message : 'Unknown error'}
+        <AlertDescription className='mt-2 flex flex-wrap items-center gap-3'>
+          <span>
+            {query.error instanceof Error
+              ? query.error.message
+              : 'Unknown error'}
+          </span>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={() => void query.refetch()}
+          >
+            Try again
+          </Button>
         </AlertDescription>
       </Alert>
     )
@@ -137,10 +145,12 @@ export function AdminHiringRequestsPage() {
   return (
     <div className='space-y-6'>
       <div className='space-y-2'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Hiring requests</h1>
+        <h1 className='text-2xl font-semibold tracking-tight'>
+          Hiring requests
+        </h1>
         <p className='text-sm text-muted-foreground'>
-          Concierge demand captured from the public hire flow. These are the highest-signal
-          buyer leads on Beonely right now.
+          Concierge demand captured from the public hire flow. These are the
+          highest-signal buyer leads on Beonely right now.
         </p>
       </div>
 
@@ -154,25 +164,42 @@ export function AdminHiringRequestsPage() {
 
       {requests.length === 0 ? (
         <div className='rounded-2xl border border-dashed p-8 text-sm text-muted-foreground'>
-          No hiring requests yet. The public /hire form will surface buyer intent here.
+          No hiring requests yet. The public /hire form will surface buyer
+          intent here.
         </div>
       ) : (
         <div className='grid gap-4'>
           {requests.map((request) => {
+            const titleId = `hiring-request-${request.id}-title`
+            const statusId = `hiring-request-${request.id}-status`
+            const ownerId = `hiring-request-${request.id}-owner`
+            const notesId = `hiring-request-${request.id}-notes`
             const draft = drafts[request.id] ?? {
               status: request.status,
               assigned_to_email: request.assigned_to_email ?? '',
               internal_notes: request.internal_notes ?? '',
             }
-            const busy = saveMutation.isPending && saveMutation.variables?.id === request.id
+            const busy =
+              saveMutation.isPending &&
+              saveMutation.variables?.id === request.id
 
             return (
-              <article key={request.id} className='rounded-2xl border bg-card p-5 shadow-sm'>
+              <article
+                key={request.id}
+                aria-labelledby={titleId}
+                className='rounded-2xl border bg-card p-5 shadow-sm'
+              >
                 <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
                   <div>
-                    <h2 className='text-lg font-semibold tracking-tight'>{request.role_title}</h2>
+                    <h2
+                      id={titleId}
+                      className='text-lg font-semibold tracking-tight'
+                    >
+                      {request.role_title}
+                    </h2>
                     <p className='text-sm text-muted-foreground'>
-                      {request.company_name} · {request.contact_name} · {request.email}
+                      {request.company_name} · {request.contact_name} ·{' '}
+                      {request.email}
                     </p>
                   </div>
                   <div className='flex items-center gap-2'>
@@ -187,25 +214,34 @@ export function AdminHiringRequestsPage() {
 
                 <dl className='mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4'>
                   <Info label='Phone' value={request.phone ?? '—'} />
-                  <Info label='Website' value={request.company_website ?? '—'} />
-                  <Info label='Hiring type' value={prettify(request.hiring_type)} />
+                  <Info
+                    label='Website'
+                    value={request.company_website ?? '—'}
+                  />
+                  <Info
+                    label='Hiring type'
+                    value={prettify(request.hiring_type)}
+                  />
                   <Info label='Work mode' value={prettify(request.work_mode)} />
                   <Info label='Location' value={request.location ?? '—'} />
                   <Info label='Timeline' value={request.timeline ?? '—'} />
-                  <Info label='Headcount' value={formatHeadcount(request.headcount)} />
+                  <Info
+                    label='Headcount'
+                    value={formatHeadcount(request.headcount)}
+                  />
                   <Info label='Source' value={prettify(request.source)} />
                 </dl>
 
                 <div className='mt-4 grid gap-4 lg:grid-cols-2'>
                   <section className='rounded-xl bg-muted/40 p-4'>
                     <h3 className='font-medium'>ServiceNow scope</h3>
-                    <p className='mt-2 whitespace-pre-wrap text-sm text-muted-foreground'>
+                    <p className='mt-2 text-sm whitespace-pre-wrap text-muted-foreground'>
                       {request.servicenow_scope ?? '—'}
                     </p>
                   </section>
                   <section className='rounded-xl bg-muted/40 p-4'>
                     <h3 className='font-medium'>Buyer notes</h3>
-                    <p className='mt-2 whitespace-pre-wrap text-sm text-muted-foreground'>
+                    <p className='mt-2 text-sm whitespace-pre-wrap text-muted-foreground'>
                       {request.notes ?? '—'}
                     </p>
                   </section>
@@ -214,7 +250,7 @@ export function AdminHiringRequestsPage() {
                 <section className='mt-4 rounded-xl border p-4'>
                   <div className='grid gap-4 lg:grid-cols-3'>
                     <div className='space-y-2'>
-                      <Label>Status</Label>
+                      <Label htmlFor={statusId}>Status</Label>
                       <Select
                         value={draft.status}
                         onValueChange={(value) =>
@@ -227,7 +263,7 @@ export function AdminHiringRequestsPage() {
                           }))
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id={statusId}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -240,10 +276,13 @@ export function AdminHiringRequestsPage() {
                       </Select>
                     </div>
                     <div className='space-y-2 lg:col-span-2'>
-                      <Label>Owner email</Label>
+                      <Label htmlFor={ownerId}>Owner email</Label>
                       <Input
+                        id={ownerId}
+                        type='email'
+                        autoComplete='email'
                         value={draft.assigned_to_email}
-                        placeholder='nextgrid_os@agentmail.to'
+                        placeholder='ops@beonely.in'
                         onChange={(event) =>
                           setDrafts((current) => ({
                             ...current,
@@ -258,8 +297,9 @@ export function AdminHiringRequestsPage() {
                   </div>
 
                   <div className='mt-4 space-y-2'>
-                    <Label>Internal notes</Label>
+                    <Label htmlFor={notesId}>Internal notes</Label>
                     <Textarea
+                      id={notesId}
                       value={draft.internal_notes}
                       placeholder='Qualification notes, next step, pricing, objections, sourcing approach…'
                       className='min-h-28'
@@ -281,7 +321,8 @@ export function AdminHiringRequestsPage() {
                   <div className='mt-4 flex flex-wrap gap-2'>
                     <Button
                       type='button'
-                      disabled={busy}
+                      disabled={saveMutation.isPending}
+                      aria-busy={busy}
                       onClick={() =>
                         saveMutation.mutate({
                           id: request.id,
@@ -291,13 +332,16 @@ export function AdminHiringRequestsPage() {
                         })
                       }
                     >
-                      {busy ? <Loader2 className='size-4 animate-spin' /> : null}
+                      {busy ? (
+                        <Loader2 className='size-4 animate-spin' aria-hidden />
+                      ) : null}
                       Save pipeline state
                     </Button>
                     <Button
                       type='button'
                       variant='outline'
-                      disabled={busy}
+                      disabled={saveMutation.isPending}
+                      aria-busy={busy}
                       onClick={() =>
                         saveMutation.mutate({
                           id: request.id,
@@ -324,7 +368,9 @@ export function AdminHiringRequestsPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className='text-xs uppercase tracking-wide text-muted-foreground'>{label}</dt>
+      <dt className='text-xs tracking-wide text-muted-foreground uppercase'>
+        {label}
+      </dt>
       <dd className='mt-1 break-words text-foreground'>{value}</dd>
     </div>
   )

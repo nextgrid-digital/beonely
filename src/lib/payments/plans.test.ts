@@ -51,7 +51,9 @@ describe('plan amounts with GST', () => {
 
   it('renewal base is 60% of matching initial plan', () => {
     expect(PLAN_BASE_AMOUNT_INR_PAISE.standard_week_renew).toBe(
-      Math.round(PLAN_BASE_AMOUNT_INR_PAISE.standard_week * RENEWAL_PRICE_FACTOR)
+      Math.round(
+        PLAN_BASE_AMOUNT_INR_PAISE.standard_week * RENEWAL_PRICE_FACTOR
+      )
     )
     expect(PLAN_BASE_AMOUNT_INR_PAISE.standard_month_renew).toBe(
       Math.round(

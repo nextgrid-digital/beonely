@@ -27,12 +27,12 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { PortfolioPublishButton } from '@/features/candidate/portfolio-publish-button'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
-import { PortfolioPublishButton } from '@/features/candidate/portfolio-publish-button'
 import { ReadCvResumePreview } from './read-cv-resume-preview'
 
 export type CandidateResumeBuilderProps = {
@@ -99,7 +99,9 @@ export function CandidateResumeBuilder({
         toast.error('Your account needs an email address to save your profile.')
       } else {
         toast.error(
-          message ? `Could not save profile: ${message}` : 'Could not save profile'
+          message
+            ? `Could not save profile: ${message}`
+            : 'Could not save profile'
         )
       }
     },
@@ -152,7 +154,7 @@ export function CandidateResumeBuilder({
     }
   }
 
-  const uploadCertificate = async (file: File): Promise<string> => {
+  const uploadCertificate = async (file: File) => {
     if (!getSupabaseConfigured()) {
       throw new Error('Connect Supabase to upload a certificate.')
     }

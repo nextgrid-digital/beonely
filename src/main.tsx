@@ -15,7 +15,6 @@ import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
-import { AdminWorkspaceProvider } from '@/context/admin-workspace-provider'
 import { AuthProvider } from '@/context/auth-provider'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -101,16 +100,14 @@ if (!rootElement.innerHTML) {
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <AdminWorkspaceProvider>
-              <ThemeProvider>
-                <FontProvider>
-                  <DirectionProvider>
-                    <RouterProvider router={router} />
-                    <Analytics />
-                  </DirectionProvider>
-                </FontProvider>
-              </ThemeProvider>
-            </AdminWorkspaceProvider>
+            <ThemeProvider>
+              <FontProvider>
+                <DirectionProvider>
+                  <RouterProvider router={router} />
+                  <Analytics />
+                </DirectionProvider>
+              </FontProvider>
+            </ThemeProvider>
           </AuthProvider>
         </QueryClientProvider>
       </HelmetProvider>

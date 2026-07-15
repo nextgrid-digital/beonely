@@ -6,7 +6,11 @@ import {
   daysUntilListingExpiry,
   jobListingCanRenew,
 } from '@/lib/jobs/job-listing-renewal'
-import { paymentPlanFromSelection, type PaymentPlan } from '@/lib/payments/plans'
+import { usePaymentTurnstileChallenge } from '@/lib/payments/payment-turnstile'
+import {
+  paymentPlanFromSelection,
+  type PaymentPlan,
+} from '@/lib/payments/plans'
 import { startRazorpayJobCheckout } from '@/lib/payments/razorpay-job-checkout'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
@@ -36,6 +40,7 @@ export function ExtendListingButton(props: {
     paymentPlanFromSelection('month', props.job.featured, true)
   )
   const [paying, setPaying] = useState(false)
+  const turnstile = usePaymentTurnstileChallenge()
 
   if (!canRenew) return null
 
@@ -48,16 +53,19 @@ export function ExtendListingButton(props: {
       toast.error('Sign in again')
       return
     }
+    if (!turnstile.ready) {
+      toast.error('Complete the verification before starting checkout')
+      return
+    }
     setPaying(true)
     try {
       await startRazorpayJobCheckout({
         jobId: props.job.id,
         plan,
         accessToken: props.accessToken,
+        turnstileToken: turnstile.token ?? undefined,
         onPaid: () => {
-          toast.success(
-            expired ? 'Listing reactivated' : 'Listing extended'
-          )
+          toast.success(expired ? 'Listing reactivated' : 'Listing extended')
           setOpen(false)
           window.location.reload()
         },
@@ -69,6 +77,7 @@ export function ExtendListingButton(props: {
       })
     } finally {
       setPaying(false)
+      turnstile.reset()
     }
   }
 
@@ -112,6 +121,7 @@ export function ExtendListingButton(props: {
             plan={plan}
             onChange={setPlan}
           />
+          {turnstile.challenge}
           <DialogFooter className='flex-col gap-2 sm:flex-col sm:items-stretch'>
             <p className='text-center text-sm text-muted-foreground'>
               Total due:{' '}
@@ -119,7 +129,10 @@ export function ExtendListingButton(props: {
                 {selectedPlanPriceLabel(plan)}
               </span>
             </p>
-            <Button disabled={paying} onClick={() => void startPay()}>
+            <Button
+              disabled={paying || !turnstile.ready}
+              onClick={() => void startPay()}
+            >
               {paying ? (
                 <>
                   <Loader2 className='size-4 animate-spin' aria-hidden />

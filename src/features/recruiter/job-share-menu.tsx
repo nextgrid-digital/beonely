@@ -23,7 +23,9 @@ import {
 } from '@/components/ui/tooltip'
 
 function canUseNativeShare(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  return (
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  )
 }
 
 export function JobShareMenu(props: {

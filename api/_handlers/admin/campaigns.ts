@@ -1,13 +1,13 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
 import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
 const createSchema = z.object({
-  subject: z.string().min(1),
-  preview_text: z.string().optional().nullable(),
-  body: z.string().min(1),
+  subject: z.string().trim().min(1).max(200),
+  preview_text: z.string().max(300).optional().nullable(),
+  body: z.string().min(1).max(200_000),
   template_id: z.string().uuid().optional().nullable(),
   audience: z.enum([
     'candidates',
@@ -100,10 +100,16 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
       .from('email_campaigns')
       .update(patch)
       .eq('id', id)
+      // A failed campaign may already have a stable recipient snapshot and
+      // provider idempotency keys. Mutating it would make a retry ambiguous.
+      .eq('status', 'draft')
       .select('*')
-      .single()
+      .maybeSingle()
     if (error) {
       return res.status(500).json({ error: error.message })
+    }
+    if (!data) {
+      return res.status(409).json({ error: 'campaign_not_editable' })
     }
     return res.status(200).json({ campaign: data })
   }
@@ -112,18 +118,24 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
     const id =
       typeof req.query.id === 'string'
         ? req.query.id
-        : typeof req.body === 'object' &&
-            req.body !== null &&
-            'id' in req.body
+        : typeof req.body === 'object' && req.body !== null && 'id' in req.body
           ? String((req.body as { id: unknown }).id)
           : ''
-    if (!id) {
+    const parsedId = z.string().uuid().safeParse(id)
+    if (!parsedId.success) {
       return res.status(400).json({ error: 'missing_id' })
     }
-    const { error } = await sb.from('email_campaigns').delete().eq('id', id)
+    const { data, error } = await sb
+      .from('email_campaigns')
+      .delete()
+      .eq('id', parsedId.data)
+      .eq('status', 'draft')
+      .select('id')
+      .maybeSingle()
     if (error) {
       return res.status(500).json({ error: error.message })
     }
+    if (!data) return res.status(409).json({ error: 'campaign_not_deletable' })
     return res.status(200).json({ ok: true })
   }
 

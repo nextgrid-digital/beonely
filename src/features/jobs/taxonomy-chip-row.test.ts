@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { appendTaxonomyOption } from '@/features/jobs/taxonomy-chip-row'
 import { toggleInList } from '@/lib/jobs/servicenow-job-taxonomy'
+import { appendTaxonomyOption } from '@/features/jobs/taxonomy-chip-row'
 
 const CATALOG = ['ITSM', 'CSM', 'SPM'] as const
 

@@ -1,8 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useId } from 'react'
 import Link from '@tiptap/extension-link'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { Bold, Heading2, Italic, Link as LinkIcon, List, ListOrdered } from 'lucide-react'
+import {
+  Bold,
+  Heading2,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+} from 'lucide-react'
 import { sanitizeJobDescriptionHtml } from '@/lib/jobs/sanitize-job-description-html'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -16,14 +23,20 @@ const EDITOR_CLASS = cn(
 )
 
 export function EmailBodyRichTextField({
+  id,
+  ariaLabel = 'Email body',
   value,
   onChange,
   disabled,
 }: {
+  id?: string
+  ariaLabel?: string
   value: string
   onChange: (html: string) => void
   disabled?: boolean
 }) {
+  const generatedId = useId()
+  const editorId = id ?? generatedId
   const editor = useEditor({
     editable: !disabled,
     extensions: [
@@ -36,6 +49,10 @@ export function EmailBodyRichTextField({
     },
     editorProps: {
       attributes: {
+        id: editorId,
+        role: 'textbox',
+        'aria-label': ariaLabel,
+        'aria-multiline': 'true',
         class: EDITOR_CLASS,
       },
     },
@@ -73,51 +90,81 @@ export function EmailBodyRichTextField({
   return (
     <div className='rounded-md border border-border'>
       {!disabled ? (
-        <div className='flex flex-wrap gap-1 border-b border-border p-2'>
+        <div
+          role='toolbar'
+          aria-label={`${ariaLabel} formatting`}
+          aria-controls={editorId}
+          className='flex flex-wrap gap-1 border-b border-border p-2'
+        >
           <Button
             type='button'
-            size='sm'
-            variant='ghost'
+            size='icon'
+            variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
+            className='size-8'
+            aria-label='Bold'
+            aria-pressed={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
-            <Bold className='size-4' />
+            <Bold className='size-4' aria-hidden />
           </Button>
           <Button
             type='button'
-            size='sm'
-            variant='ghost'
+            size='icon'
+            variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
+            className='size-8'
+            aria-label='Italic'
+            aria-pressed={editor.isActive('italic')}
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
-            <Italic className='size-4' />
+            <Italic className='size-4' aria-hidden />
           </Button>
           <Button
             type='button'
-            size='sm'
-            variant='ghost'
+            size='icon'
+            variant={
+              editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'
+            }
+            className='size-8'
+            aria-label='Heading level 2'
+            aria-pressed={editor.isActive('heading', { level: 2 })}
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 2 }).run()
             }
           >
-            <Heading2 className='size-4' />
+            <Heading2 className='size-4' aria-hidden />
           </Button>
           <Button
             type='button'
-            size='sm'
-            variant='ghost'
+            size='icon'
+            variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
+            className='size-8'
+            aria-label='Bullet list'
+            aria-pressed={editor.isActive('bulletList')}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
-            <List className='size-4' />
+            <List className='size-4' aria-hidden />
           </Button>
           <Button
             type='button'
-            size='sm'
-            variant='ghost'
+            size='icon'
+            variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
+            className='size-8'
+            aria-label='Numbered list'
+            aria-pressed={editor.isActive('orderedList')}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
-            <ListOrdered className='size-4' />
+            <ListOrdered className='size-4' aria-hidden />
           </Button>
-          <Button type='button' size='sm' variant='ghost' onClick={setLink}>
-            <LinkIcon className='size-4' />
+          <Button
+            type='button'
+            size='icon'
+            variant={editor.isActive('link') ? 'secondary' : 'ghost'}
+            className='size-8'
+            aria-label='Add or edit link'
+            aria-pressed={editor.isActive('link')}
+            onClick={setLink}
+          >
+            <LinkIcon className='size-4' aria-hidden />
           </Button>
         </div>
       ) : null}

@@ -2,19 +2,21 @@ import { publicSiteOrigin } from '@/lib/site/site-origin'
 
 export { publicSiteOrigin }
 
-export function publicPortfolioUrl (handle: string): string {
+export function publicPortfolioUrl(handle: string): string {
   const origin = publicSiteOrigin()
   const path = `/p/${encodeURIComponent(handle)}`
   return origin ? `${origin}${path}` : path
 }
 
-export function portfolioOgImageUrl (handle: string): string {
+export function portfolioOgImageUrl(handle: string): string {
   const origin = publicSiteOrigin()
   const query = `slug=${encodeURIComponent(handle)}`
-  return origin ? `${origin}/api/og/portfolio?${query}` : `/api/og/portfolio?${query}`
+  return origin
+    ? `${origin}/api/og/portfolio?${query}`
+    : `/api/og/portfolio?${query}`
 }
 
-export function portfolioShareTitle (input: {
+export function portfolioShareTitle(input: {
   name: string
   headline?: string | null
 }): string {
@@ -22,7 +24,7 @@ export function portfolioShareTitle (input: {
   return headline ? `${input.name} · ${headline}` : `${input.name} · Beonely`
 }
 
-export function portfolioShareMessage (input: {
+export function portfolioShareMessage(input: {
   name: string
   headline?: string | null
   handle: string

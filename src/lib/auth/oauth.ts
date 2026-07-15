@@ -1,3 +1,4 @@
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
@@ -34,8 +35,9 @@ export async function signInWithGoogle(
   if (options.intent) {
     callbackUrl.searchParams.set('intent', options.intent)
   }
-  if (options.redirect && options.redirect.startsWith('/')) {
-    callbackUrl.searchParams.set('redirect', options.redirect)
+  const redirect = sanitizeRedirectPath(options.redirect)
+  if (redirect) {
+    callbackUrl.searchParams.set('redirect', redirect)
   }
 
   const sb = getSupabaseBrowserClient()

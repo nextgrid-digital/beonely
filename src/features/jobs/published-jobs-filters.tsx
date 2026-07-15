@@ -435,7 +435,9 @@ export function PublishedJobsFiltersBar(props: FilterControlsProps) {
 }
 
 /** Count of active detailed (non-search) filters. */
-export function countActiveDetailedFilters(s: PublishedJobsSearchState): number {
+export function countActiveDetailedFilters(
+  s: PublishedJobsSearchState
+): number {
   return DETAILED_FILTER_DEFS.reduce((n, def) => {
     const value = s[def.key]
     return n + (typeof value === 'string' && value.trim() ? 1 : 0)
@@ -466,7 +468,12 @@ export function PublishedJobsFiltersButton({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type='button' variant='outline' size='sm' className='h-8 gap-1.5'>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          className='h-8 gap-1.5'
+        >
           <SlidersHorizontal className='size-3.5' aria-hidden />
           Filters
           {count > 0 && (
@@ -476,10 +483,7 @@ export function PublishedJobsFiltersButton({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        align='end'
-        className='max-h-[70vh] w-72 overflow-y-auto'
-      >
+      <PopoverContent align='end' className='max-h-[70vh] w-72 overflow-y-auto'>
         <PublishedJobsFilterControls
           search={search}
           navigate={navigate}

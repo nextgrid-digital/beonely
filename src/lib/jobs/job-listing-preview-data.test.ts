@@ -3,8 +3,8 @@ import {
   jobListingPreviewDataFromJob,
   jobListingPreviewDataFromValues,
 } from '@/lib/jobs/job-listing-preview-data'
-import { defaultFormValues } from '@/features/recruiter/recruiter-job-editor-page'
 import type { JobRow } from '@/lib/supabase/database.types'
+import { defaultFormValues } from '@/features/recruiter/recruiter-job-editor-page'
 
 describe('jobListingPreviewDataFromJob', () => {
   it('maps job row fields for candidate preview', () => {

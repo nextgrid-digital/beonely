@@ -48,7 +48,11 @@ export type HiringRequestInput = {
 }
 
 export async function submitHiringRequest(input: HiringRequestInput) {
-  return apiPost<{ ok: true; id: string }>('/api/hiring-request', input, undefined)
+  return apiPost<{ ok: true; id: string }>(
+    '/api/hiring-request',
+    input,
+    undefined
+  )
 }
 
 export async function fetchAdminHiringRequests(

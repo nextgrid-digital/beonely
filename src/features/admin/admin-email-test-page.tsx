@@ -84,9 +84,9 @@ export function AdminEmailTestPage() {
           />
         </div>
         <div className='space-y-2'>
-          <Label>Template</Label>
+          <Label htmlFor='test-email-template'>Template</Label>
           <Select value={trigger} onValueChange={setTrigger}>
-            <SelectTrigger>
+            <SelectTrigger id='test-email-template'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

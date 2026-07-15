@@ -1,17 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { apiPost } from '@/lib/api-client'
+import { useAuth } from '@/context/auth-provider'
 
 export function useToggleRecruiterDisabled() {
   const qc = useQueryClient()
+  const { session } = useAuth()
   return useMutation({
     mutationFn: async (input: { id: string; disabled: boolean }) => {
-      const sb = getSupabaseBrowserClient()
-      const { error } = await sb
-        .from('recruiters')
-        .update({ disabled: input.disabled })
-        .eq('id', input.id)
-      if (error) throw error
+      if (!session?.access_token) throw new Error('missing_access_token')
+      await apiPost('/api/admin/recruiters', input, session.access_token)
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-recruiters'] })

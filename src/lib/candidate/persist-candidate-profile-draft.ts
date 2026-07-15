@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { prepareCertificateAssetsForStorage } from '@/lib/candidate/certificate-assets'
 import type { ResumeStructuredV1 } from '@/lib/candidate/resume-structured-schema'
 import { deriveProfileColumnsFromResume } from '@/lib/candidate/resume-to-profile-columns'
 import { sanitizeResumeStructuredRichFields } from '@/lib/candidate/sanitize-resume-html'
@@ -24,7 +25,10 @@ export async function persistCandidateProfileDraft(
           phone: opts.profileRow.phone ?? null,
         }
       : null
-  const sanitized = sanitizeResumeStructuredRichFields(opts.draft)
+  const sanitized = prepareCertificateAssetsForStorage(
+    sanitizeResumeStructuredRichFields(opts.draft),
+    opts.userId
+  )
   const derived = deriveProfileColumnsFromResume(sanitized, preserve)
   const email = opts.userEmail.trim()
   if (!email) throw new Error('missing_email')
@@ -70,14 +74,13 @@ export async function persistCandidateProfileDraft(
     return
   }
 
-  const now = new Date().toISOString()
   const { error } = await sb.from('job_seeker_profiles').insert({
     user_id: opts.userId,
     email,
     ...resumePayload,
-    notification_opt_in: true,
-    marketing_opt_in: true,
-    marketing_opt_in_at: now,
+    notification_opt_in: false,
+    marketing_opt_in: false,
+    marketing_opt_in_at: null,
   })
   if (error) throw error
 }

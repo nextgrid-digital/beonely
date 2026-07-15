@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 
 export function AdminEmailOverviewPage() {
   const { session } = useAuth()
@@ -32,12 +33,25 @@ export function AdminEmailOverviewPage() {
     queryFn: () => fetchAutomations(token!),
   })
 
-  const enabledCount =
-    automationsQuery.data?.filter((r) => r.enabled).length ?? 0
+  const enabledCount = automationsQuery.data
+    ? automationsQuery.data.filter((r) => r.enabled).length
+    : null
   const marketing = statsQuery.data?.marketing
   const summary = analyticsQuery.data?.summary as
     | { transactional_30d?: number }
     | undefined
+  const firstError =
+    statsQuery.error ?? analyticsQuery.error ?? automationsQuery.error
+  const hasError =
+    statsQuery.isError || analyticsQuery.isError || automationsQuery.isError
+  const isLoading =
+    statsQuery.isLoading ||
+    analyticsQuery.isLoading ||
+    automationsQuery.isLoading
+  const isRetrying =
+    statsQuery.isFetching ||
+    analyticsQuery.isFetching ||
+    automationsQuery.isFetching
 
   return (
     <div className='space-y-6'>
@@ -49,41 +63,54 @@ export function AdminEmailOverviewPage() {
         </p>
       </div>
 
+      {hasError ? (
+        <AdminQueryError
+          title='Could not load all email metrics'
+          error={firstError}
+          retrying={isRetrying}
+          onRetry={() => {
+            void statsQuery.refetch()
+            void analyticsQuery.refetch()
+            void automationsQuery.refetch()
+          }}
+        />
+      ) : null}
+
       <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-        {statsQuery.isLoading ? (
-          <Skeleton className='h-24' />
+        {isLoading ? (
+          Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className='h-24' />
+          ))
         ) : (
-          <Card>
-            <CardHeader className='pb-2'>
-              <CardTitle className='text-sm font-medium'>
-                Automations on
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className='text-2xl font-semibold tabular-nums'>
-                {enabledCount}
-                <span className='text-sm font-normal text-muted-foreground'>
-                  {' '}
-                  / {automationsQuery.data?.length ?? 0}
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-        )}
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Sends (30 days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className='text-2xl font-semibold tabular-nums'>
-              {summary?.transactional_30d ?? '—'}
-            </p>
-          </CardContent>
-        </Card>
-        {marketing ? (
           <>
+            <Card>
+              <CardHeader className='pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Automations on
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-2xl font-semibold tabular-nums'>
+                  {enabledCount ?? '—'}
+                  <span className='text-sm font-normal text-muted-foreground'>
+                    {' '}
+                    / {automationsQuery.data?.length ?? '—'}
+                  </span>
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Sends (30 days)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-2xl font-semibold tabular-nums'>
+                  {summary?.transactional_30d ?? '—'}
+                </p>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader className='pb-2'>
                 <CardTitle className='text-sm font-medium'>
@@ -92,7 +119,7 @@ export function AdminEmailOverviewPage() {
               </CardHeader>
               <CardContent>
                 <p className='text-2xl font-semibold tabular-nums'>
-                  {marketing.candidates}
+                  {marketing?.candidates ?? '—'}
                 </p>
               </CardContent>
             </Card>
@@ -104,12 +131,12 @@ export function AdminEmailOverviewPage() {
               </CardHeader>
               <CardContent>
                 <p className='text-2xl font-semibold tabular-nums'>
-                  {marketing.recruiters}
+                  {marketing?.recruiters ?? '—'}
                 </p>
               </CardContent>
             </Card>
           </>
-        ) : null}
+        )}
       </div>
 
       <div className='flex flex-wrap gap-2'>

@@ -1,5 +1,5 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
 import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
@@ -225,17 +225,24 @@ export async function handleDuplicate(req: VercelRequest, res: VercelResponse) {
   if (!source) {
     return res.status(404).json({ error: 'not_found' })
   }
-  if (source.category !== 'marketing') {
-    return res.status(400).json({ error: 'only_marketing_duplicable' })
-  }
+  const candidateTriggers = new Set([
+    'candidate_signup',
+    'application_confirmation',
+  ])
+  const audience =
+    source.category === 'marketing'
+      ? source.audience
+      : candidateTriggers.has(source.trigger_key ?? '')
+        ? 'candidates'
+        : 'recruiters'
 
   const { data, error } = await sb
     .from('email_templates')
     .insert({
-      slug: slugify(`${source.name} copy`),
+      slug: `${slugify(`${source.name} copy`)}-${crypto.randomUUID().slice(0, 8)}`,
       name: `${source.name} (copy)`,
       category: 'marketing',
-      audience: source.audience,
+      audience,
       subject: source.subject,
       preview_text: source.preview_text,
       body_html: source.body_html,

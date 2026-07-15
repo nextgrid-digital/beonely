@@ -5,8 +5,8 @@ import {
   type ReactNode,
 } from 'react'
 import { motion } from 'motion/react'
-import { cn } from '@/lib/utils'
 import { formatListTimestamp } from '@/lib/list/format-list-timestamp'
+import { cn } from '@/lib/utils'
 import { InboxStatusPill, type InboxPillItem } from './inbox-status-pill'
 
 export interface InboxRowData {

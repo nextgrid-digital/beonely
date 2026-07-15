@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   PublicSiteFooter,
@@ -20,14 +20,13 @@ function UnsubscribePage() {
   const trimmedToken = token?.trim() ?? ''
   const hasToken = trimmedToken.length > 0
 
-  const unsubscribeQuery = useQuery({
-    queryKey: ['unsubscribe', trimmedToken],
-    enabled: hasToken,
-    retry: false,
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/unsubscribe?token=${encodeURIComponent(trimmedToken)}`
-      )
+  const unsubscribe = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: trimmedToken }),
+      })
       if (!res.ok) throw new Error('unsubscribe_failed')
       return true
     },
@@ -35,11 +34,11 @@ function UnsubscribePage() {
 
   const status = !hasToken
     ? 'error'
-    : unsubscribeQuery.isPending
+    : unsubscribe.isPending
       ? 'loading'
-      : unsubscribeQuery.isSuccess
+      : unsubscribe.isSuccess
         ? 'ok'
-        : unsubscribeQuery.isError
+        : unsubscribe.isError
           ? 'error'
           : 'idle'
 
@@ -51,6 +50,21 @@ function UnsubscribePage() {
         className='mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-16'
       >
         <h1 className='text-2xl font-semibold tracking-tight'>Unsubscribe</h1>
+        {status === 'idle' ? (
+          <>
+            <p className='mt-4 text-sm text-muted-foreground'>
+              Confirm to stop Beonely marketing emails. Account and application
+              messages may still be sent.
+            </p>
+            <button
+              type='button'
+              className='mt-6 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground'
+              onClick={() => unsubscribe.mutate()}
+            >
+              Confirm unsubscribe
+            </button>
+          </>
+        ) : null}
         {status === 'loading' ? (
           <p className='mt-4 text-sm text-muted-foreground'>Processing…</p>
         ) : null}

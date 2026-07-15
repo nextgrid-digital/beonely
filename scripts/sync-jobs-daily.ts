@@ -7,22 +7,34 @@
  * Run:
  *   pnpm sync:jobs
  */
+import { createClient } from '@supabase/supabase-js'
+import { spawn } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { spawn } from 'node:child_process'
-import { createClient } from '@supabase/supabase-js'
+import { checkLinkedInApplyUrl } from './lib/check-linkedin-apply-urls'
 import {
   normalizeLinkedInApplyUrl,
   parseIngestJobsFile,
   type IngestLinkedInJobInput,
 } from './lib/ingest-linkedin-jobs'
 import { buildCanonicalApplyUrlSet } from './lib/prune-linkedin-jobs'
-import { checkLinkedInApplyUrl } from './lib/check-linkedin-apply-urls'
 
 const FRESHNESS_DAYS = parsePositiveIntEnv('JOBS_SYNC_MAX_AGE_DAYS', 30)
 const CHECK_APPLY_URLS = process.env.JOBS_SYNC_CHECK_APPLY_URLS !== '0'
-const APPLY_CHECK_LIMIT = parsePositiveIntEnv('JOBS_SYNC_APPLY_CHECK_LIMIT', 250)
-const APPLY_CHECK_DELAY_MS = parsePositiveIntEnv('JOBS_SYNC_APPLY_CHECK_DELAY_MS', 800)
+const APPLY_CHECK_LIMIT = parsePositiveIntEnv(
+  'JOBS_SYNC_APPLY_CHECK_LIMIT',
+  250
+)
+const APPLY_CHECK_DELAY_MS = parsePositiveIntEnv(
+  'JOBS_SYNC_APPLY_CHECK_DELAY_MS',
+  800
+)
+// Missing from one scrape is not proof a listing closed: LinkedIn can return a
+// partial page during throttling. Age and direct URL liveness remain the safe
+// default cleanup signals.
+const ENABLE_MISSING_EXPIRY =
+  process.env.JOBS_SYNC_ENABLE_MISSING_EXPIRY === '1'
+const MIN_SCRAPE_COVERAGE = 0.8
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const value = Number.parseInt(process.env[name] ?? '', 10)
@@ -80,7 +92,10 @@ type DailySyncSummary = {
   generatedAt: string
 }
 
-const DEFAULT_LINKEDIN_JOBS_FILE = resolve(process.cwd(), 'data/linkedin-jobs.json')
+const DEFAULT_LINKEDIN_JOBS_FILE = resolve(
+  process.cwd(),
+  'data/linkedin-jobs.json'
+)
 
 function resolveSupabaseUrl(): string | undefined {
   return (
@@ -98,19 +113,27 @@ function resolveSyncSummaryFile(): string | null {
 
 function getScrapeSummaryPath(): string {
   const explicit = process.env.SCRAPE_LINKEDIN_SUMMARY_FILE?.trim()
-  return explicit ? resolve(explicit) : resolve(process.cwd(), '.tmp/scrape-summary.json')
+  return explicit
+    ? resolve(explicit)
+    : resolve(process.cwd(), '.tmp/scrape-summary.json')
 }
 
 function getIngestSummaryPath(): string {
   const explicit = process.env.INGEST_SUMMARY_FILE?.trim()
-  return explicit ? resolve(explicit) : resolve(process.cwd(), '.tmp/ingest-summary.json')
+  return explicit
+    ? resolve(explicit)
+    : resolve(process.cwd(), '.tmp/ingest-summary.json')
 }
 
 function readJsonFile<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T
 }
 
-async function runCommand(cmd: string, args: string[], env: Record<string, string>) {
+async function runCommand(
+  cmd: string,
+  args: string[],
+  env: Record<string, string>
+) {
   await new Promise<void>((resolvePromise, rejectPromise) => {
     const child = spawn(cmd, args, {
       stdio: 'inherit',
@@ -123,7 +146,10 @@ async function runCommand(cmd: string, args: string[], env: Record<string, strin
     child.on('error', rejectPromise)
     child.on('exit', (code) => {
       if (code === 0) resolvePromise()
-      else rejectPromise(new Error(`${cmd} ${args.join(' ')} exited with code ${code ?? -1}`))
+      else
+        rejectPromise(
+          new Error(`${cmd} ${args.join(' ')} exited with code ${code ?? -1}`)
+        )
     })
   })
 }
@@ -195,7 +221,11 @@ async function runFreshnessAndLivenessSweeps(
       deadIds.push(row.id)
       console.info(
         '[jobs-sync] apply url not accepting applications',
-        JSON.stringify({ url: result.url, reason: result.reason, status: result.status })
+        JSON.stringify({
+          url: result.url,
+          reason: result.reason,
+          status: result.status,
+        })
       )
     }
     await sleep(APPLY_CHECK_DELAY_MS)
@@ -302,13 +332,15 @@ async function main() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       errors.push(`source_jobs_unreadable:${message}`)
-      summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
+      summary.status =
+        summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     }
 
     if (!sourceJobsLoaded) {
       summary.stale.skipped++
       errors.push('stale_cleanup_skipped:source_jobs_unavailable')
-      summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
+      summary.status =
+        summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     } else {
       const canonicalApplyUrls = buildCanonicalApplyUrlSet(sourceJobs)
 
@@ -319,7 +351,8 @@ async function main() {
 
       if (importedRowsError) {
         errors.push(`fetch_imported_jobs_failed:${importedRowsError.message}`)
-        summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
+        summary.status =
+          summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
       } else {
         const nowTs = Date.now()
         const activeImportedRows = (importedRows ?? []).filter((row) => {
@@ -330,13 +363,25 @@ async function main() {
         summary.stale.activeImportedJobs = activeImportedRows.length
 
         const candidates = activeImportedRows.filter(
-          (row) => !canonicalApplyUrls.has(normalizeLinkedInApplyUrl(row.apply_url))
+          (row) =>
+            !canonicalApplyUrls.has(normalizeLinkedInApplyUrl(row.apply_url))
         )
 
         summary.stale.candidates = candidates.length
         summary.stale.checked = candidates.length
 
-        if (candidates.length > 0) {
+        const coverage =
+          activeImportedRows.length === 0
+            ? 1
+            : canonicalApplyUrls.size / activeImportedRows.length
+        const healthyMissingSweep =
+          ENABLE_MISSING_EXPIRY &&
+          summary.status !== 'FAILED' &&
+          summary.scrape.failed === 0 &&
+          canonicalApplyUrls.size >= 25 &&
+          coverage >= MIN_SCRAPE_COVERAGE
+
+        if (candidates.length > 0 && healthyMissingSweep) {
           const nowIso = new Date().toISOString()
           const candidateIds = candidates.map((row) => row.id)
           const { error: updateError } = await sb
@@ -359,6 +404,21 @@ async function main() {
               })
             )
           }
+        } else if (candidates.length > 0) {
+          summary.stale.skipped += candidates.length
+          errors.push(
+            `missing_import_expiry_skipped:enable=${ENABLE_MISSING_EXPIRY};coverage=${coverage.toFixed(3)};scrape_failed=${summary.scrape.failed}`
+          )
+          console.warn(
+            '[jobs-sync] skipped missing-listing expiry because scrape health was not conclusive',
+            JSON.stringify({
+              candidates: candidates.length,
+              activeImportedJobs: activeImportedRows.length,
+              scrapedUrls: canonicalApplyUrls.size,
+              coverage,
+              enabled: ENABLE_MISSING_EXPIRY,
+            })
+          )
         }
       }
     }
@@ -368,7 +428,8 @@ async function main() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       errors.push(`freshness_liveness_sweep_failed:${message}`)
-      summary.status = summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
+      summary.status =
+        summary.status === 'FAILED' ? 'FAILED' : 'PARTIAL_SUCCESS'
     }
   }
 

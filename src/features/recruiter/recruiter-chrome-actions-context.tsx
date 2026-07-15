@@ -21,10 +21,7 @@ export function RecruiterChromeActionsProvider({
   children: ReactNode
 }) {
   const [actions, setActions] = useState<ReactNode | null>(null)
-  const value = useMemo(
-    () => ({ actions, setActions }),
-    [actions, setActions]
-  )
+  const value = useMemo(() => ({ actions, setActions }), [actions, setActions])
   return (
     <RecruiterChromeActionsContext.Provider value={value}>
       {children}

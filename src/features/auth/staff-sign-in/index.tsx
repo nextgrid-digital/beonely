@@ -1,6 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import { fetchSessionPersona } from '@/lib/auth/route-guards'
 import {
   getSupabaseBrowserClient,
@@ -47,7 +48,7 @@ export function StaffSignIn() {
       return
     }
 
-    const dest = redirect && redirect.startsWith('/') ? redirect : '/admin'
+    const dest = sanitizeRedirectPath(redirect) ?? '/admin'
     void navigate({ to: dest, replace: true })
   }
 

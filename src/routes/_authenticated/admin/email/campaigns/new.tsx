@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { AdminCampaignWizardPage } from '@/features/admin/admin-campaign-wizard-page'
+import { createFileRoute } from '@tanstack/react-router'
 import type { Database } from '@/lib/supabase/database.types'
+import { AdminCampaignWizardPage } from '@/features/admin/admin-campaign-wizard-page'
 
 const searchSchema = z.object({
   templateId: z.string().uuid().optional(),
@@ -10,7 +10,9 @@ const searchSchema = z.object({
     .optional(),
 })
 
-export const Route = createFileRoute('/_authenticated/admin/email/campaigns/new')({
+export const Route = createFileRoute(
+  '/_authenticated/admin/email/campaigns/new'
+)({
   validateSearch: searchSchema,
   component: CampaignNewRoute,
 })

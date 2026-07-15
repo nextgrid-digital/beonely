@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockInsertSingle = vi.fn()
 const mockInsertSelect = vi.fn(() => ({ single: mockInsertSingle }))
@@ -15,7 +15,11 @@ const mockFrom = vi.fn((table: string) => {
   throw new Error(`unexpected_table:${table}`)
 })
 const mockRateLimit = vi.fn(async () => undefined)
-const mockSendTransactionalEmail = vi.fn(async () => ({ skipped: true as const }))
+const mockSendTransactionalEmail = vi.fn(async () => ({
+  skipped: true as const,
+}))
+const originalNotificationEmails =
+  process.env.HIRING_REQUEST_NOTIFICATION_EMAILS
 
 vi.mock('../_lib/rate-limit.js', () => ({
   rateLimitOrThrow: mockRateLimit,
@@ -55,6 +59,8 @@ function mockRes() {
 
 describe('api/hiring-request', () => {
   beforeEach(() => {
+    process.env.HIRING_REQUEST_NOTIFICATION_EMAILS =
+      'ops@example.com,talent@example.com'
     mockInsertSingle.mockReset()
     mockInsertSingle.mockResolvedValue({ data: { id: 'req_123' }, error: null })
     mockFrom.mockClear()
@@ -64,6 +70,15 @@ describe('api/hiring-request', () => {
     mockRateLimit.mockClear()
     mockSendTransactionalEmail.mockClear()
     mockSendTransactionalEmail.mockResolvedValue({ skipped: true })
+  })
+
+  afterAll(() => {
+    if (originalNotificationEmails === undefined) {
+      delete process.env.HIRING_REQUEST_NOTIFICATION_EMAILS
+    } else {
+      process.env.HIRING_REQUEST_NOTIFICATION_EMAILS =
+        originalNotificationEmails
+    }
   })
 
   it('rejects non-POST methods', async () => {
@@ -103,7 +118,10 @@ describe('api/hiring-request', () => {
 
     expect(res.statusCode).toBe(201)
     expect(res.body).toEqual({ ok: true, id: 'req_123' })
-    expect(mockRateLimit).toHaveBeenCalledWith('hiring-request:127.0.0.1')
+    expect(mockRateLimit).toHaveBeenCalledWith('hiring-request:127.0.0.1', {
+      limit: 3,
+      windowSeconds: 600,
+    })
     expect(mockFrom).toHaveBeenCalledWith('hiring_requests')
     expect(mockHiringInsert).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { AlertCircle } from 'lucide-react'
+import { isLinkedInProfileUrl } from '@/lib/candidate/linkedin-url'
+import { safeHttpsUrl } from '@/lib/security/safe-url'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { InboxList } from '@/components/inbox/inbox-list'
@@ -20,6 +22,12 @@ export function AdminCandidatesPage() {
 
   const candidates = query.data ?? []
   const normalizedQuery = searchQuery.trim().toLowerCase()
+  const linkedInUrl =
+    peekCandidate?.linkedin_url &&
+    isLinkedInProfileUrl(peekCandidate.linkedin_url)
+      ? peekCandidate.linkedin_url
+      : null
+  const portfolioUrl = safeHttpsUrl(peekCandidate?.portfolio_url)
 
   const rows: InboxRowData[] = candidates
     .filter((row) =>
@@ -116,11 +124,11 @@ export function AdminCandidatesPage() {
               <div>
                 <dt className='text-muted-foreground'>LinkedIn</dt>
                 <dd className='font-medium'>
-                  {peekCandidate.linkedin_url ? (
+                  {linkedInUrl ? (
                     <a
-                      href={peekCandidate.linkedin_url}
+                      href={linkedInUrl}
                       target='_blank'
-                      rel='noreferrer'
+                      rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
                     >
                       Profile
@@ -133,11 +141,11 @@ export function AdminCandidatesPage() {
               <div>
                 <dt className='text-muted-foreground'>Portfolio</dt>
                 <dd className='font-medium'>
-                  {peekCandidate.portfolio_url ? (
+                  {portfolioUrl ? (
                     <a
-                      href={peekCandidate.portfolio_url}
+                      href={portfolioUrl}
                       target='_blank'
-                      rel='noreferrer'
+                      rel='noopener noreferrer'
                       className='text-primary underline-offset-4 hover:underline'
                     >
                       Portfolio

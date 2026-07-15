@@ -1,13 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
 import {
   jobOgDescription,
   jobOgImageApiUrl,
   jobOgTitle,
   publicJobPageUrl,
 } from '../../_lib/job-og-meta.js'
+import { fetchPublicJobBySlug } from '../../_lib/public-job.js'
+import { isValidJobSlug } from '../../_lib/public-slug.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { requestIp } from '../../_lib/request-ip.js'
 
-function escapeHtml (s: string): string {
+function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -15,7 +18,7 @@ function escapeHtml (s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-export async function handleJobShareHtml (
+export async function handleJobShareHtml(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -24,11 +27,15 @@ export async function handleJobShareHtml (
   }
 
   const slug = typeof req.query.slug === 'string' ? req.query.slug.trim() : ''
-  if (!slug) {
-    return res.status(400).send('Missing slug')
+  if (!isValidJobSlug(slug)) {
+    return res.status(400).send('Invalid slug')
   }
 
   try {
+    await rateLimitOrThrow(`share-html:${requestIp(req)}`, {
+      limit: 120,
+      windowSeconds: 300,
+    })
     const job = await fetchPublicJobBySlug(slug)
     if (!job) {
       return res.status(404).send('Job not found')
@@ -67,7 +74,11 @@ export async function handleJobShareHtml (
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600')
     return res.status(200).send(html)
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      res.setHeader('Retry-After', String(error.retryAfterSeconds))
+      return res.status(error.statusCode).send(error.code)
+    }
     return res.status(500).send('error')
   }
 }

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
@@ -12,9 +13,13 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
 
   const campaignId =
     typeof req.query.campaign_id === 'string' ? req.query.campaign_id : ''
-  if (!campaignId) {
+  const parsedCampaignId = z.string().uuid().safeParse(campaignId)
+  if (!parsedCampaignId.success) {
     return res.status(400).json({ error: 'missing_campaign_id' })
   }
+  const page = Math.max(1, Number(req.query.page) || 1)
+  const pageSize = Math.min(100, Math.max(1, Number(req.query.page_size) || 50))
+  const offset = (page - 1) * pageSize
 
   const sbInit = tryGetServiceSupabase()
   if (!sbInit.ok) {
@@ -24,33 +29,48 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
   const { data: campaign, error: cErr } = await sbInit.client
     .from('email_campaigns')
     .select('*')
-    .eq('id', campaignId)
+    .eq('id', parsedCampaignId.data)
     .single()
 
   if (cErr || !campaign) {
     return res.status(404).json({ error: 'campaign_not_found' })
   }
 
-  const { data: recipients, error: rErr } = await sbInit.client
+  const {
+    data: recipients,
+    error: rErr,
+    count: total,
+  } = await sbInit.client
     .from('email_campaign_recipients')
-    .select('*')
-    .eq('campaign_id', campaignId)
+    .select('*', { count: 'exact' })
+    .eq('campaign_id', parsedCampaignId.data)
     .order('created_at', { ascending: false })
-    .limit(500)
+    .range(offset, offset + pageSize - 1)
 
   if (rErr) {
     return res.status(500).json({ error: rErr.message })
   }
 
-  const counts: Record<string, number> = {}
-  for (const row of recipients ?? []) {
-    const st = row.delivery_status as string
-    counts[st] = (counts[st] ?? 0) + 1
-  }
+  const statuses = ['pending', 'sent', 'failed', 'skipped'] as const
+  const countResults = await Promise.all(
+    statuses.map((status) =>
+      sbInit.client
+        .from('email_campaign_recipients')
+        .select('id', { count: 'exact', head: true })
+        .eq('campaign_id', parsedCampaignId.data)
+        .eq('delivery_status', status)
+    )
+  )
+  const countError = countResults.find((result) => result.error)?.error
+  if (countError) return res.status(500).json({ error: countError.message })
+  const counts = Object.fromEntries(
+    statuses.map((status, index) => [status, countResults[index]?.count ?? 0])
+  )
 
   return res.status(200).json({
     campaign,
     recipients: recipients ?? [],
     delivery_counts: counts,
+    pagination: { page, page_size: pageSize, total: total ?? 0 },
   })
 }

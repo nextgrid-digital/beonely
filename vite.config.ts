@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import path from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
@@ -19,8 +19,13 @@ function vercelSupabaseClientDefine(): Record<string, string> | undefined {
   )?.trim()
 
   if (!url || !anon) {
-    console.warn(
-      'Vercel build missing Supabase client env. The app will build, but Supabase-backed pages will show the existing setup-required state until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or SUPABASE_URL and SUPABASE_ANON_KEY, are configured. Never expose the service role key as VITE_*. See docs/vercel-environment.md'
+    const message =
+      'Vercel build missing Supabase client env. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or use the Supabase+Vercel integration (SUPABASE_URL + SUPABASE_ANON_KEY). Never expose the service role key as VITE_*. See docs/vercel-environment.md'
+    if (process.env.VERCEL_ENV === 'production') {
+      throw new Error(message)
+    }
+    process.emitWarning(
+      `${message} This non-production deployment will remain fail-closed.`
     )
     return undefined
   }
@@ -37,57 +42,88 @@ function vercelSupabaseClientDefine(): Record<string, string> | undefined {
 
 const supabaseDefine = vercelSupabaseClientDefine()
 
-export default defineConfig({
-  ...(supabaseDefine ? { define: supabaseDefine } : {}),
-  plugins: [
-    tanstackRouter({
-      target: 'react',
-      autoCodeSplitting: true,
-    }),
-    react(),
-    tailwindcss(),
-  ],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:3000',
-        changeOrigin: true,
+function googleVerificationMeta(value: string | undefined) {
+  return {
+    name: 'beonely-google-site-verification',
+    transformIndexHtml: {
+      order: 'pre' as const,
+      handler(html: string) {
+        const meta =
+          /\s*<meta\s+name="google-site-verification"\s+content="%VITE_GOOGLE_SITE_VERIFICATION%"\s*\/>/
+        const token = value?.trim()
+        if (!token) return html.replace(meta, '')
+        const escaped = token
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+        return html.replace(
+          meta,
+          `\n    <meta name="google-site-verification" content="${escaped}" />`
+        )
       },
     },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  test: {
-    silent: 'passed-only',
-    unstubEnvs: true,
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/cypress/**',
-      '**/.{idea,git,cache,output,temp}/**',
-      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
-      'api/**/*.test.ts',
-      'scripts/**/*.test.ts',
-      'e2e/**',
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    ...(supabaseDefine ? { define: supabaseDefine } : {}),
+    plugins: [
+      googleVerificationMeta(
+        process.env.VITE_GOOGLE_SITE_VERIFICATION ??
+          env.VITE_GOOGLE_SITE_VERIFICATION
+      ),
+      tanstackRouter({
+        target: 'react',
+        autoCodeSplitting: true,
+      }),
+      react(),
+      tailwindcss(),
     ],
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      instances: [{ browser: 'chromium' }],
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+        },
+      },
     },
-    coverage: {
-      // include: ['src/**/*.{js,jsx,ts,tsx}'], // Uncomment to expand the report to all src/**/* so untested modules appear as 0% coverage.
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    test: {
+      silent: 'passed-only',
+      unstubEnvs: true,
       exclude: [
-        'src/components/ui/**',
-        'src/assets/**',
-        'src/tanstack-table.d.ts',
-        'src/routeTree.gen.ts',
-        'src/test-utils/**',
-        'src/routes/**',
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/cypress/**',
+        '**/.{idea,git,cache,output,temp}/**',
+        '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
+        'api/**/*.test.ts',
+        'scripts/**/*.test.ts',
+        'e2e/**',
       ],
+      browser: {
+        enabled: true,
+        provider: playwright(),
+        instances: [{ browser: 'chromium' }],
+      },
+      coverage: {
+        // include: ['src/**/*.{js,jsx,ts,tsx}'], // Uncomment to expand the report to all src/**/* so untested modules appear as 0% coverage.
+        exclude: [
+          'src/components/ui/**',
+          'src/assets/**',
+          'src/tanstack-table.d.ts',
+          'src/routeTree.gen.ts',
+          'src/test-utils/**',
+          'src/routes/**',
+        ],
+      },
     },
-  },
+  }
 })

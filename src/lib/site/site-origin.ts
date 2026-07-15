@@ -8,7 +8,19 @@
  */
 export function publicSiteOrigin(): string {
   const fromEnv = import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined
-  if (fromEnv?.trim()) return fromEnv.trim().replace(/\/$/, '')
+  if (fromEnv?.trim()) {
+    try {
+      const parsed = new URL(fromEnv.trim())
+      const localDevelopment =
+        parsed.protocol === 'http:' &&
+        (parsed.hostname === 'localhost' ||
+          parsed.hostname === '127.0.0.1' ||
+          parsed.hostname === '[::1]')
+      if (parsed.protocol === 'https:' || localDevelopment) return parsed.origin
+    } catch {
+      // Use the current origin below when configuration is malformed.
+    }
+  }
   if (typeof window !== 'undefined') return window.location.origin
   return ''
 }

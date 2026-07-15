@@ -1,11 +1,16 @@
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, UserPlus } from 'lucide-react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CheckCircle2,
+  UserPlus,
+} from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import { currentPathWithSearch } from '@/lib/auth/redirect-path'
 import { publicSiteOrigin } from '@/lib/site/site-origin'
 import { Button } from '@/components/ui/button'
-import { HiringRequestForm } from '@/features/jobs/hiring-request-form'
 import { hiringRoleGuides } from '@/features/jobs/hiring-guides'
+import { HiringRequestForm } from '@/features/jobs/hiring-request-form'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
@@ -68,9 +73,10 @@ function HirePage() {
               Hire ServiceNow talent with less noise.
             </h1>
             <p className='max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg'>
-              Beonely is building a focused hiring layer for the ServiceNow ecosystem.
-              If you need developers, architects, consultants, or admins, start with a
-              paid listing or submit a curated shortlist request.
+              Beonely is building a focused hiring layer for the ServiceNow
+              ecosystem. If you need developers, architects, consultants, or
+              admins, start with a paid listing or submit a curated shortlist
+              request.
             </p>
             <div className='flex flex-col gap-3 sm:flex-row'>
               <Button asChild size='lg' className='min-w-[13rem]'>
@@ -79,7 +85,12 @@ function HirePage() {
                   <ArrowRight className='size-4' aria-hidden />
                 </a>
               </Button>
-              <Button asChild size='lg' variant='outline' className='min-w-[13rem]'>
+              <Button
+                asChild
+                size='lg'
+                variant='outline'
+                className='min-w-[13rem]'
+              >
                 <Link
                   to='/hire/sign-up'
                   search={currentRedirect ? { redirect: currentRedirect } : {}}
@@ -101,20 +112,30 @@ function HirePage() {
                 Publish a paid ServiceNow role
               </h2>
               <p className='mt-3 text-sm leading-6 text-muted-foreground'>
-                Best for teams that already have a clear role description and want to get
-                in front of focused ServiceNow talent.
+                Best for teams that already have a clear role description and
+                want to get in front of focused ServiceNow talent.
               </p>
               <ul className='mt-5 space-y-3 text-sm text-muted-foreground'>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
                   Paid listing flow with recruiter workspace and moderation.
                 </li>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  Built for ServiceNow-specific roles instead of generic hiring traffic.
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
+                  Built for ServiceNow-specific roles instead of generic hiring
+                  traffic.
                 </li>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
                   Good fit when you want visibility and direct applicants.
                 </li>
               </ul>
@@ -138,24 +159,41 @@ function HirePage() {
                 Need candidates faster? Send a structured hiring brief.
               </h2>
               <p className='mt-3 text-sm leading-6 text-muted-foreground'>
-                Best for urgent or hard-to-fill roles where you want Beonely to help with
-                sourcing and qualification instead of only listing the job.
+                Best for urgent or hard-to-fill roles where you want Beonely to
+                help with sourcing and qualification instead of only listing the
+                job.
               </p>
               <ul className='mt-5 space-y-3 text-sm text-muted-foreground'>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  Capture the role, hiring timeline, location, and ServiceNow scope.
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
+                  Capture the role, hiring timeline, location, and ServiceNow
+                  scope.
                 </li>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  Route demand into an internal pipeline instead of a generic inbox.
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
+                  Route demand into an internal pipeline instead of a generic
+                  inbox.
                 </li>
                 <li className='flex gap-2'>
-                  <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-foreground' aria-hidden />
-                  Use this when shortlist quality matters more than a posting alone.
+                  <CheckCircle2
+                    className='mt-0.5 size-4 shrink-0 text-foreground'
+                    aria-hidden
+                  />
+                  Use this when shortlist quality matters more than a posting
+                  alone.
                 </li>
               </ul>
-              <Button asChild variant='outline' className='mt-6 w-full sm:w-auto'>
+              <Button
+                asChild
+                variant='outline'
+                className='mt-6 w-full sm:w-auto'
+              >
                 <a href='#hiring-request-form'>
                   Open hiring brief
                   <ArrowRight className='size-4' aria-hidden />
@@ -167,14 +205,16 @@ function HirePage() {
           <section className='rounded-2xl border bg-muted/40 p-6 sm:p-8'>
             <div className='flex flex-col gap-6 md:flex-row md:items-end md:justify-between'>
               <div className='max-w-2xl'>
-                <p className='text-sm font-medium text-muted-foreground'>Employer-intent pages</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Employer-intent pages
+                </p>
                 <h2 className='mt-2 text-2xl font-semibold tracking-tight'>
                   Explore role-specific ServiceNow hiring paths
                 </h2>
                 <p className='mt-3 text-sm leading-6 text-muted-foreground sm:text-base'>
-                  These pages are built for employer-intent search and answer-engine traffic,
-                  so hiring teams can land on a narrower path before they post or request a
-                  shortlist.
+                  These pages are built for employer-intent search and
+                  answer-engine traffic, so hiring teams can land on a narrower
+                  path before they post or request a shortlist.
                 </p>
               </div>
               <Button asChild variant='outline'>
@@ -188,7 +228,9 @@ function HirePage() {
                   to={guide.path}
                   className='rounded-2xl border bg-background p-5 text-sm transition hover:border-foreground/30 hover:shadow-sm'
                 >
-                  <div className='font-semibold text-foreground'>{guide.title}</div>
+                  <div className='font-semibold text-foreground'>
+                    {guide.title}
+                  </div>
                   <p className='mt-2 line-clamp-3 leading-6 text-muted-foreground'>
                     {guide.description}
                   </p>
@@ -202,11 +244,14 @@ function HirePage() {
           </section>
 
           <section className='max-w-3xl rounded-2xl border bg-muted/40 p-6 sm:p-8'>
-            <h2 className='text-xl font-semibold tracking-tight'>Why this exists</h2>
+            <h2 className='text-xl font-semibold tracking-tight'>
+              Why this exists
+            </h2>
             <p className='mt-3 text-sm leading-6 text-muted-foreground sm:text-base'>
-              Generic job boards create too much noise for ServiceNow hiring. Beonely is
-              focused on the niche: role relevance, ecosystem context, and better matching
-              between hiring teams and ServiceNow professionals.
+              Generic job boards create too much noise for ServiceNow hiring.
+              Beonely is focused on the niche: role relevance, ecosystem
+              context, and better matching between hiring teams and ServiceNow
+              professionals.
             </p>
           </section>
         </main>

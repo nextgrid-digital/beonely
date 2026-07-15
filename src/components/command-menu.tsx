@@ -15,7 +15,9 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
+import { adminNavGroups } from '@/features/admin/admin-nav'
 import { getSidebarNavGroupsForRole } from './layout/data/sidebar-data'
+import type { NavGroup } from './layout/types'
 import { ScrollArea } from './ui/scroll-area'
 
 export function CommandMenu() {
@@ -28,7 +30,17 @@ export function CommandMenu() {
     role === 'candidate' && user
       ? `${displayNameFromUser(user)} — profile & resume`
       : undefined
-  const navGroups = getSidebarNavGroupsForRole(role, candidateNavTitle)
+  const navGroups: NavGroup[] =
+    role === 'admin'
+      ? adminNavGroups.map((group) => ({
+          title: group.label,
+          items: group.items.map((item) => ({
+            title: item.title,
+            url: item.href,
+            icon: item.icon,
+          })),
+        }))
+      : getSidebarNavGroupsForRole(role, candidateNavTitle)
 
   const runCommand = React.useCallback(
     (command: () => unknown) => {
@@ -63,7 +75,9 @@ export function CommandMenu() {
                     </CommandItem>
                   )
 
-                return navItem.items?.map((subItem, i) => (
+                if (!('items' in navItem) || !navItem.items) return null
+
+                return navItem.items.map((subItem, i) => (
                   <CommandItem
                     key={`${navItem.title}-${subItem.url}-${i}`}
                     value={`${navItem.title}-${subItem.url}`}

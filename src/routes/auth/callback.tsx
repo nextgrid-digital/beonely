@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
-import type { Session } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import type { Session } from '@supabase/supabase-js'
 import { Loader2 } from 'lucide-react'
 import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import { fetchSessionPersona } from '@/lib/auth/route-guards'
 import { signInIntentSchema } from '@/lib/auth/sign-in-intent'
 import {
@@ -110,8 +111,9 @@ function AuthCallback() {
 
       const profile = await refreshProfile()
 
-      if (redirect && redirect.startsWith('/')) {
-        void navigate({ to: redirect, replace: true })
+      const safeRedirect = sanitizeRedirectPath(redirect)
+      if (safeRedirect) {
+        void navigate({ to: safeRedirect, replace: true })
         return
       }
 

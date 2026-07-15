@@ -24,10 +24,7 @@ describe('jobListingCanRenew', () => {
     const exp = new Date(now)
     exp.setUTCDate(exp.getUTCDate() + 5)
     expect(
-      jobListingCanRenew(
-        job({ listing_expires_at: exp.toISOString() }),
-        now
-      )
+      jobListingCanRenew(job({ listing_expires_at: exp.toISOString() }), now)
     ).toBe(true)
   })
 
@@ -35,10 +32,7 @@ describe('jobListingCanRenew', () => {
     const exp = new Date(now)
     exp.setUTCDate(exp.getUTCDate() - 10)
     expect(
-      jobListingCanRenew(
-        job({ listing_expires_at: exp.toISOString() }),
-        now
-      )
+      jobListingCanRenew(job({ listing_expires_at: exp.toISOString() }), now)
     ).toBe(true)
   })
 
@@ -46,10 +40,7 @@ describe('jobListingCanRenew', () => {
     const exp = new Date(now)
     exp.setUTCDate(exp.getUTCDate() + 20)
     expect(
-      jobListingCanRenew(
-        job({ listing_expires_at: exp.toISOString() }),
-        now
-      )
+      jobListingCanRenew(job({ listing_expires_at: exp.toISOString() }), now)
     ).toBe(false)
   })
 })

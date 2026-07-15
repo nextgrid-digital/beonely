@@ -47,11 +47,7 @@ export function RecruiterPricingPage() {
           <TableBody>
             {DURATIONS.map((d) => {
               const standard = paymentPlanFromSelection(d.key, false, false)
-              const standardRenew = paymentPlanFromSelection(
-                d.key,
-                false,
-                true
-              )
+              const standardRenew = paymentPlanFromSelection(d.key, false, true)
               return (
                 <TableRow key={d.key}>
                   <TableCell>
@@ -62,16 +58,15 @@ export function RecruiterPricingPage() {
                       ) : null}
                     </div>
                     <p className='mt-1 text-xs text-muted-foreground'>
-                      Featured +{formatInrFromPaise(
-                        FEATURED_ADDON_BASE_INR_PAISE[d.key]
-                      )}{' '}
+                      Featured +
+                      {formatInrFromPaise(FEATURED_ADDON_BASE_INR_PAISE[d.key])}{' '}
                       + GST on same duration
                     </p>
                   </TableCell>
                   <TableCell className='text-end tabular-nums'>
                     {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[standard])}
                   </TableCell>
-                  <TableCell className='text-end tabular-nums text-muted-foreground'>
+                  <TableCell className='text-end text-muted-foreground tabular-nums'>
                     {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[standardRenew])}
                   </TableCell>
                 </TableRow>
@@ -91,7 +86,7 @@ export function RecruiterPricingPage() {
                   <TableCell className='text-end tabular-nums'>
                     {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[featured])}
                   </TableCell>
-                  <TableCell className='text-end tabular-nums text-muted-foreground'>
+                  <TableCell className='text-end text-muted-foreground tabular-nums'>
                     {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[featuredRenew])}
                   </TableCell>
                 </TableRow>

@@ -19,6 +19,7 @@ const emptyItem = (): ResumeContentItem => ({
   date: '',
   description: '',
   fileUrl: '',
+  filePath: '',
 })
 
 /** Non-empty, trimmed chip labels from a section's items (`item.title`). */
@@ -100,9 +101,7 @@ export function ResumeChipSection({
     setPending('')
   }
 
-  const availableSuggestions = suggestions.filter(
-    (s) => !hasChip(items, s)
-  )
+  const availableSuggestions = suggestions.filter((s) => !hasChip(items, s))
 
   return (
     <div className='flex flex-col gap-3'>
@@ -117,7 +116,7 @@ export function ResumeChipSection({
                 <button
                   type='button'
                   aria-label={`Remove ${label}`}
-                  className='ml-1 rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                  className='ml-1 rounded-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                   onClick={() => removeChipAt(itemIndex)}
                 >
                   <X className='size-3' />
@@ -159,7 +158,9 @@ export function ResumeChipSection({
 
       {availableSuggestions.length > 0 ? (
         <div className='flex flex-wrap items-center gap-1.5'>
-          <span className='mr-1 text-xs text-muted-foreground'>Suggestions:</span>
+          <span className='mr-1 text-xs text-muted-foreground'>
+            Suggestions:
+          </span>
           {availableSuggestions.map((s) => (
             <button key={s} type='button' onClick={() => addChip(s)}>
               <Badge

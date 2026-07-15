@@ -47,9 +47,9 @@ test.describe('responsive smoke', () => {
       page.getByRole('button', { name: /close navigation menu/i })
     ).toBeVisible()
 
-    await page.getByRole('link', { name: /roles from linkedin/i }).click()
-    await expect(page).toHaveURL(/#linkedin-roles$/)
-    await expect(page.locator('#linkedin-roles')).toBeVisible()
+    await page.getByRole('link', { name: /open roles/i }).click()
+    await expect(page).toHaveURL(/#open-roles$/)
+    await expect(page.locator('#open-roles')).toBeVisible()
   })
 
   test('/500 redirects to home without a 500 error page', async ({ page }) => {
@@ -71,17 +71,17 @@ test.describe('responsive smoke', () => {
     }
   })
 
-  test('primary home CTA is visible in mobile viewport', async ({ page }, testInfo) => {
+  test('primary home CTA is visible in mobile viewport', async ({
+    page,
+  }, testInfo) => {
     if (!testInfo.project.name.toLowerCase().includes('iphone')) {
       test.skip()
     }
 
     await page.goto('/')
-    const cta = page.getByRole('link', { name: /browse jobs/i })
+    const cta = page.getByRole('link', { name: /join as candidate/i })
     await expect(cta).toBeVisible()
-    const top = await cta.evaluate((el) =>
-      el.getBoundingClientRect().top
-    )
+    const top = await cta.evaluate((el) => el.getBoundingClientRect().top)
     const viewportHeight = page.viewportSize()?.height ?? 0
     expect(top).toBeLessThan(viewportHeight)
   })

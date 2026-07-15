@@ -12,10 +12,10 @@ describe('SiteVentureAttribution', () => {
     await expect.element(screen.getByText(/A venture by/i)).toBeInTheDocument()
 
     const link = screen.getByRole('link', { name: 'NextGrid.Digital' })
-    await expect.element(link).toHaveAttribute('href', 'https://nextgrid.digital')
-    await expect.element(link).toHaveAttribute('target', '_blank')
     await expect
       .element(link)
-      .toHaveAttribute('rel', 'noopener noreferrer')
+      .toHaveAttribute('href', 'https://nextgrid.digital')
+    await expect.element(link).toHaveAttribute('target', '_blank')
+    await expect.element(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 })

@@ -1,7 +1,7 @@
 import { formatSalaryRange } from '@/lib/jobs/salary-range-format'
+import type { JobRow } from '@/lib/supabase/database.types'
 import type { JobListingPreviewData } from '@/features/jobs/job-listing-preview'
 import type { JobEditorValues } from '@/features/recruiter/recruiter-job-editor-page'
-import type { JobRow } from '@/lib/supabase/database.types'
 
 export function jobListingPreviewDataFromJob(
   job: JobRow | null

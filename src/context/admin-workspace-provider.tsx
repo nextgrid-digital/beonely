@@ -3,14 +3,13 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
   type ReactNode,
 } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
 import {
-  getAdminWorkspace,
   setAdminWorkspace,
+  workspaceFromPathname,
   workspacePath,
   type AdminWorkspace,
 } from '@/lib/auth/admin-workspace'
@@ -30,30 +29,30 @@ const AdminWorkspaceContext = createContext<AdminWorkspaceContextValue | null>(
 export function AdminWorkspaceProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const isStaffAdmin =
     profile?.role === 'admin' &&
     Boolean(user?.email && isAllowlistedAdminEmail(user.email))
 
-  const [workspace, setWorkspaceState] = useState<AdminWorkspace>(() =>
-    isStaffAdmin ? getAdminWorkspace() : 'admin'
-  )
+  const workspace = isStaffAdmin ? workspaceFromPathname(pathname) : 'admin'
 
   const setWorkspace = useCallback(
     async (next: AdminWorkspace) => {
       if (!isStaffAdmin) return
-      setAdminWorkspace(next)
-      setWorkspaceState(next)
       if (next === 'candidate' && user) {
         await ensureAdminCandidateProfile(user)
       }
-      void navigate({ to: workspacePath(next) })
+      setAdminWorkspace(next)
+      await navigate({ to: workspacePath(next) })
     },
     [isStaffAdmin, navigate, user]
   )
 
   const value = useMemo(
     () => ({
-      workspace: isStaffAdmin ? workspace : 'admin',
+      workspace,
       isStaffAdmin,
       setWorkspace,
     }),

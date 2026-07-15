@@ -1,18 +1,13 @@
 import { beonelyTransactionalHtml } from './email-layout.js'
 import { beonelyMarketingHtml } from './email-marketing-layout.js'
-
-function siteOrigin(): string {
-  const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
-  if (raw) return raw.replace(/\/$/, '')
-  return 'https://beonely.vercel.app'
-}
+import { serverSiteOrigin } from './site-origin.js'
 
 export function jobApprovedRecruiterEmail(opts: {
   jobTitle: string
   companyName: string
   jobSlug: string
 }) {
-  const url = `${siteOrigin()}/jobs/${opts.jobSlug}`
+  const url = `${serverSiteOrigin()}/jobs/${opts.jobSlug}`
   return {
     subject: `Beonely — "${opts.jobTitle}" is live`,
     html: beonelyTransactionalHtml({
@@ -63,7 +58,7 @@ export function applicationReceivedRecruiterEmail(opts: {
 }
 
 export function candidateSignupEmail(opts: { name: string }) {
-  const origin = siteOrigin()
+  const origin = serverSiteOrigin()
   return {
     subject: 'Welcome to Beonely',
     html: beonelyTransactionalHtml({
@@ -85,7 +80,7 @@ export function recruiterSignupEmail(opts: { companyName: string }) {
       bodyParagraphs: [
         `Thanks for signing up on behalf of ${opts.companyName}.`,
         'Post a paid listing when you are ready to reach ServiceNow talent on Beonely.',
-        `Open your recruiter dashboard: ${siteOrigin()}/recruiter`,
+        `Open your recruiter dashboard: ${serverSiteOrigin()}/recruiter`,
       ],
     }),
   }
@@ -160,7 +155,7 @@ export const TRANSACTIONAL_TEMPLATE_SAMPLES = {
     applicationReceivedRecruiterEmail({
       jobTitle: 'Senior ServiceNow Developer',
       candidateName: 'Alex Candidate',
-      recruiterPortalUrl: `${siteOrigin()}/recruiter`,
+      recruiterPortalUrl: `${serverSiteOrigin()}/recruiter`,
     }),
   applicationConfirmation: () =>
     applicationConfirmationCandidateEmail({

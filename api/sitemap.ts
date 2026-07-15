@@ -1,13 +1,16 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { serverSiteOrigin } from './_lib/site-origin.js'
 import { tryGetServiceSupabase } from './_lib/supabase.js'
 
 type SitemapJobRow = {
+  id: string
   job_slug: string
   updated_at: string | null
-  listing_expires_at: string | null
 }
 
 type SitemapPortfolioRow = {
+  id: string
   public_slug: string | null
   updated_at: string | null
 }
@@ -17,7 +20,7 @@ type StaticSitemapEntry = {
   lastmod?: string
 }
 
-function escapeXml (s: string) {
+function escapeXml(s: string) {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -25,7 +28,52 @@ function escapeXml (s: string) {
     .replace(/"/g, '&quot;')
 }
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
+const PAGE_SIZE = 1_000
+const SITEMAP_URL_LIMIT = 50_000
+
+async function fetchPublicJobs(
+  sb: SupabaseClient,
+  limit: number
+): Promise<SitemapJobRow[]> {
+  const rows: SitemapJobRow[] = []
+  for (let offset = 0; offset < limit; offset += PAGE_SIZE) {
+    const last = Math.min(offset + PAGE_SIZE, limit) - 1
+    const { data, error } = await sb
+      .from('public_jobs')
+      .select('id, job_slug, updated_at')
+      .order('id', { ascending: true })
+      .range(offset, last)
+    if (error) throw new Error(`sitemap_jobs_failed: ${error.message}`)
+    const page = (data ?? []) as SitemapJobRow[]
+    rows.push(...page)
+    if (page.length < last - offset + 1) break
+  }
+  return rows
+}
+
+async function fetchPublicPortfolios(
+  sb: SupabaseClient,
+  limit: number
+): Promise<SitemapPortfolioRow[]> {
+  const rows: SitemapPortfolioRow[] = []
+  for (let offset = 0; offset < limit; offset += PAGE_SIZE) {
+    const last = Math.min(offset + PAGE_SIZE, limit) - 1
+    const { data, error } = await sb
+      .from('job_seeker_profiles')
+      .select('id, public_slug, updated_at')
+      .eq('is_public', true)
+      .not('public_slug', 'is', null)
+      .order('id', { ascending: true })
+      .range(offset, last)
+    if (error) throw new Error(`sitemap_portfolios_failed: ${error.message}`)
+    const page = (data ?? []) as SitemapPortfolioRow[]
+    rows.push(...page)
+    if (page.length < last - offset + 1) break
+  }
+  return rows
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).end()
   }
@@ -40,29 +88,6 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
         )
     }
     const sb = supInit.client
-    const { data: jobsRaw } = await sb
-      .from('jobs')
-      .select('job_slug, updated_at, listing_expires_at')
-      .eq('approval_status', 'approved')
-      .eq('payment_status', 'paid')
-
-    const { data: portfoliosRaw } = await sb
-      .from('job_seeker_profiles')
-      .select('public_slug, updated_at')
-      .eq('is_public', true)
-      .not('public_slug', 'is', null)
-
-    const now = Date.now()
-    const jobs = ((jobsRaw ?? []) as SitemapJobRow[]).filter(
-      (j) =>
-        !j.listing_expires_at || new Date(j.listing_expires_at).getTime() > now
-    )
-    const portfolios = (portfoliosRaw ?? []) as SitemapPortfolioRow[]
-
-    const site =
-      process.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-      'https://beonely.example.com'
-
     const staticUrls: StaticSitemapEntry[] = [
       { path: '/' },
       { path: '/hire' },
@@ -76,18 +101,30 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
       { path: '/changelog' },
     ]
 
+    const dynamicLimit = SITEMAP_URL_LIMIT - staticUrls.length
+    const jobs = await fetchPublicJobs(sb, dynamicLimit)
+    const portfolios = await fetchPublicPortfolios(
+      sb,
+      Math.max(0, dynamicLimit - jobs.length)
+    )
+    const site = escapeXml(serverSiteOrigin())
+
     const urls = jobs.map((j) => {
-      const loc = `${site}/jobs/${escapeXml(j.job_slug)}`
+      const loc = `${site}/jobs/${encodeURIComponent(j.job_slug)}`
       const lastmod = (j.updated_at as string)?.slice(0, 10) ?? ''
       return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
     })
 
     const portfolioUrls = portfolios
-      .filter((p): p is { public_slug: string; updated_at: string | null } =>
-        Boolean(p.public_slug)
+      .filter(
+        (
+          p
+        ): p is SitemapPortfolioRow & {
+          public_slug: string
+        } => Boolean(p.public_slug)
       )
       .map((p) => {
-        const loc = `${site}/p/${escapeXml(p.public_slug)}`
+        const loc = `${site}/p/${encodeURIComponent(p.public_slug)}`
         const lastmod = (p.updated_at as string)?.slice(0, 10) ?? ''
         return `<url><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`
       })
@@ -105,8 +142,9 @@ ${portfolioUrls.join('\n')}
 </urlset>`
 
     res.setHeader('Content-Type', 'application/xml')
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=900')
     return res.status(200).send(xml)
   } catch {
-    return res.status(500).send('error')
+    return res.status(503).send('Sitemap temporarily unavailable')
   }
 }

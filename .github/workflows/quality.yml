@@ -1,0 +1,47 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.11.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check formatting
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Check dependency declarations
+        run: pnpm knip
+      - name: Audit production dependencies
+        run: pnpm audit --prod
+      - name: Type-check serverless APIs
+        run: pnpm typecheck:api
+      - name: Build and type-check the app
+        run: pnpm build
+      - name: Install browser test runtime
+        run: pnpm test:browser:install
+      - name: Test
+        run: pnpm test
+      - name: Responsive smoke tests
+        run: pnpm test:responsive

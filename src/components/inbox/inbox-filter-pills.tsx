@@ -60,10 +60,12 @@ export function InboxFilterPills<T extends string>({
   }, [updateFade, pillCountsKey])
 
   return (
-    <div className={cn('relative max-w-full min-w-0 overflow-hidden', className)}>
+    <div
+      className={cn('relative max-w-full min-w-0 overflow-hidden', className)}
+    >
       <div
         ref={scrollRef}
-        className='flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-4 whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+        className='flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-4 whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
       >
         {pills.map((pill) => {
           const isActive = activeId === pill.id

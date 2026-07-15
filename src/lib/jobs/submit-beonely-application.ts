@@ -1,20 +1,11 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { safeResumeStoragePath } from '@/lib/candidate/application-assets'
+import { isLinkedInProfileUrl } from '@/lib/candidate/linkedin-url'
 import { resumeStructuredEnvelopeSchema } from '@/lib/candidate/resume-structured-schema'
+import { safeHttpsUrl } from '@/lib/security/safe-url'
 import type { Database, JobRow } from '@/lib/supabase/database.types'
 
 type SB = SupabaseClient<Database>
-
-function safeHttpUrl(raw: string | null | undefined): string | null {
-  const t = raw?.trim()
-  if (!t) return null
-  try {
-    const u = new URL(t)
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
-    return u.toString()
-  } catch {
-    return null
-  }
-}
 
 function firstWorkSnapshot(structured: unknown): {
   company: string | null
@@ -75,11 +66,18 @@ export async function submitBeonelyApplication(
     candidate_email: email,
     candidate_name: name,
     candidate_phone: jobSeekerRow.phone?.trim() || null,
-    linkedin_url: jobSeekerRow.linkedin_url?.trim() || null,
+    linkedin_url:
+      jobSeekerRow.linkedin_url &&
+      isLinkedInProfileUrl(jobSeekerRow.linkedin_url)
+        ? jobSeekerRow.linkedin_url.trim()
+        : null,
     current_company: company,
     experience_years: null,
-    resume_url: safeHttpUrl(jobSeekerRow.portfolio_url),
-    resume_storage_path: jobSeekerRow.resume_storage_path?.trim() || null,
+    resume_url: safeHttpsUrl(jobSeekerRow.portfolio_url),
+    resume_storage_path: safeResumeStoragePath(
+      jobSeekerRow.resume_storage_path,
+      authUser.id
+    ),
     resume_structured_snapshot,
     status: 'new',
   })

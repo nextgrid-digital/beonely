@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import {
-  sameOriginReferrerPath,
-  sanitizeRedirectPath,
-} from './redirect-path'
+import { sameOriginReferrerPath, sanitizeRedirectPath } from './redirect-path'
 
 function setDocumentReferrer(referrer: string) {
   Object.defineProperty(document, 'referrer', {
@@ -21,6 +18,9 @@ describe('sanitizeRedirectPath', () => {
   it('rejects external or malformed targets', () => {
     expect(sanitizeRedirectPath('https://example.com')).toBeUndefined()
     expect(sanitizeRedirectPath('javascript:alert(1)')).toBeUndefined()
+    expect(sanitizeRedirectPath('//evil.example/path')).toBeUndefined()
+    expect(sanitizeRedirectPath('/\\evil.example/path')).toBeUndefined()
+    expect(sanitizeRedirectPath('/jobs/good\nLocation: //evil')).toBeUndefined()
     expect(sanitizeRedirectPath(undefined)).toBeUndefined()
   })
 })

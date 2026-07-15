@@ -45,7 +45,10 @@ function MetaSelectField(props: {
       render={({ field }) => (
         <FormItem className='space-y-0'>
           <FormLabel className='sr-only'>{props.label}</FormLabel>
-          <Select onValueChange={field.onChange} value={String(field.value ?? '')}>
+          <Select
+            onValueChange={field.onChange}
+            value={String(field.value ?? '')}
+          >
             <FormControl>
               <SelectTrigger className={META_SELECT_TRIGGER}>
                 <SelectValue placeholder={props.label} />

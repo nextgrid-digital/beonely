@@ -1,77 +1,191 @@
 /**
- * Razorpay Orders API over HTTPS (no `razorpay` npm package).
- * Avoids Vercel serverless bundling issues with the official SDK (CommonJS + package.json requires).
+ * Minimal Razorpay REST client for the serverless payment boundary.
+ * Every request is authenticated server-side and bounded by a timeout.
  */
 
-const ORDERS_BASE = 'https://api.razorpay.com/v1/orders'
+const API_BASE = 'https://api.razorpay.com/v1'
 
-function basicAuthHeader (keyId: string, keySecret: string): string {
-  const raw = `${keyId}:${keySecret}`
-  const token =
-    typeof globalThis.Buffer !== 'undefined'
-      ? globalThis.Buffer.from(raw, 'utf8').toString('base64')
-      : btoa(raw)
-  return `Basic ${token}`
+function basicAuthHeader(keyId: string, keySecret: string): string {
+  return `Basic ${Buffer.from(`${keyId}:${keySecret}`, 'utf8').toString('base64')}`
 }
 
-export async function razorpayCreateOrder (opts: {
+async function razorpayRequest(
+  path: string,
+  opts: {
+    keyId: string
+    keySecret: string
+    method?: 'GET' | 'POST'
+    body?: unknown
+  }
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: opts.method ?? 'GET',
+    headers: {
+      Authorization: basicAuthHeader(opts.keyId, opts.keySecret),
+      ...(opts.body === undefined
+        ? {}
+        : { 'Content-Type': 'application/json' }),
+    },
+    ...(opts.body === undefined ? {} : { body: JSON.stringify(opts.body) }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  const text = await response.text()
+  if (!response.ok) {
+    throw new Error(
+      `razorpay_request_failed:${response.status}:${text.slice(0, 200)}`
+    )
+  }
+  const value = JSON.parse(text) as unknown
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('razorpay_invalid_response')
+  }
+  return value as Record<string, unknown>
+}
+
+function finiteNumber(value: unknown, field: string): number {
+  if (value === null || value === '' || typeof value === 'boolean') {
+    throw new Error(`razorpay_invalid_${field}`)
+  }
+  const number = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(number)) {
+    throw new Error(`razorpay_invalid_${field}`)
+  }
+  return number
+}
+
+function nonNegativeInteger(value: unknown, field: string): number {
+  const number = finiteNumber(value, field)
+  if (!Number.isSafeInteger(number) || number < 0) {
+    throw new Error(`razorpay_invalid_${field}`)
+  }
+  return number
+}
+
+function requiredString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`razorpay_invalid_${field}`)
+  }
+  return value
+}
+
+export type RazorpayOrder = {
+  id: string
+  amount: number
+  amountPaid: number
+  currency: string
+  status: string
+  receipt: string
+  notes: Record<string, string>
+}
+
+function parseOrder(json: Record<string, unknown>): RazorpayOrder {
+  const rawNotes = json.notes
+  const notes =
+    rawNotes && typeof rawNotes === 'object' && !Array.isArray(rawNotes)
+      ? Object.fromEntries(
+          Object.entries(rawNotes as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string'
+          )
+        )
+      : {}
+  return {
+    id: requiredString(json.id, 'order_id'),
+    amount: nonNegativeInteger(json.amount, 'order_amount'),
+    amountPaid: nonNegativeInteger(json.amount_paid ?? 0, 'order_amount_paid'),
+    currency: requiredString(json.currency, 'order_currency'),
+    status: requiredString(json.status, 'order_status'),
+    receipt: requiredString(json.receipt, 'order_receipt'),
+    notes,
+  }
+}
+
+export async function razorpayCreateOrder(opts: {
   keyId: string
   keySecret: string
   amount: number
   currency: string
   receipt: string
   notes: Record<string, string>
-}): Promise<{ id: string }> {
-  const res = await fetch(ORDERS_BASE, {
+}): Promise<RazorpayOrder> {
+  const json = await razorpayRequest('/orders', {
+    keyId: opts.keyId,
+    keySecret: opts.keySecret,
     method: 'POST',
-    headers: {
-      Authorization: basicAuthHeader(opts.keyId, opts.keySecret),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+    body: {
       amount: opts.amount,
       currency: opts.currency,
       receipt: opts.receipt,
       notes: opts.notes,
-    }),
+    },
   })
-  const text = await res.text()
-  if (!res.ok) {
-    throw new Error(`razorpay_orders_create ${res.status}: ${text.slice(0, 400)}`)
-  }
-  const json = JSON.parse(text) as { id?: string }
-  if (!json.id || typeof json.id !== 'string') {
-    throw new Error('razorpay_orders_create: missing order id in response')
-  }
-  return { id: json.id }
+  return parseOrder(json)
 }
 
-export async function razorpayFetchOrder (opts: {
+/**
+ * Recover an order after an ambiguous provider response or a failed local bind.
+ * The receipt is generated by the database and unique within this application.
+ */
+export async function razorpayFindOrderByReceipt(opts: {
+  keyId: string
+  keySecret: string
+  receipt: string
+}): Promise<RazorpayOrder | null> {
+  const query = new URLSearchParams({ receipt: opts.receipt, count: '2' })
+  const json = await razorpayRequest(`/orders?${query.toString()}`, opts)
+  const items = json.items
+  if (!Array.isArray(items)) throw new Error('razorpay_invalid_order_list')
+  if (items.length === 0) return null
+  if (items.length > 1) throw new Error('razorpay_duplicate_receipt')
+  const item = items[0]
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    throw new Error('razorpay_invalid_order_list')
+  }
+  return parseOrder(item as Record<string, unknown>)
+}
+
+export async function razorpayFetchOrder(opts: {
   keyId: string
   keySecret: string
   orderId: string
+}): Promise<RazorpayOrder> {
+  const json = await razorpayRequest(
+    `/orders/${encodeURIComponent(opts.orderId)}`,
+    opts
+  )
+  return parseOrder(json)
+}
+
+export async function razorpayFetchPayment(opts: {
+  keyId: string
+  keySecret: string
+  paymentId: string
 }): Promise<{
+  id: string
+  orderId: string
   amount: number
-  notes?: Record<string, string>
+  currency: string
+  status: string
+  captured: boolean
+  amountRefunded: number
+  createdAt: string
 }> {
-  const url = `${ORDERS_BASE}/${encodeURIComponent(opts.orderId)}`
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: basicAuthHeader(opts.keyId, opts.keySecret),
-    },
-  })
-  const text = await res.text()
-  if (!res.ok) {
-    throw new Error(`razorpay_orders_fetch ${res.status}: ${text.slice(0, 400)}`)
+  const json = await razorpayRequest(
+    `/payments/${encodeURIComponent(opts.paymentId)}`,
+    opts
+  )
+  return {
+    id: requiredString(json.id, 'payment_id'),
+    orderId: requiredString(json.order_id, 'payment_order_id'),
+    amount: nonNegativeInteger(json.amount, 'payment_amount'),
+    currency: requiredString(json.currency, 'payment_currency'),
+    status: requiredString(json.status, 'payment_status'),
+    captured: json.captured === true,
+    amountRefunded: nonNegativeInteger(
+      json.amount_refunded ?? 0,
+      'payment_amount_refunded'
+    ),
+    createdAt: new Date(
+      nonNegativeInteger(json.created_at, 'payment_created_at') * 1_000
+    ).toISOString(),
   }
-  const json = JSON.parse(text) as {
-    amount?: number
-    notes?: Record<string, string>
-  }
-  const amount = typeof json.amount === 'number' ? json.amount : Number(json.amount)
-  if (!Number.isFinite(amount)) {
-    throw new Error('razorpay_orders_fetch: invalid amount')
-  }
-  return { amount, notes: json.notes }
 }

@@ -1,10 +1,20 @@
+import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
-import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 import {
   resolveCampaignAudience,
   type CampaignAudience,
 } from '../../_lib/resolve-campaign-audience.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+
+const audienceSchema = z.enum([
+  'candidates',
+  'recruiters',
+  'newsletter',
+  'all_marketing',
+  'subscribers',
+  'both',
+])
 
 export async function handle(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -20,51 +30,76 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
   }
   const sb = sbInit.client
 
-  const [
-    candidates,
-    recruiters,
-    newsletter,
-    allMarketing,
-    subscribersTotal,
-    campaigns,
-  ] = await Promise.all([
-    resolveCampaignAudience(sb, 'candidates'),
-    resolveCampaignAudience(sb, 'recruiters'),
-    resolveCampaignAudience(sb, 'newsletter'),
-    resolveCampaignAudience(sb, 'all_marketing'),
-    sb
-      .from('email_subscribers')
-      .select('id', { count: 'exact', head: true })
-      .is('unsubscribed_at', null),
-    sb.from('email_campaigns').select('status'),
-  ])
-
-  const byStatus: Record<string, number> = {}
-  for (const row of campaigns.data ?? []) {
-    const s = row.status as string
-    byStatus[s] = (byStatus[s] ?? 0) + 1
+  const rawAudience =
+    typeof req.query.audience === 'string' ? req.query.audience : undefined
+  const parsedAudience = rawAudience
+    ? audienceSchema.safeParse(rawAudience)
+    : null
+  if (parsedAudience && !parsedAudience.success) {
+    return res.status(400).json({ error: 'invalid_audience' })
   }
 
-  const audience =
-    typeof req.query.audience === 'string'
-      ? (req.query.audience as CampaignAudience)
+  try {
+    const statuses = ['draft', 'sending', 'sent', 'failed'] as const
+    const [
+      candidates,
+      recruiters,
+      newsletter,
+      allMarketing,
+      subscribersTotal,
+      ...statusCounts
+    ] = await Promise.all([
+      resolveCampaignAudience(sb, 'candidates'),
+      resolveCampaignAudience(sb, 'recruiters'),
+      resolveCampaignAudience(sb, 'newsletter'),
+      resolveCampaignAudience(sb, 'all_marketing'),
+      sb
+        .from('email_subscribers')
+        .select('id', { count: 'exact', head: true })
+        .is('unsubscribed_at', null),
+      ...statuses.map((status) =>
+        sb
+          .from('email_campaigns')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', status)
+      ),
+    ])
+
+    const queryError =
+      subscribersTotal.error ??
+      statusCounts.find((result) => result.error)?.error
+    if (queryError)
+      throw new Error(`campaign_stats_failed: ${queryError.message}`)
+    const byStatus = Object.fromEntries(
+      statuses.map((status, index) => [status, statusCounts[index]?.count ?? 0])
+    )
+
+    const audience = parsedAudience?.success
+      ? (parsedAudience.data as CampaignAudience)
       : null
 
-  let audienceCount: number | null = null
-  if (audience) {
-    const list = await resolveCampaignAudience(sb, audience)
-    audienceCount = list.length
-  }
-
-  return res.status(200).json({
-    marketing: {
+    const knownCounts: Partial<Record<CampaignAudience, number>> = {
       candidates: candidates.length,
       recruiters: recruiters.length,
       newsletter: newsletter.length,
+      subscribers: newsletter.length,
       all_marketing: allMarketing.length,
-      subscribers_active: subscribersTotal.count ?? 0,
-    },
-    campaigns_by_status: byStatus,
-    audience_count: audienceCount,
-  })
+      both: allMarketing.length,
+    }
+
+    return res.status(200).json({
+      marketing: {
+        candidates: candidates.length,
+        recruiters: recruiters.length,
+        newsletter: newsletter.length,
+        all_marketing: allMarketing.length,
+        subscribers_active: subscribersTotal.count ?? 0,
+      },
+      campaigns_by_status: byStatus,
+      audience_count: audience ? (knownCounts[audience] ?? null) : null,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'stats_unavailable'
+    return res.status(503).json({ error: message })
+  }
 }

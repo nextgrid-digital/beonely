@@ -10,11 +10,10 @@ export const JOB_SALARY_CURRENCIES = [
   { code: 'CAD', symbol: 'C$', label: 'CAD (C$)' },
 ] as const
 
-export type JobSalaryCurrencyCode = (typeof JOB_SALARY_CURRENCIES)[number]['code']
+export type JobSalaryCurrencyCode =
+  (typeof JOB_SALARY_CURRENCIES)[number]['code']
 
-const CURRENCY_CODES = new Set<string>(
-  JOB_SALARY_CURRENCIES.map((c) => c.code)
-)
+const CURRENCY_CODES = new Set<string>(JOB_SALARY_CURRENCIES.map((c) => c.code))
 
 export function parseSalaryRange(stored: string | null | undefined): {
   currency: JobSalaryCurrencyCode
@@ -62,7 +61,9 @@ export function formatSalaryRange(
   return `${code} · ${a}`
 }
 
-export function displaySalaryRange(stored: string | null | undefined): string | null {
+export function displaySalaryRange(
+  stored: string | null | undefined
+): string | null {
   const trimmed = stored?.trim()
   if (!trimmed) return null
   const { currency, amount } = parseSalaryRange(trimmed)

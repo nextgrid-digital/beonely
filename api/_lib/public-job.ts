@@ -1,3 +1,4 @@
+import { isValidJobSlug } from './public-slug.js'
 import { tryGetServiceSupabase } from './supabase.js'
 
 export type PublicJobRow = {
@@ -13,7 +14,7 @@ export type PublicJobRow = {
   company_logo: string | null
 }
 
-export function isPublicJobListing (job: {
+export function isPublicJobListing(job: {
   approval_status: string
   payment_status: string
   listing_expires_at: string | null
@@ -30,14 +31,15 @@ export function isPublicJobListing (job: {
   return true
 }
 
-export async function fetchPublicJobBySlug (
+export async function fetchPublicJobBySlug(
   slug: string
 ): Promise<PublicJobRow | null> {
+  if (!isValidJobSlug(slug)) return null
   const supInit = tryGetServiceSupabase()
   if (!supInit.ok) return null
 
   const { data, error } = await supInit.client
-    .from('jobs')
+    .from('public_jobs')
     .select(
       'id, job_slug, job_title, company_name, location, employment_type, work_mode, featured, job_description, company_logo, approval_status, payment_status, listing_expires_at'
     )

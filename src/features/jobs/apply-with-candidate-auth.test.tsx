@@ -49,6 +49,7 @@ vi.mock('@tanstack/react-router', async (orig) => {
 
 vi.mock('@/lib/supabase/client', () => ({
   getSupabaseConfigured: () => mocks.getSupabaseConfigured(),
+  getSupabaseUrl: () => 'https://example.supabase.co',
   getSupabaseBrowserClient: () => ({
     auth: { getUser: mocks.getUser },
     from: (table: string) => {
@@ -179,17 +180,22 @@ describe('ApplyWithCandidateAuth', () => {
     vi.spyOn(window, 'open').mockImplementation(() => null)
   })
 
-  it('opens auth stub when visitor clicks Apply (LinkedIn listing)', async () => {
+  it('opens LinkedIn directly when a visitor clicks Apply', async () => {
     const screen = await renderWithQuery(
       <ApplyWithCandidateAuth job={linkedInJob} />
     )
     await userEvent.click(
       screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
-    await expect
-      .element(screen.getByTestId('auth-modal-complete'))
-      .toBeInTheDocument()
+    await vi.waitFor(() =>
+      expect(window.open).toHaveBeenCalledWith(
+        'https://www.linkedin.com/jobs/view/1',
+        '_blank',
+        'noopener,noreferrer'
+      )
+    )
     expect(navigate).not.toHaveBeenCalled()
+    expect(maybeSingleProfile).not.toHaveBeenCalled()
   })
 
   it('opens auth when visitor clicks Beonely apply', async () => {
@@ -204,7 +210,7 @@ describe('ApplyWithCandidateAuth', () => {
       .toBeInTheDocument()
   })
 
-  it('navigates to candidate profile when profile incomplete (LinkedIn)', async () => {
+  it('opens LinkedIn directly without gating an incomplete candidate profile', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
@@ -226,11 +232,14 @@ describe('ApplyWithCandidateAuth', () => {
       screen.getByRole('button', { name: /Apply on LinkedIn/i })
     )
     await vi.waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        to: '/candidate/profile',
-        search: { returnTo: '/jobs/test-role' },
-      })
+      expect(window.open).toHaveBeenCalledWith(
+        'https://www.linkedin.com/jobs/view/1',
+        '_blank',
+        'noopener,noreferrer'
+      )
     )
+    expect(navigate).not.toHaveBeenCalled()
+    expect(maybeSingleProfile).not.toHaveBeenCalled()
   })
 
   it('opens apply URL when candidate profile is complete (LinkedIn)', async () => {
@@ -362,7 +371,7 @@ describe('ApplyWithCandidateAuth', () => {
     await vi.waitFor(() => expect(insertApplication).toHaveBeenCalled())
   })
 
-  it('shows inline error when profile lookup fails during apply flow', async () => {
+  it('does not query the candidate profile before opening LinkedIn', async () => {
     useAuthMock.mockReturnValue({
       user: candidateUser(),
       session: {} as Session,
@@ -384,10 +393,13 @@ describe('ApplyWithCandidateAuth', () => {
     )
 
     await vi.waitFor(() =>
-      expect(toastMock.error).toHaveBeenCalledWith('Temporary backend error')
+      expect(window.open).toHaveBeenCalledWith(
+        'https://www.linkedin.com/jobs/view/1',
+        '_blank',
+        'noopener,noreferrer'
+      )
     )
-    expect(navigate).not.toHaveBeenCalledWith(
-      expect.objectContaining({ to: '/500' })
-    )
+    expect(maybeSingleProfile).not.toHaveBeenCalled()
+    expect(toastMock.error).not.toHaveBeenCalled()
   })
 })

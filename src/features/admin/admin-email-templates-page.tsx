@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -236,149 +237,165 @@ export function AdminEmailTemplatesPage({
         </Button>
       </div>
 
-      <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
-        <aside className='w-full shrink-0 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-3 lg:w-56'>
-          {templatesQuery.isLoading ? (
-            <Skeleton className='h-40 w-full' />
-          ) : (
-            <>
-              {renderNavGroup('Transactional', groups.transactional)}
-              {renderNavGroup('Candidates', groups.marketingCandidates)}
-              {renderNavGroup('Recruiters', groups.marketingRecruiters)}
-              {renderNavGroup('Newsletter', groups.marketingNewsletter)}
-            </>
-          )}
-        </aside>
+      {templatesQuery.isError ? (
+        <AdminQueryError
+          title='Could not load email templates'
+          error={templatesQuery.error}
+          retrying={templatesQuery.isFetching}
+          onRetry={() => void templatesQuery.refetch()}
+        />
+      ) : null}
 
-        <main className='min-w-0 flex-1 space-y-4'>
-          {!templateId || !selected ? (
-            <div className='flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground'>
-              Select a template from the sidebar, or create a new marketing
-              template.
-            </div>
-          ) : (
-            <>
-              {!isMarketing ? (
-                <Alert>
-                  <AlertDescription>
-                    Transactional templates are read-only. They reflect emails
-                    sent by automations. Duplicate as marketing to customize.
-                  </AlertDescription>
-                </Alert>
-              ) : null}
+      {!templatesQuery.isError ? (
+        <div className='flex min-h-0 flex-1 flex-col gap-4 lg:flex-row'>
+          <aside className='w-full shrink-0 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-3 lg:w-56'>
+            {templatesQuery.isLoading ? (
+              <Skeleton className='h-40 w-full' />
+            ) : (
+              <>
+                {renderNavGroup('Transactional', groups.transactional)}
+                {renderNavGroup('Candidates', groups.marketingCandidates)}
+                {renderNavGroup('Recruiters', groups.marketingRecruiters)}
+                {renderNavGroup('Newsletter', groups.marketingNewsletter)}
+              </>
+            )}
+          </aside>
 
-              <iframe
-                title='Email preview'
-                srcDoc={previewHtml}
-                className='h-[360px] w-full rounded-md border border-border bg-white'
-                sandbox=''
-              />
+          <section
+            aria-label='Template editor'
+            className='min-w-0 flex-1 space-y-4'
+          >
+            {!templateId || !selected ? (
+              <div className='flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground'>
+                Select a template from the sidebar, or create a new marketing
+                template.
+              </div>
+            ) : (
+              <>
+                {!isMarketing ? (
+                  <Alert>
+                    <AlertDescription>
+                      Transactional templates are read-only. They reflect emails
+                      sent by automations. Duplicate as marketing to customize.
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
 
-              {draft ? (
-                <div className='space-y-4 rounded-lg border border-border p-4'>
-                  <div className='grid gap-4 sm:grid-cols-2'>
-                    <div className='space-y-2 sm:col-span-2'>
-                      <Label htmlFor='tpl-name'>Name</Label>
-                      <Input
-                        id='tpl-name'
-                        value={draft.name}
-                        disabled={!isMarketing}
-                        onChange={(e) =>
-                          updateDraft({ ...draft, name: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className='space-y-2 sm:col-span-2'>
-                      <Label htmlFor='tpl-subject'>Subject</Label>
-                      <Input
-                        id='tpl-subject'
-                        value={draft.subject}
-                        disabled={!isMarketing}
-                        onChange={(e) =>
-                          updateDraft({ ...draft, subject: e.target.value })
-                        }
-                      />
-                    </div>
-                    {selected.shell === 'marketing' ? (
+                <iframe
+                  title='Email preview'
+                  srcDoc={previewHtml}
+                  className='h-[360px] w-full rounded-md border border-border bg-white'
+                  sandbox=''
+                />
+
+                {draft ? (
+                  <div className='space-y-4 rounded-lg border border-border p-4'>
+                    <div className='grid gap-4 sm:grid-cols-2'>
                       <div className='space-y-2 sm:col-span-2'>
-                        <Label htmlFor='tpl-preview'>Preview text</Label>
+                        <Label htmlFor='tpl-name'>Name</Label>
                         <Input
-                          id='tpl-preview'
-                          value={draft.preview_text}
+                          id='tpl-name'
+                          value={draft.name}
                           disabled={!isMarketing}
                           onChange={(e) =>
-                            updateDraft({
-                              ...draft,
-                              preview_text: e.target.value,
-                            })
+                            updateDraft({ ...draft, name: e.target.value })
                           }
                         />
                       </div>
-                    ) : null}
-                  </div>
-                  <div className='space-y-2'>
-                    <Label>Body</Label>
-                    <EmailBodyRichTextField
-                      value={draft.body_html}
-                      disabled={!isMarketing}
-                      onChange={(html) =>
-                        updateDraft({ ...draft, body_html: html })
-                      }
-                    />
-                  </div>
-                  <div className='flex flex-wrap gap-2'>
-                    {isMarketing ? (
-                      <Button
-                        type='button'
-                        disabled={saveMutation.isPending}
-                        onClick={() => saveMutation.mutate()}
-                      >
-                        {saveMutation.isPending ? (
-                          <Loader2 className='size-4 animate-spin' />
-                        ) : null}
-                        Save
-                      </Button>
-                    ) : null}
-                    <Button
-                      type='button'
-                      variant='outline'
-                      disabled={duplicateMutation.isPending}
-                      onClick={() => duplicateMutation.mutate()}
-                    >
-                      <Copy className='size-4' />
-                      Duplicate
-                    </Button>
-                    {isMarketing && !selected.is_system ? (
-                      <Button
-                        type='button'
-                        variant='destructive'
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate()}
-                      >
-                        <Trash2 className='size-4' />
-                        Delete
-                      </Button>
-                    ) : null}
-                    {selected.audience ? (
-                      <Button type='button' variant='secondary' asChild>
-                        <Link
-                          to='/admin/email/campaigns/new'
-                          search={{
-                            templateId: selected.id,
-                            audience: selected.audience,
-                          }}
+                      <div className='space-y-2 sm:col-span-2'>
+                        <Label htmlFor='tpl-subject'>Subject</Label>
+                        <Input
+                          id='tpl-subject'
+                          value={draft.subject}
+                          disabled={!isMarketing}
+                          onChange={(e) =>
+                            updateDraft({ ...draft, subject: e.target.value })
+                          }
+                        />
+                      </div>
+                      {selected.shell === 'marketing' ? (
+                        <div className='space-y-2 sm:col-span-2'>
+                          <Label htmlFor='tpl-preview'>Preview text</Label>
+                          <Input
+                            id='tpl-preview'
+                            value={draft.preview_text}
+                            disabled={!isMarketing}
+                            onChange={(e) =>
+                              updateDraft({
+                                ...draft,
+                                preview_text: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className='space-y-2'>
+                      <Label htmlFor='template-body'>Body</Label>
+                      <EmailBodyRichTextField
+                        id='template-body'
+                        ariaLabel='Template body'
+                        value={draft.body_html}
+                        disabled={!isMarketing}
+                        onChange={(html) =>
+                          updateDraft({ ...draft, body_html: html })
+                        }
+                      />
+                    </div>
+                    <div className='flex flex-wrap gap-2'>
+                      {isMarketing ? (
+                        <Button
+                          type='button'
+                          disabled={saveMutation.isPending}
+                          onClick={() => saveMutation.mutate()}
                         >
-                          Use in campaign
-                        </Link>
+                          {saveMutation.isPending ? (
+                            <Loader2 className='size-4 animate-spin' />
+                          ) : null}
+                          Save
+                        </Button>
+                      ) : null}
+                      <Button
+                        type='button'
+                        variant='outline'
+                        disabled={duplicateMutation.isPending}
+                        onClick={() => duplicateMutation.mutate()}
+                      >
+                        <Copy className='size-4' />
+                        Duplicate
                       </Button>
-                    ) : null}
+                      {isMarketing && !selected.is_system ? (
+                        <Button
+                          type='button'
+                          variant='destructive'
+                          disabled={deleteMutation.isPending}
+                          onClick={() => deleteMutation.mutate()}
+                        >
+                          <Trash2 className='size-4' />
+                          Delete
+                        </Button>
+                      ) : null}
+                      {selected.audience ? (
+                        <Button type='button' variant='secondary' asChild>
+                          <Link
+                            to='/admin/email/campaigns/new'
+                            search={{
+                              templateId: selected.id,
+                              audience: selected.audience,
+                            }}
+                          >
+                            Use in campaign
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              ) : null}
-            </>
-          )}
-        </main>
-      </div>
+                ) : null}
+              </>
+            )}
+          </section>
+        </div>
+      ) : null}
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent>
@@ -395,12 +412,12 @@ export function AdminEmailTemplatesPage({
               />
             </div>
             <div className='space-y-2'>
-              <Label>Audience</Label>
+              <Label htmlFor='new-template-audience'>Audience</Label>
               <Select
                 value={newAudience}
                 onValueChange={(v) => setNewAudience(v as typeof newAudience)}
               >
-                <SelectTrigger>
+                <SelectTrigger id='new-template-audience'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

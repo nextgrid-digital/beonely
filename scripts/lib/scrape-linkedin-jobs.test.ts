@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   canonicalLinkedInApplyUrl,
@@ -230,6 +230,14 @@ describe('parseLinkedInJobDetailHtml', () => {
 })
 
 describe('scrapeLinkedInJobs', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-06-21T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('deduplicates and keeps only valid servicenow jobs', async () => {
     const fetchMock = vi.fn(async (input: URL | RequestInfo) => {
       const url = String(input)

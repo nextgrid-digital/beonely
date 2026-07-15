@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/context/auth-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -9,11 +10,13 @@ interface SignOutDialogProps {
 
 export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { signOut } = useAuth()
 
   const handleSignOut = async () => {
     await signOut()
-    navigate({ to: '/', replace: true })
+    queryClient.clear()
+    await navigate({ to: '/', replace: true })
   }
 
   return (

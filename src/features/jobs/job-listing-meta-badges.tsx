@@ -1,7 +1,7 @@
 import { formatJobEnumLabel } from '@/lib/jobs/job-enum-labels'
 import { displaySalaryRange } from '@/lib/jobs/salary-range-format'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 export type JobListingMetaBadgesProps = {
   location?: string | null
@@ -60,9 +60,7 @@ export function JobListingMetaBadges(props: JobListingMetaBadgesProps) {
           {props.jobType ? (
             <Badge variant='outline'>{formatJobEnumLabel(props.jobType)}</Badge>
           ) : null}
-          {salaryLabel ? (
-            <Badge variant='outline'>{salaryLabel}</Badge>
-          ) : null}
+          {salaryLabel ? <Badge variant='outline'>{salaryLabel}</Badge> : null}
         </div>
       ) : null}
 

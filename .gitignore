@@ -32,6 +32,7 @@ dist-ssr
 # Vitest artifacts (browser screenshots/attachments)
 **/__screenshots__/
 .vitest-attachments/
+/test-results/
 .vercel
 .env*.local
 

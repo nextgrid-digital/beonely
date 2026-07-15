@@ -39,7 +39,10 @@ export function PortfolioPublishButton({
   const savedPublic = Boolean(profileRow?.is_public)
 
   const canPublish = useMemo(
-    () => Boolean(profileRow) && name.trim().length > 0 && headline.trim().length > 0,
+    () =>
+      Boolean(profileRow) &&
+      name.trim().length > 0 &&
+      headline.trim().length > 0,
     [profileRow, name, headline]
   )
 

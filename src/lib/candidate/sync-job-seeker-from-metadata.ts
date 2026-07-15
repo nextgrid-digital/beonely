@@ -13,11 +13,13 @@ export async function syncJobSeekerFromUserMetadata(
     | {
         linkedin_url?: unknown
         phone?: unknown
+        marketing_opt_in?: unknown
       }
     | undefined
   const linkedinMeta =
     typeof meta?.linkedin_url === 'string' ? meta.linkedin_url.trim() : ''
   const phoneMeta = typeof meta?.phone === 'string' ? meta.phone.trim() : ''
+  const marketingOptIn = meta?.marketing_opt_in === true
   if (!linkedinMeta && !phoneMeta) return
 
   const { data: existing, error } = await sb
@@ -56,7 +58,6 @@ export async function syncJobSeekerFromUserMetadata(
     return
   }
 
-  const now = new Date().toISOString()
   const { error: iErr } = await sb.from('job_seeker_profiles').insert({
     user_id: user.id,
     email,
@@ -64,9 +65,9 @@ export async function syncJobSeekerFromUserMetadata(
     phone: phoneMeta || null,
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit',
-    notification_opt_in: true,
-    marketing_opt_in: true,
-    marketing_opt_in_at: now,
+    notification_opt_in: false,
+    marketing_opt_in: marketingOptIn,
+    marketing_opt_in_at: marketingOptIn ? new Date().toISOString() : null,
   })
   if (iErr) throw iErr
 }

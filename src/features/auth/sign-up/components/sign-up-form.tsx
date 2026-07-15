@@ -21,14 +21,12 @@ import {
   getSupabaseConfigured,
 } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import {
-  AuthDivider,
-  GoogleSignInButton,
-} from '@/features/auth/components/google-sign-in-button'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,6 +34,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '@/features/auth/components/google-sign-in-button'
 
 type CandidateSignUpFields = {
   linkedin_url: string
@@ -54,6 +56,7 @@ function buildSignUpFormSchema(intent: SignInIntent | undefined) {
         .min(1, 'Please enter your password.')
         .min(7, 'Password must be at least 7 characters long.'),
       confirmPassword: z.string().min(1, 'Please confirm your password.'),
+      marketing_opt_in: z.boolean().default(false),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: "Passwords don't match.",
@@ -92,6 +95,7 @@ async function persistCandidateJobSeekerRow(opts: {
   email: string
   linkedin_url: string
   phone: string
+  marketing_opt_in: boolean
 }): Promise<{ created: boolean }> {
   const sb = getSupabaseBrowserClient()
   const { data: existing, error: selErr } = await sb
@@ -106,9 +110,11 @@ async function persistCandidateJobSeekerRow(opts: {
     phone: opts.phone,
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit' as const,
-    notification_opt_in: true,
-    marketing_opt_in: true,
-    marketing_opt_in_at: new Date().toISOString(),
+    notification_opt_in: false,
+    marketing_opt_in: opts.marketing_opt_in,
+    marketing_opt_in_at: opts.marketing_opt_in
+      ? new Date().toISOString()
+      : null,
   }
   if (existing?.id) {
     const { error } = await sb
@@ -132,6 +138,7 @@ type SignUpFormFields = {
   confirmPassword: string
   linkedin_url?: string
   phone?: string
+  marketing_opt_in: boolean
 }
 
 export function SignUpForm({
@@ -151,6 +158,7 @@ export function SignUpForm({
       email: '',
       password: '',
       confirmPassword: '',
+      marketing_opt_in: false,
       ...(intent === 'candidate' ? { linkedin_url: '', phone: '' } : {}),
     }),
     [intent]
@@ -206,6 +214,7 @@ export function SignUpForm({
           captchaToken: turnstileToken ?? undefined,
           data: {
             ...(candidateMeta ?? {}),
+            marketing_opt_in: data.marketing_opt_in === true,
             ...signUpAuthDataFields(intent),
           },
         },
@@ -225,6 +234,7 @@ export function SignUpForm({
             email,
             linkedin_url: candidateMeta.linkedin_url,
             phone: candidateMeta.phone,
+            marketing_opt_in: data.marketing_opt_in === true,
           })
           const accessToken = signUpData.session?.access_token
           if (created && accessToken) {
@@ -243,7 +253,7 @@ export function SignUpForm({
           }
           if (accessToken) {
             await updateMarketingConsent({
-              marketing_opt_in: true,
+              marketing_opt_in: data.marketing_opt_in === true,
               audience: 'candidate',
               accessToken,
             })
@@ -262,7 +272,7 @@ export function SignUpForm({
       ) {
         try {
           await updateMarketingConsent({
-            marketing_opt_in: true,
+            marketing_opt_in: data.marketing_opt_in === true,
             audience: 'recruiter',
             accessToken: signUpData.session.access_token,
           })
@@ -409,6 +419,35 @@ export function SignUpForm({
               onExpire={() => setTurnstileToken(null)}
             />
           </div>
+        ) : null}
+        {intent === 'candidate' || intent === 'recruiter' ? (
+          <FormField
+            control={form.control}
+            name='marketing_opt_in'
+            render={({ field }) => (
+              <FormItem className='flex items-start gap-3 rounded-lg border p-3'>
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(checked) =>
+                      field.onChange(checked === true)
+                    }
+                    aria-label='Opt in to marketing emails'
+                  />
+                </FormControl>
+                <div className='space-y-1 leading-none'>
+                  <FormLabel className='font-normal'>
+                    Email me relevant{' '}
+                    {intent === 'candidate' ? 'job' : 'hiring'} and product
+                    updates
+                  </FormLabel>
+                  <FormDescription>
+                    Optional. You can unsubscribe at any time.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
         ) : null}
         <Button
           className='mt-2 min-h-11 w-full sm:min-h-10'

@@ -6,6 +6,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPostAuthPath } from '@/lib/auth/post-auth-path'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import type { SignInIntent } from '@/lib/auth/sign-in-intent'
 import {
   getSupabaseBrowserClient,
@@ -13,10 +14,6 @@ import {
 } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
-import {
-  AuthDivider,
-  GoogleSignInButton,
-} from '@/features/auth/components/google-sign-in-button'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -28,6 +25,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '@/features/auth/components/google-sign-in-button'
 
 const formSchema = z.object({
   email: z.email({
@@ -111,10 +112,7 @@ export function UserAuthForm({
         return
       }
       const profile = await refreshProfile()
-      const dest =
-        redirectTo && redirectTo.startsWith('/')
-          ? redirectTo
-          : getPostAuthPath(profile)
+      const dest = sanitizeRedirectPath(redirectTo) ?? getPostAuthPath(profile)
       void navigate({ to: dest, replace: true })
     } finally {
       setIsLoading(false)

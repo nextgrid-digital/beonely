@@ -12,6 +12,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
+      api_rate_limits: {
+        Row: {
+          key_hash: string
+          request_count: number
+          window_expires_at: string
+        }
+        Insert: {
+          key_hash: string
+          request_count: number
+          window_expires_at: string
+        }
+        Update: {
+          key_hash?: string
+          request_count?: number
+          window_expires_at?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           candidate_email: string
@@ -116,6 +167,7 @@ export type Database = {
           campaign_id: string
           created_at: string
           delivery_status: Database['public']['Enums']['delivery_status']
+          delivery_event_at: string | null
           email: string
           error_message: string | null
           id: string
@@ -127,6 +179,7 @@ export type Database = {
           campaign_id: string
           created_at?: string
           delivery_status?: Database['public']['Enums']['delivery_status']
+          delivery_event_at?: string | null
           email: string
           error_message?: string | null
           id?: string
@@ -138,6 +191,7 @@ export type Database = {
           campaign_id?: string
           created_at?: string
           delivery_status?: Database['public']['Enums']['delivery_status']
+          delivery_event_at?: string | null
           email?: string
           error_message?: string | null
           id?: string
@@ -207,7 +261,9 @@ export type Database = {
       }
       email_templates: {
         Row: {
-          audience: Database['public']['Enums']['email_template_audience'] | null
+          audience:
+            | Database['public']['Enums']['email_template_audience']
+            | null
           body_html: string
           category: Database['public']['Enums']['email_template_category']
           created_at: string
@@ -223,7 +279,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          audience?: Database['public']['Enums']['email_template_audience'] | null
+          audience?:
+            | Database['public']['Enums']['email_template_audience']
+            | null
           body_html: string
           category: Database['public']['Enums']['email_template_category']
           created_at?: string
@@ -239,7 +297,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          audience?: Database['public']['Enums']['email_template_audience'] | null
+          audience?:
+            | Database['public']['Enums']['email_template_audience']
+            | null
           body_html?: string
           category?: Database['public']['Enums']['email_template_category']
           created_at?: string
@@ -258,8 +318,12 @@ export type Database = {
       }
       email_send_log: {
         Row: {
+          attempt_count: number
+          attempted_at: string | null
           campaign_id: string | null
+          claim_token: string | null
           created_at: string
+          delivery_event_at: string | null
           error_message: string | null
           id: string
           metadata: Json
@@ -269,10 +333,15 @@ export type Database = {
           status: string
           subject: string | null
           trigger_key: string | null
+          updated_at: string
         }
         Insert: {
+          attempt_count?: number
+          attempted_at?: string | null
           campaign_id?: string | null
+          claim_token?: string | null
           created_at?: string
+          delivery_event_at?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json
@@ -282,10 +351,15 @@ export type Database = {
           status?: string
           subject?: string | null
           trigger_key?: string | null
+          updated_at?: string
         }
         Update: {
+          attempt_count?: number
+          attempted_at?: string | null
           campaign_id?: string | null
+          claim_token?: string | null
           created_at?: string
+          delivery_event_at?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json
@@ -295,6 +369,7 @@ export type Database = {
           status?: string
           subject?: string | null
           trigger_key?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -313,6 +388,8 @@ export type Database = {
           email: string
           id: string
           linkedin_url: string | null
+          pending_opt_in_requested_at: string | null
+          pending_opt_in_token: string | null
           source: string
           unsubscribe_token: string
           unsubscribed_at: string | null
@@ -324,6 +401,8 @@ export type Database = {
           email: string
           id?: string
           linkedin_url?: string | null
+          pending_opt_in_requested_at?: string | null
+          pending_opt_in_token?: string | null
           source?: string
           unsubscribe_token?: string
           unsubscribed_at?: string | null
@@ -335,10 +414,84 @@ export type Database = {
           email?: string
           id?: string
           linkedin_url?: string | null
+          pending_opt_in_requested_at?: string | null
+          pending_opt_in_token?: string | null
           source?: string
           unsubscribe_token?: string
           unsubscribed_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      hiring_requests: {
+        Row: {
+          assigned_to_email: string | null
+          company_name: string
+          company_website: string | null
+          contact_name: string
+          created_at: string
+          email: string
+          headcount: number | null
+          hiring_type: string
+          id: string
+          internal_notes: string | null
+          last_contacted_at: string | null
+          location: string | null
+          notes: string | null
+          phone: string | null
+          role_title: string
+          servicenow_scope: string | null
+          source: string
+          status: string
+          timeline: string | null
+          updated_at: string
+          work_mode: string | null
+        }
+        Insert: {
+          assigned_to_email?: string | null
+          company_name: string
+          company_website?: string | null
+          contact_name: string
+          created_at?: string
+          email: string
+          headcount?: number | null
+          hiring_type: string
+          id?: string
+          internal_notes?: string | null
+          last_contacted_at?: string | null
+          location?: string | null
+          notes?: string | null
+          phone?: string | null
+          role_title: string
+          servicenow_scope?: string | null
+          source?: string
+          status?: string
+          timeline?: string | null
+          updated_at?: string
+          work_mode?: string | null
+        }
+        Update: {
+          assigned_to_email?: string | null
+          company_name?: string
+          company_website?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string
+          headcount?: number | null
+          hiring_type?: string
+          id?: string
+          internal_notes?: string | null
+          last_contacted_at?: string | null
+          location?: string | null
+          notes?: string | null
+          phone?: string | null
+          role_title?: string
+          servicenow_scope?: string | null
+          source?: string
+          status?: string
+          timeline?: string | null
+          updated_at?: string
+          work_mode?: string | null
         }
         Relationships: []
       }
@@ -586,36 +739,90 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          chargeback_amount: number
+          checkout_expires_at: string | null
+          checkout_version: number
           created_at: string
           currency: string
+          entitlement_applied_at: string | null
+          entitlement_withheld_reason: string | null
           id: string
           job_id: string
+          last_failure_at: string | null
+          last_failure_code: string | null
+          paid_at: string | null
+          payment_kind: Database['public']['Enums']['payment_kind']
+          plan: Database['public']['Enums']['payment_plan']
+          provider_event_at: string | null
+          provider_receipt: string
+          provisioning_started_at: string | null
+          provisioning_token: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           recruiter_id: string
+          refunded_amount: number
+          requires_manual_review: boolean
+          risk_status: string | null
           status: Database['public']['Enums']['payment_status']
+          updated_at: string
         }
         Insert: {
           amount: number
+          chargeback_amount?: number
+          checkout_expires_at?: string | null
+          checkout_version?: number
           created_at?: string
           currency?: string
+          entitlement_applied_at?: string | null
+          entitlement_withheld_reason?: string | null
           id?: string
           job_id: string
+          last_failure_at?: string | null
+          last_failure_code?: string | null
+          paid_at?: string | null
+          payment_kind: Database['public']['Enums']['payment_kind']
+          plan: Database['public']['Enums']['payment_plan']
+          provider_event_at?: string | null
+          provider_receipt: string
+          provisioning_started_at?: string | null
+          provisioning_token?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           recruiter_id: string
+          refunded_amount?: number
+          requires_manual_review?: boolean
+          risk_status?: string | null
           status?: Database['public']['Enums']['payment_status']
+          updated_at?: string
         }
         Update: {
           amount?: number
+          chargeback_amount?: number
+          checkout_expires_at?: string | null
+          checkout_version?: number
           created_at?: string
           currency?: string
+          entitlement_applied_at?: string | null
+          entitlement_withheld_reason?: string | null
           id?: string
           job_id?: string
+          last_failure_at?: string | null
+          last_failure_code?: string | null
+          paid_at?: string | null
+          payment_kind?: Database['public']['Enums']['payment_kind']
+          plan?: Database['public']['Enums']['payment_plan']
+          provider_event_at?: string | null
+          provider_receipt?: string
+          provisioning_started_at?: string | null
+          provisioning_token?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           recruiter_id?: string
+          refunded_amount?: number
+          requires_manual_review?: boolean
+          risk_status?: string | null
           status?: Database['public']['Enums']['payment_status']
+          updated_at?: string
         }
         Relationships: [
           {
@@ -630,6 +837,68 @@ export type Database = {
             columns: ['recruiter_id']
             isOneToOne: false
             referencedRelation: 'recruiters'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      payment_provider_events: {
+        Row: {
+          action_taken: string | null
+          attempt_count: number
+          error_code: string | null
+          event_id: string
+          event_type: string
+          payment_record_id: string | null
+          processing_status: string
+          provider: string
+          provider_entity_id: string | null
+          provider_event_at: string | null
+          provider_order_id: string | null
+          provider_payment_id: string | null
+          received_at: string
+          requires_manual_review: boolean
+          updated_at: string
+        }
+        Insert: {
+          action_taken?: string | null
+          attempt_count?: number
+          error_code?: string | null
+          event_id: string
+          event_type: string
+          payment_record_id?: string | null
+          processing_status?: string
+          provider?: string
+          provider_entity_id?: string | null
+          provider_event_at?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          received_at?: string
+          requires_manual_review?: boolean
+          updated_at?: string
+        }
+        Update: {
+          action_taken?: string | null
+          attempt_count?: number
+          error_code?: string | null
+          event_id?: string
+          event_type?: string
+          payment_record_id?: string | null
+          processing_status?: string
+          provider?: string
+          provider_entity_id?: string | null
+          provider_event_at?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          received_at?: string
+          requires_manual_review?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'payment_provider_events_payment_record_id_fkey'
+            columns: ['payment_record_id']
+            isOneToOne: false
+            referencedRelation: 'payments'
             referencedColumns: ['id']
           },
         ]
@@ -702,14 +971,171 @@ export type Database = {
           },
         ]
       }
+      webhook_event_receipts: {
+        Row: {
+          event_id: string
+          event_type: string
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          provider: string
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      public_jobs: {
+        Row: Database['public']['Tables']['jobs']['Row']
+        Relationships: []
+      }
     }
     Functions: {
+      apply_resend_delivery_event: {
+        Args: {
+          p_error_message: string | null
+          p_event_at: string
+          p_event_id: string
+          p_event_type: string
+          p_message_id: string
+          p_recipient_email?: string | null
+          p_status: string
+          p_suppress_recipient?: boolean
+        }
+        Returns: Json
+      }
+      apply_razorpay_lifecycle_event: {
+        Args: {
+          p_amount: number | null
+          p_event_at: string
+          p_event_id: string
+          p_event_type: string
+          p_failure_code: string | null
+          p_provider_order_id: string | null
+          p_provider_payment_id: string | null
+        }
+        Returns: Json
+      }
+      bind_razorpay_order: {
+        Args: {
+          p_order_id: string
+          p_payment_id: string
+          p_provisioning_token: string
+        }
+        Returns: Json
+      }
+      claim_razorpay_webhook_event: {
+        Args: {
+          p_event_at: string
+          p_event_id: string
+          p_event_type: string
+          p_provider_entity_id: string | null
+          p_provider_order_id: string | null
+          p_provider_payment_id: string | null
+        }
+        Returns: Json
+      }
+      complete_razorpay_webhook_event: {
+        Args: {
+          p_action: string
+          p_event_id: string
+          p_payment_record_id?: string | null
+        }
+        Returns: undefined
+      }
+      claim_transactional_email: {
+        Args: {
+          p_dedupe_key: string
+          p_metadata?: Json
+          p_recipient_email: string
+          p_recipient_role: string
+          p_stale_after_seconds?: number
+          p_subject: string
+          p_trigger_key: string
+        }
+        Returns: Json
+      }
+      consume_api_rate_limit: {
+        Args: {
+          p_key_hash: string
+          p_limit: number
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
+      can_apply_to_job: {
+        Args: { p_job_id: string; p_recruiter_id: string }
+        Returns: boolean
+      }
+      fulfill_razorpay_payment: {
+        Args: {
+          p_duration_days: number
+          p_expected_amount: number
+          p_expected_user_id?: string | null
+          p_featured: boolean
+          p_is_boost: boolean
+          p_is_renewal: boolean
+          p_listing_duration: Database['public']['Enums']['listing_duration']
+          p_listing_tier: Database['public']['Enums']['listing_tier']
+          p_order_id: string
+          p_payment_id: string
+          p_plan: string
+        }
+        Returns: Json
+      }
+      fulfill_razorpay_payment_v2: {
+        Args: {
+          p_expected_user_id?: string | null
+          p_order_id: string
+          p_paid_at: string
+          p_payment_id: string
+        }
+        Returns: Json
+      }
+      fail_razorpay_webhook_event: {
+        Args: { p_error_code: string; p_event_id: string }
+        Returns: undefined
+      }
+      finish_transactional_email: {
+        Args: {
+          p_claim_token: string
+          p_error_message?: string | null
+          p_log_id: string
+          p_resend_message_id?: string | null
+          p_status: string
+        }
+        Returns: boolean
+      }
+      get_admin_dashboard_stats: { Args: never; Returns: Json }
+      get_admin_email_analytics: { Args: never; Returns: Json }
+      get_admin_email_automation_counts: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
-      is_portfolio_slug_available: { Args: { p_slug: string }; Returns: boolean }
+      is_portfolio_slug_available: {
+        Args: { p_slug: string }
+        Returns: boolean
+      }
       get_public_portfolio: { Args: { p_slug: string }; Returns: Json }
+      reserve_payment_checkout: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_expected_user_id: string
+          p_job_id: string
+          p_payment_kind: Database['public']['Enums']['payment_kind']
+          p_plan: Database['public']['Enums']['payment_plan']
+          p_recruiter_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       application_status: 'new' | 'reviewed' | 'shortlisted' | 'rejected'
@@ -738,6 +1164,16 @@ export type Database = {
       listing_duration: 'weekly' | 'monthly'
       listing_tier: 'standard' | 'featured'
       operator_feedback_status: 'new' | 'triaged' | 'done'
+      payment_kind: 'initial' | 'renewal' | 'boost'
+      payment_plan:
+        | 'standard_week'
+        | 'standard_month'
+        | 'featured_week'
+        | 'featured_month'
+        | 'standard_week_renew'
+        | 'standard_month_renew'
+        | 'featured_week_renew'
+        | 'featured_month_renew'
       payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded'
       recruiter_role: 'recruiter' | 'admin'
       resume_source: 'none' | 'linkedin_import' | 'manual_admin' | 'user_edit'
@@ -900,6 +1336,17 @@ export const Constants = {
       listing_duration: ['weekly', 'monthly'],
       listing_tier: ['standard', 'featured'],
       operator_feedback_status: ['new', 'triaged', 'done'],
+      payment_kind: ['initial', 'renewal', 'boost'],
+      payment_plan: [
+        'standard_week',
+        'standard_month',
+        'featured_week',
+        'featured_month',
+        'standard_week_renew',
+        'standard_month_renew',
+        'featured_week_renew',
+        'featured_month_renew',
+      ],
       payment_status: ['unpaid', 'paid', 'failed', 'refunded'],
       recruiter_role: ['recruiter', 'admin'],
       resume_source: ['none', 'linkedin_import', 'manual_admin', 'user_edit'],
