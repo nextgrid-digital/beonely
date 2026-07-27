@@ -47,7 +47,7 @@ Recruiters maintain a company profile, create/edit draft jobs, pay via Razorpay,
 
 **Why this priority**: Revenue path and supply side of the board.
 
-**Independent Test**: Create draft → pay (test mode) → job reaches paid/pending moderation state per [`api/verify-payment.ts`](../../api/verify-payment.ts).
+**Independent Test**: Create draft → pay (test mode) → job reaches paid/pending moderation state per the [`verify-payment` handler](../../api/_handlers/payments/verify-payment.ts).
 
 **Acceptance Scenarios**:
 

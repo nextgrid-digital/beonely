@@ -1,21 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { jobListingCanRenew } from './_lib/listing-renewal.js'
+import { jobListingCanRenew } from '../../_lib/listing-renewal.js'
 import {
   ALL_PAYMENT_PLANS,
   PLAN_AMOUNT_INR_PAISE,
   planIsFeatured,
   planIsRenewal,
   type PaymentPlan,
-} from './_lib/plan-helpers.js'
-import { isRateLimitError, rateLimitOrThrow } from './_lib/rate-limit.js'
+} from '../../_lib/plan-helpers.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
 import {
   razorpayCreateOrder,
   razorpayFindOrderByReceipt,
   type RazorpayOrder,
-} from './_lib/razorpay-rest.js'
-import { readJsonObjectBody } from './_lib/request-json-body.js'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
-import { verifyTurnstileToken } from './_lib/turnstile.js'
+} from '../../_lib/razorpay-rest.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import {
+  getUserFromBearer,
+  tryGetServiceSupabase,
+} from '../../_lib/supabase.js'
+import { verifyTurnstileToken } from '../../_lib/turnstile.js'
 
 /** UUID shape (matches typical `z.string().uuid()` acceptance). */
 const UUID_RE =

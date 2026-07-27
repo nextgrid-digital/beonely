@@ -1,9 +1,12 @@
 import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { isAllowlistedAdminEmail } from './_lib/admin-access.js'
-import { safeResumeStoragePath } from './_lib/private-assets.js'
-import { isRateLimitError, rateLimitOrThrow } from './_lib/rate-limit.js'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
+import { isAllowlistedAdminEmail } from '../../_lib/admin-access.js'
+import { safeResumeStoragePath } from '../../_lib/private-assets.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import {
+  getUserFromBearer,
+  tryGetServiceSupabase,
+} from '../../_lib/supabase.js'
 
 const inputSchema = z.object({ application_id: z.string().uuid() }).strict()
 const SIGNED_URL_TTL_SECONDS = 5 * 60

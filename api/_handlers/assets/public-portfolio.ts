@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchPublicPortfolioBySlug } from './_lib/public-portfolio.js'
-import { isValidPortfolioSlug } from './_lib/public-slug.js'
-import { isRateLimitError, rateLimitOrThrow } from './_lib/rate-limit.js'
-import { requestIp } from './_lib/request-ip.js'
+import { fetchPublicPortfolioBySlug } from '../../_lib/public-portfolio.js'
+import { isValidPortfolioSlug } from '../../_lib/public-slug.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { requestIp } from '../../_lib/request-ip.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET')

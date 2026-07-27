@@ -5,10 +5,13 @@ import {
   PaymentFulfillmentError,
   sendPaymentFulfillmentEmails,
   verifyProviderAndFulfill,
-} from './_lib/payment-fulfillment.js'
-import { isRateLimitError, rateLimitOrThrow } from './_lib/rate-limit.js'
-import { readJsonObjectBody } from './_lib/request-json-body.js'
-import { getUserFromBearer, tryGetServiceSupabase } from './_lib/supabase.js'
+} from '../../_lib/payment-fulfillment.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import {
+  getUserFromBearer,
+  tryGetServiceSupabase,
+} from '../../_lib/supabase.js'
 
 const bodySchema = z.object({
   razorpay_order_id: z.string().min(1).max(120),

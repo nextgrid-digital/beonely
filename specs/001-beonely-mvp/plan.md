@@ -32,7 +32,7 @@ Beonely is a ServiceNow-focused job marketplace with **three personas** (candida
 
 - **Role isolation**: Enforced via [`src/lib/auth/route-guards.ts`](../../src/lib/auth/route-guards.ts) and role-filtered sidebar [`src/components/layout/data/sidebar-data.ts`](../../src/components/layout/data/sidebar-data.ts).
 - **Secrets**: Client [`src/lib/supabase/client.ts`](../../src/lib/supabase/client.ts); server [`api/_lib/supabase.ts`](../../api/_lib/supabase.ts).
-- **Payments**: [`api/create-order.ts`](../../api/create-order.ts), [`api/verify-payment.ts`](../../api/verify-payment.ts) aligned with [`src/lib/payments/plans.ts`](../../src/lib/payments/plans.ts).
+- **Payments**: consolidated [`api/payments.ts`](../../api/payments.ts) entrypoint with [`create-order`](../../api/_handlers/payments/create-order.ts) and [`verify-payment`](../../api/_handlers/payments/verify-payment.ts) handlers aligned with [`src/lib/payments/plans.ts`](../../src/lib/payments/plans.ts).
 - **Quality**: `pnpm lint`, `pnpm test`, `pnpm build`.
 
 ## Project Structure

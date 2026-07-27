@@ -33,10 +33,7 @@
     }
   ],
   "functions": {
-    "api/create-order.ts": {
-      "maxDuration": 60
-    },
-    "api/verify-payment.ts": {
+    "api/payments.ts": {
       "maxDuration": 60
     },
     "api/sitemap.ts": {
@@ -45,10 +42,7 @@
     "api/job-preview.ts": {
       "maxDuration": 30
     },
-    "api/public-portfolio.ts": {
-      "maxDuration": 30
-    },
-    "api/application-asset.ts": {
+    "api/assets.ts": {
       "maxDuration": 30
     },
     "api/og-job.tsx": {
@@ -83,6 +77,22 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/create-order",
+      "destination": "/api/payments?route=create-order"
+    },
+    {
+      "source": "/api/verify-payment",
+      "destination": "/api/payments?route=verify-payment"
+    },
+    {
+      "source": "/api/public-portfolio",
+      "destination": "/api/assets?route=public-portfolio"
+    },
+    {
+      "source": "/api/application-asset",
+      "destination": "/api/assets?route=application-asset"
+    },
     {
       "source": "/api/subscribe",
       "destination": "/api/marketing?route=subscribe"
