@@ -61,7 +61,9 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
         .eq('delivery_status', status)
     )
   )
-  const countError = countResults.find((result) => result.error)?.error
+  const countError = countResults.find(
+    (result: { error: { message: string } | null }) => result.error
+  )?.error
   if (countError) return res.status(500).json({ error: countError.message })
   const counts = Object.fromEntries(
     statuses.map((status, index) => [status, countResults[index]?.count ?? 0])

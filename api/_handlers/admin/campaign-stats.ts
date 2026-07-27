@@ -67,7 +67,9 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
 
     const queryError =
       subscribersTotal.error ??
-      statusCounts.find((result) => result.error)?.error
+      statusCounts.find(
+        (result: { error: { message: string } | null }) => result.error
+      )?.error
     if (queryError)
       throw new Error(`campaign_stats_failed: ${queryError.message}`)
     const byStatus = Object.fromEntries(
