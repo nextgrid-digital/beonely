@@ -13,7 +13,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OUTPUT = ROOT / "docs" / "Beonely-Repository-Audit-and-Remediation-Report-2026-07-11.docx"
+OUTPUT = ROOT / "docs" / "Beonely-Repository-Audit-and-Remediation-Report-2026-07-27.docx"
 
 BLUE = "2E74B5"
 DARK_BLUE = "1F4D78"
@@ -477,7 +477,7 @@ def configure_page(doc: Document) -> None:
         left = header_p.add_run("BEONELY | REPOSITORY AUDIT")
         set_run_font(left, size=8.5, color=MUTED, bold=True)
         header_p.add_run("\t")
-        right = header_p.add_run("15 JULY 2026")
+        right = header_p.add_run("27 JULY 2026")
         set_run_font(right, size=8.5, color=MUTED)
 
         footer = section.footer
@@ -542,11 +542,11 @@ def build_document() -> Document:
     metadata = [
         ("Repository", "beonely"),
         ("Workspace", "Repository root; file paths are shown relative to it"),
-        ("Review date", "11–15 July 2026"),
+        ("Review date", "11–27 July 2026"),
         ("Scope", "Frontend, API, Supabase, Storage, payments, email, admin UX, CI, and documentation"),
-        ("Source status", "Runtime code head 925f6c8 is pushed on codex/repository-hardening-admin-redesign; draft PR #2 targets main and remains open and unmerged"),
+        ("Source status", "Runtime code head cde79d0 is pushed on codex/repository-hardening-admin-redesign; draft PR #2 targets main and remains open and unmerged"),
         ("Main boundary", "main and origin/main remained at 059af73e22925ea5a421e3a9d8d2af2ae9541c69"),
-        ("Database status", "Supabase Preview attempted a clean replay and failed in the legacy May chain before the July hardening migrations; production was not changed"),
+        ("Database status", "Supabase Preview remains unhealthy after the historical May-chain bootstrap failure; the July hardening migrations and production database were not changed"),
     ]
     for label, value in metadata:
         paragraph = doc.add_paragraph(style="Metadata")
@@ -558,7 +558,7 @@ def build_document() -> Document:
     add_callout(
         doc,
         "Outcome",
-        "The repository was reduced to its real product surface, its highest-risk authorization/payment/email paths were redesigned, and the admin experience was rebuilt. Local gates and GitHub Quality passed. Hosted preview validation remains incomplete because Vercel rejected project access before deployment and Supabase Preview stopped in the legacy May migration chain.",
+        "The repository was reduced to its real product surface, its highest-risk authorization/payment/email paths were redesigned, and the admin experience was rebuilt. Local gates, GitHub Quality, Vercel function packaging, the team Vercel Preview, and an independently tested Preview deployment pass. Full data-backed validation remains blocked by the legacy Supabase migration/bootstrap state.",
         color=AMBER,
     )
 
@@ -573,15 +573,15 @@ def build_document() -> Document:
         doc,
         ["Severity", "Findings", "Source status", "Primary risk themes"],
         [
-            ["Critical", "3", "Fixed in repository", "Privilege escalation, payment integrity, open email relay"],
-            ["High", "13", "Fixed in repository", "PII, consent, signed events, asset privacy, capture reconciliation"],
+            ["Critical", "4", "Fixed in repository", "Privilege escalation, payment integrity, open email relay, Seroval deserialization"],
+            ["High", "15", "Fixed in repository", "PII, consent, signed events, asset privacy, capture reconciliation, image/CSS dependencies"],
             ["Medium", "12", "Fixed in repository", "Abuse controls, retries, lifecycle accounting, operations"],
-            ["Low / quality", "10", "Fixed in repository", "Headers, UX, accessibility, dead code, CI, runtime startup"],
+            ["Low / quality", "12", "Fixed in repository", "Headers, UX, accessibility, dead code, CI, dependency and deployment hygiene"],
         ],
         [1440, 1080, 1800, 5040],
     )
     doc.add_paragraph(
-        "The original audit logged 33 findings. Final branch verification added three high-severity payment-capture persistence findings and two low/quality browser-accessibility findings, for 38 findings in total."
+        "The original audit logged 33 findings. Final branch and deployment verification added three high-severity payment-capture persistence findings, two low/quality browser-accessibility findings, four dependency advisories, and one Vercel deployment-limit defect, for 43 findings in total."
     )
     add_list(
         doc,
@@ -589,7 +589,7 @@ def build_document() -> Document:
             ("Repository scope", "Implementation commit 00017cb changes 374 files with 16,659 insertions and 12,913 deletions; inherited demo/template modules were removed and the repository-wide formatting baseline was normalized."),
             ("Security architecture", "Fifteen cumulative July hardening migrations now encode RLS, public projections, admin boundaries, rate limits, private assets, payment lifecycle, email claims, and suppression."),
             ("Admin console", "The console is organized into Overview, Marketplace, Growth, and Operations with server-backed metrics, explicit error states, and responsive navigation."),
-            ("Verification", "33 API test files / 108 tests, 59 browser test files / 285 tests, 22 responsive passes with 2 expected desktop-only skips, both TypeScript checks, build, lint (0 errors / 23 nonblocking warnings), formatting, Knip, production audit, diff hygiene, local built-browser smoke, and GitHub Quality passed."),
+            ("Verification", "34 API test files / 114 tests, 59 browser test files / 285 tests, 22 responsive passes with 2 expected desktop-only skips, both TypeScript checks, build, lint (0 errors / 23 nonblocking warnings), formatting, Knip, production audit, diff hygiene, local and hosted Preview smoke, and GitHub Quality passed."),
         ],
     )
 
@@ -667,7 +667,7 @@ def build_document() -> Document:
         "Payment amount, replay, and fulfillment integrity",
         "Underpayment, duplicate checkouts, repeated renewal/boost, or captured funds without consistent job state were possible when browser input and separate writes were trusted.",
         "The server selects price from an allowlist, reserves a versioned immutable snapshot, creates/reuses a unique provider receipt, verifies signatures, and fulfills through a replay-safe database RPC. Capture/refund/dispute/failure lifecycle is deduplicated.",
-        "api/create-order.ts; api/verify-payment.ts; api/razorpay-webhook.ts; payment hardening migrations",
+        "api/payments.ts; api/_handlers/payments/*; api/razorpay-webhook.ts; payment hardening migrations",
         severity_color=RED,
     )
     add_finding(
@@ -677,6 +677,15 @@ def build_document() -> Document:
         "An attacker could abuse the project's mail provider and reputation by choosing recipients or content.",
         "The dispatch surface now accepts only server-allowlisted transactional triggers, trusted recipient derivation, bounded payloads, authentication, and rate limits. Negative tests reject arbitrary recipients and content.",
         "api/email/dispatch.ts; api/_tests/email-dispatch-security.test.ts",
+        severity_color=RED,
+    )
+    add_finding(
+        doc,
+        "C-04",
+        "Seroval deserialization code execution advisory",
+        "A vulnerable transitive Seroval version could execute attacker-controlled JavaScript when parsing a malicious payload with the affected API.",
+        "The workspace override now resolves Seroval 1.5.6, above the 1.5.3 patched boundary. The lockfile, production audit, build, and complete test suite were revalidated.",
+        "package.json; pnpm-lock.yaml; GHSA-mv8w-475r-vwqw",
         severity_color=RED,
     )
 
@@ -695,6 +704,8 @@ def build_document() -> Document:
         ("H-11", "Disabled recruiter at capture", "A verified capture is recorded as paid unless already refunded, flagged `recruiter_disabled_at_capture` for manual review, and denied entitlement/job changes."),
         ("H-12", "Reused provider payment ID", "The affected checkout records the financial movement and `provider_payment_reused` review state without violating provider-ID uniqueness or granting entitlement."),
         ("H-13", "Capture for a closed/failed checkout", "Late capture persists paid timing/identifier data where safe, flags `capture_for_closed_checkout`, and withholds entitlement."),
+        ("H-14", "Sharp/libvips image advisory", "The Sharp resolution is pinned to 0.35.3, above the affected versions, and the Vercel package was rebuilt successfully."),
+        ("H-15", "PostCSS source-map path disclosure", "The lockfile resolves PostCSS 8.5.23, above the 8.5.18 patched boundary, and all CSS builds/tests were rerun."),
     ]
     add_list(doc, [(f"{i} - {t}", s) for i, t, s in high_items])
 
@@ -703,7 +714,7 @@ def build_document() -> Document:
         ("M-01", "Abuse rate limits", "Database-backed IP/user claims cover public and authenticated abuse-sensitive endpoints."),
         ("M-02", "Redirect normalization", "Protocol-relative paths, backslashes, and control characters are rejected; safe same-origin paths are preserved."),
         ("M-03", "Cron authorization", "A strong `CRON_SECRET` is required; missing/invalid authorization fails closed and required work failures remain retryable."),
-        ("M-04", "Unbounded weekly digest", "Each invocation sends at most 50 recipients and resumes; Monday scheduling supplies controlled capacity."),
+        ("M-04", "Unbounded weekly digest", "A daily Hobby-compatible cron processes at most 50 recipients per invocation and resumes; weekly dedupe preserves recipient cadence."),
         ("M-05", "Reminder duplicate race", "Listing-expiry reminders use the claimed dispatcher and validated shared site origin."),
         ("M-06", "Unsubscribe by GET", "GET shows confirmation only; POST performs the idempotent mutation."),
         ("M-07", "Receipt email replay", "Successful fulfillment replays re-enter the deduplicated dispatcher so failed/stale mail claims can retry."),
@@ -737,7 +748,7 @@ def build_document() -> Document:
             ("Newsletter consent", "Creates a pending subscriber and token, sends a confirmation link, and activates only after confirmation. Exact normalized email matching replaces wildcard matching."),
             ("Unsubscribe semantics", "Link scanners and previews can safely GET the page; only the explicit POST confirmation mutates the subscription."),
             ("Campaigns", "Freeze content/audience through a recipient snapshot; use resumable batches and stable idempotency; test sends target allowlisted staff without contaminating subscriber records."),
-            ("Scheduled delivery", "Weekly digest is bounded to 50 recipients per invocation. Listing reminders use the same claimed transactional path. All server links use validated `serverSiteOrigin`."),
+            ("Scheduled delivery", "A daily bounded batch processes at most 50 digest recipients per invocation while weekly dedupe preserves cadence. Listing reminders use the same claimed transactional path. All server links use validated `serverSiteOrigin`."),
         ],
     )
     add_callout(
@@ -830,21 +841,33 @@ def build_document() -> Document:
             ["API TypeScript", "Pass", "Vercel handlers, provider clients, RPC types, tests"],
             ["ESLint", "Pass (0 errors / 23 warnings)", "Fast-refresh notices are nonblocking module-organization warnings"],
             ["Prettier", "Pass", "All matched repository files; 299 inherited out-of-policy files normalized during the final pass"],
-            ["API Vitest", "33 files / 108 tests", "Auth, rate limits, cron, payments, webhooks, email, consent, portfolio, sitemap helpers"],
+            ["API Vitest", "34 files / 114 tests", "Auth, rate limits, cron, payments, consolidated routers, webhooks, email, consent, portfolio, sitemap helpers"],
             ["Browser Vitest", "59 files / 285 tests", "Components, forms, auth flows, jobs, admin navigation, state handling"],
             ["Responsive Playwright", "22 pass / 2 expected skips", "Desktop, iPhone SE, iPhone 14; overflow, menu, CTA, route smoke"],
             ["Production build", "Pass", "Vite production output plus TypeScript build"],
+            ["Vercel package build", "Pass", "All 12 Hobby-compatible function bundles compiled for the Node.js 22 runtime"],
             ["Knip", "Pass", "No unused files or dependencies"],
             ["pnpm audit --prod", "Pass", "No known production dependency vulnerabilities"],
             ["Local built-browser smoke", "Pass", "Home, hiring, auth, legal, changelog, unsubscribe, 404, fail-closed admin, post-fix console"],
             ["Diff hygiene", "Pass", "No whitespace errors; repository-wide Prettier check passes"],
-            ["GitHub Quality / validate", "Pass (3m37s)", "All workflow steps succeeded for runtime code commit 925f6c8"],
-            ["Vercel Preview", "Blocked before deployment", "Git author Zsw0rd lacks project/team access; no preview URL was created"],
-            ["Supabase Preview", "Failed in legacy bootstrap", "`public.job_seeker_profiles` missing at statement 10 before the July chain"],
-            ["Overall hosted preview", "Not runnable", "Vercel never deployed and Supabase schema replay did not reach the implementation migrations"],
+            ["GitHub Quality / validate", "Pass (2m22s)", "All workflow steps succeeded for runtime code commit cde79d0"],
+            ["Team Vercel Preview", "Pass", "Branch environment deployed successfully after dependency, Node runtime, cron, and function-count fixes"],
+            ["Isolated Vercel Preview", "Ready and smoke-tested", "Root/auth/admin/job routes, security headers, compatibility rewrites, negative API responses, and fail-closed cron/data behavior verified"],
+            ["Supabase Preview", "Failed in legacy bootstrap", "Branch database remains unhealthy after the historical May-chain failure; the July chain was not reached"],
+            ["Overall hosted preview", "Application/API shell runnable", "Vercel passes; authenticated and data-backed workflows still require a repaired Supabase baseline and configured staging secrets"],
         ],
         [2160, 1800, 5400],
         font_size=8.9,
+    )
+    add_labeled_paragraph(
+        doc,
+        "Dependency and cron retry",
+        "The retry exposed four production advisories. DOMPurify was upgraded to 3.4.12, Axios to 1.18.1, and workspace overrides resolve patched Seroval, Sharp, and PostCSS versions. The digest cron was changed from a twice-hourly weekly expression to one daily invocation compatible with the Vercel Hobby limit while database dedupe keeps the weekly recipient cadence.",
+    )
+    add_labeled_paragraph(
+        doc,
+        "Vercel packaging and hosted smoke",
+        "Local Vercel compilation first exposed two implicit callback types and an engine range that allowed Vercel to select Node.js 24; both were corrected and Node.js 22 is now enforced. Hosted output then revealed the Hobby limit of 12 non-framework functions. Four compatibility entrypoints were consolidated behind `api/payments.ts` and `api/assets.ts`, preserving the old public URLs through rewrites. The team Preview and an isolated Preview both reached Ready. Authenticated smoke requests confirmed the SPA routes, production security headers, method guards, slug validation, private-asset authorization, hidden consolidated routers, and fail-closed behavior when staging secrets were intentionally absent.",
     )
     add_labeled_paragraph(
         doc,
@@ -879,7 +902,9 @@ def build_document() -> Document:
         ["13", "Formatting baseline", "Normalized 299 inherited source/config files and verified every matched repository file with Prettier."],
         ["14", "Documentation", "Created AGENTS.md, the exact agent.md compatibility entry point, severity audit, environment updates, deployment checklist, and this full-session Word report."],
         ["15", "Final payment audit", "Found/fixed three high-severity capture-persistence gaps for disabled recruiters, reused provider IDs, and closed/failed checkouts."],
-        ["16", "Branch and preview QA", "Pushed the dedicated branch, opened draft PR #2 without merging, confirmed GitHub Quality at code commit 925f6c8, recorded both hosted blockers, and completed final browser polish."],
+        ["16", "Branch and preview QA", "Pushed the dedicated branch, opened draft PR #2 without merging, confirmed the first GitHub Quality run, documented the initial external blockers, and completed final browser polish."],
+        ["17", "Deployment retry", "Corrected four dependency advisories, adopted a Hobby-compatible daily digest schedule, fixed Vercel TypeScript packaging, and constrained the runtime to Node.js 22."],
+        ["18", "Hosted deployment verification", "Consolidated 14 API functions to the Hobby limit of 12 without breaking URLs, added router tests, passed GitHub Quality and both Vercel Previews, smoke-tested the hosted application/API shell, and isolated Supabase as the remaining environment blocker."],
     ]
     add_table(
         doc,
@@ -891,13 +916,12 @@ def build_document() -> Document:
 
     add_section(doc, "12. Deployment handoff", new_page=False)
     doc.add_paragraph(
-        "The implementation is pushed on `codex/repository-hardening-admin-redesign` and draft PR #2 is open against `main`; no merge was performed. A runnable hosted preview was not produced because Vercel rejected the Git author before deployment and Supabase Preview failed in the historical May bootstrap. Use the following sequence to avoid running new server code against an old schema or accepting provider events before secrets and policies are ready."
+        "The implementation is pushed on `codex/repository-hardening-admin-redesign` and draft PR #2 is open against `main`; no merge was performed. GitHub Quality and Vercel Preview pass, and the hosted application/API shell was smoke-tested. Supabase Preview remains unhealthy after the historical May bootstrap failure, so full authenticated and data-backed staging validation must wait for a reviewed database baseline. Use the following sequence to avoid running new server code against an old schema or accepting provider events before secrets and policies are ready."
     )
     add_list(
         doc,
         [
             "Create a database and Storage metadata backup.",
-            "Grant Git author `Zsw0rd` access to the Vercel project/team, then redeploy the branch preview.",
             "For an existing Supabase project, pull/reconcile the remote schema and migration ledger—especially duplicated version `20260519120000`—then apply the July forward chain through `20260710300000_final_access_boundary.sql` in staging.",
             "For a new Supabase project, create and review a squashed/bootstrap baseline; do not replay the current historical May chain unchanged.",
             "Test RLS with anonymous, candidate, recruiter, disabled recruiter, admin browser, and service-role sessions.",
@@ -913,7 +937,7 @@ def build_document() -> Document:
     add_callout(
         doc,
         "Not performed",
-        "No merge to main, production migration, live payment/email/refund/dispute, or provider/webhook configuration change was made. The dedicated branch was committed and pushed and draft PR #2 opened. Vercel and Supabase checks did not produce a runnable environment for the documented external reasons.",
+        "No merge to main, production migration, live payment/email/refund/dispute, or provider/webhook configuration change was made. The dedicated branch was committed and pushed and draft PR #2 remains open. Team and isolated Vercel Preview environments were deployed and tested; the Supabase branch database was not repaired or advanced because doing so requires an explicitly reviewed bootstrap/ledger plan.",
         color=AMBER,
     )
 
@@ -926,6 +950,7 @@ def build_document() -> Document:
         "corepack pnpm exec vitest run --browser.headless",
         "corepack pnpm test:responsive",
         "corepack pnpm build",
+        "corepack pnpm exec vercel build",
         "corepack pnpm format:check",
         "corepack pnpm exec knip --include files --include dependencies",
         "corepack pnpm audit --prod",
@@ -933,6 +958,8 @@ def build_document() -> Document:
     ]:
         add_code_line(doc, command)
 
+    doc.add_page_break()
+    doc.add_paragraph("Reviewed artifacts", style="Heading 2")
     add_table(
         doc,
         ["Artifact", "Purpose"],
@@ -944,6 +971,7 @@ def build_document() -> Document:
             ["supabase/migrations/20260710*.sql", "Cumulative forward security/data-policy changes"],
             ["api/_lib/payment-fulfillment.ts", "Shared replay-safe provider verification and fulfillment"],
             ["api/_lib/dispatch-transactional-email.ts", "Claimed transactional delivery dispatcher"],
+            ["api/payments.ts; api/assets.ts", "Consolidated compatibility routers that keep the deployment within the 12-function Hobby limit"],
             ["api/admin/[...segments].ts", "Explicit privileged admin API router"],
             ["src/features/admin/admin-app-shell.tsx", "Modernized admin shell and navigation frame"],
             ["vercel.json", "Functions, rewrites, cron schedules, redirects, and security headers"],
@@ -958,7 +986,7 @@ def build_document() -> Document:
         [
             "The local environment did not have a running Supabase/PostgreSQL database, Supabase CLI, psql, or Docker database. The automatic remote Supabase Preview did execute and failed in the legacy May migration chain before the July hardening migrations.",
             "No production or staging credentials were used or exposed in the report.",
-            "Vercel rejected deployment before build because Git author `Zsw0rd` lacked project/team access, so no hosted preview URL existed for browser validation.",
+            "The team Vercel Preview is protected by Vercel authentication, so anonymous in-app browser navigation could not cross the protection page. Hosted behavior was verified with authenticated Vercel requests, and the local browser/responsive suites cover rendered UI behavior.",
             "Provider behavior was exercised through signed fixtures, mocks, REST parsing tests, and source review. Real Razorpay/Resend staging events remain required.",
             "The admin shell was reviewed through source, route/component tests, and authentication redirect behavior. Full populated-data visual QA requires a signed-in staging admin account.",
             "Dependency advisory results are time-sensitive and must continue to run in CI.",
@@ -968,7 +996,7 @@ def build_document() -> Document:
     add_callout(
         doc,
         "Final assessment",
-        "No known source vulnerability was intentionally left open. Source/local tests and GitHub Quality pass, but the branch is not hosted-preview validated and PR checks remain non-green until Vercel access and the Supabase baseline are resolved.",
+        "No known source vulnerability was intentionally left open. Source/local gates, GitHub Quality, Vercel packaging, both Preview deployments, and hosted application/API smoke pass. The PR is not fully green only because Supabase Preview cannot provision from the unsupported historical migration bootstrap; this prevents populated authenticated, RLS, payment-provider, and email-provider staging validation until the database baseline is repaired.",
         color=AMBER,
     )
 
