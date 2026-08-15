@@ -1,21 +1,33 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { readJsonObjectBody } from '../../_lib/request-json-body.js'
-import { rateLimitOrThrow } from '../../_lib/rate-limit.js'
-import { tryGetServiceSupabase } from '../../_lib/supabase.js'
-import { sendTransactionalEmail } from '../../_lib/resend.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { beonelyTransactionalHtml } from '../../_lib/email-layout.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
+import { sendTransactionalEmail } from '../../_lib/resend.js'
+import { serverSiteOrigin } from '../../_lib/site-origin.js'
+import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
 const bodySchema = z.object({
   company_name: z.string().min(2).max(120),
   contact_name: z.string().min(2).max(120),
   email: z.string().email().max(160),
   phone: z.string().max(40).optional().nullable(),
-  company_website: z.string().url().max(240).optional().nullable(),
+  company_website: z
+    .string()
+    .url()
+    .max(240)
+    .refine((value) => /^https?:\/\//i.test(value), {
+      message: 'company_website must use http or https',
+    })
+    .optional()
+    .nullable(),
   role_title: z.string().min(2).max(160),
   hiring_type: z.enum(['full_time', 'contract', 'multiple', 'not_sure']),
-  work_mode: z.enum(['remote', 'hybrid', 'onsite', 'flexible']).optional().nullable(),
+  work_mode: z
+    .enum(['remote', 'hybrid', 'onsite', 'flexible'])
+    .optional()
+    .nullable(),
   location: z.string().max(160).optional().nullable(),
   timeline: z.string().max(120).optional().nullable(),
   headcount: z.number().int().positive().max(100).optional().nullable(),
@@ -23,7 +35,12 @@ const bodySchema = z.object({
   notes: z.string().max(4000).optional().nullable(),
 })
 
-const INTERNAL_RECIPIENTS = ['nextgrid_os@agentmail.to', 'hello@nextgrid.digital']
+function internalRecipients(): string[] {
+  return (process.env.HIRING_REQUEST_NOTIFICATION_EMAILS ?? '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => z.string().email().safeParse(email).success)
+}
 
 function normalize(value?: string | null) {
   const trimmed = value?.trim()
@@ -58,9 +75,11 @@ function buildInternalNotificationHtml(input: {
     ...(input.location ? [`Location: ${input.location}`] : []),
     ...(input.timeline ? [`Timeline: ${input.timeline}`] : []),
     ...(input.headcount ? [`Headcount: ${input.headcount}`] : []),
-    ...(input.servicenow_scope ? [`ServiceNow scope: ${input.servicenow_scope}`] : []),
+    ...(input.servicenow_scope
+      ? [`ServiceNow scope: ${input.servicenow_scope}`]
+      : []),
     ...(input.notes ? [`Notes: ${input.notes}`] : []),
-    `Admin queue: https://beonely.in/admin/hiring-requests`,
+    `Admin queue: ${serverSiteOrigin()}/admin/hiring-requests`,
     `Request ID: ${input.id}`,
   ]
 
@@ -95,7 +114,7 @@ async function notifyInternalTeam(
   const subject = `Beonely hiring request — ${input.role_title} @ ${input.company_name}`
   const html = buildInternalNotificationHtml(input)
 
-  for (const recipient of INTERNAL_RECIPIENTS) {
+  for (const recipient of internalRecipients()) {
     try {
       const result = await sendTransactionalEmail({
         to: recipient,
@@ -143,7 +162,10 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       'unknown'
-    await rateLimitOrThrow(`hiring-request:${ip}`)
+    await rateLimitOrThrow(`hiring-request:${ip}`, {
+      limit: 3,
+      windowSeconds: 600,
+    })
 
     const bodyRead = readJsonObjectBody(req)
     if (!bodyRead.ok) {
@@ -196,6 +218,10 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
 
     return res.status(201).json({ ok: true, id: data.id })
   } catch (e) {
+    if (isRateLimitError(e)) {
+      res.setHeader('Retry-After', String(e.retryAfterSeconds))
+      return res.status(e.statusCode).json({ error: e.code })
+    }
     const msg = e instanceof Error ? e.message : 'server_error'
     return res.status(500).json({ error: msg })
   }

@@ -37,6 +37,12 @@ const supabaseMocks = vi.hoisted(() => {
 const navigate = vi.fn()
 const toastError = vi.hoisted(() => vi.fn())
 const toastSuccess = vi.hoisted(() => vi.fn())
+const dispatchLifecycleEmail = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
+const updateMarketingConsent = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
 
 vi.mock('@/lib/supabase/client', () => ({
   getSupabaseConfigured: () => true,
@@ -56,6 +62,14 @@ vi.mock('sonner', () => ({
     success: toastSuccess,
     error: toastError,
   },
+}))
+
+vi.mock('@/lib/email/admin-email-api', () => ({
+  dispatchLifecycleEmail,
+}))
+
+vi.mock('@/lib/email/marketing-opt-in', () => ({
+  updateMarketingConsent,
 }))
 
 const signUp = supabaseMocks.signUp
@@ -230,7 +244,10 @@ describe('SignUpForm intent navigation', () => {
       error: null,
     })
     const screenIntent = await render(
-      <SignUpForm intent='candidate' redirectTo='/jobs/servicenow-dev?source=hero' />
+      <SignUpForm
+        intent='candidate'
+        redirectTo='/jobs/servicenow-dev?source=hero'
+      />
     )
     const email = screenIntent.getByRole('textbox', { name: /^Email$/i })
     const linkedin = screenIntent.getByRole('textbox', {
@@ -352,6 +369,7 @@ describe('SignUpForm candidate intent', () => {
         options: expect.objectContaining({
           data: {
             linkedin_url: 'https://www.linkedin.com/in/candidate',
+            marketing_opt_in: false,
             phone: '+1 555 123 4567',
             user_type: 'candidate',
             registration_intent: 'candidate',
@@ -363,6 +381,18 @@ describe('SignUpForm candidate intent', () => {
       expect(supabaseMocks.from).toHaveBeenCalledWith('job_seeker_profiles')
     )
     await vi.waitFor(() => expect(supabaseMocks.insert).toHaveBeenCalled())
+    expect(supabaseMocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        marketing_opt_in: false,
+        marketing_opt_in_at: null,
+        notification_opt_in: false,
+      })
+    )
+    expect(updateMarketingConsent).toHaveBeenCalledWith({
+      marketing_opt_in: false,
+      audience: 'candidate',
+      accessToken: 't',
+    })
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
         to: '/sign-in',

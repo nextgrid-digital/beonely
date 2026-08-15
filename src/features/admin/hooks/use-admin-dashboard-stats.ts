@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { apiGet } from '@/lib/api-client'
+import { useAuth } from '@/context/auth-provider'
 
 export type AdminDashboardStats = {
   revenueAllTimeInr: number
@@ -8,83 +9,45 @@ export type AdminDashboardStats = {
   activeListings: number
   recruiterCount: number
   candidateCount: number
+  campaignsNeedingAttention: number
+  emailFailures7d: number
 }
 
-function sumPaidInr(
-  rows: { amount: number; currency: string | null; status: string }[]
-): number {
-  return rows
-    .filter((r) => r.status === 'paid')
-    .reduce((sum, r) => {
-      if (r.currency && r.currency !== 'INR') return sum
-      return sum + r.amount / 100
-    }, 0)
+function numberField(row: Record<string, unknown>, key: string): number {
+  const value = row[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 export function useAdminDashboardStats() {
+  const { session } = useAuth()
+  const accessToken = session?.access_token
   return useQuery({
-    queryKey: ['admin-dashboard-stats'],
+    queryKey: ['admin-dashboard-stats', accessToken],
+    enabled: Boolean(accessToken),
     queryFn: async (): Promise<AdminDashboardStats> => {
-      const sb = getSupabaseBrowserClient()
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const iso30 = thirtyDaysAgo.toISOString()
-      const now = new Date().toISOString()
-
-      const [
-        paymentsAllRes,
-        payments30Res,
-        pendingRes,
-        activeRes,
-        recruitersRes,
-        candidatesRes,
-      ] = await Promise.all([
-        sb
-          .from('payments')
-          .select('amount, currency, status')
-          .eq('status', 'paid'),
-        sb
-          .from('payments')
-          .select('amount, currency, status, created_at')
-          .eq('status', 'paid')
-          .gte('created_at', iso30),
-        sb
-          .from('jobs')
-          .select('id, payment_status, source_kind')
-          .eq('approval_status', 'pending'),
-        sb
-          .from('jobs')
-          .select('id', { count: 'exact', head: true })
-          .eq('approval_status', 'approved')
-          .eq('payment_status', 'paid')
-          .or(`listing_expires_at.is.null,listing_expires_at.gt.${now}`),
-        sb.from('recruiters').select('id', { count: 'exact', head: true }),
-        sb
-          .from('job_seeker_profiles')
-          .select('id', { count: 'exact', head: true }),
-      ])
-
-      const firstError =
-        paymentsAllRes.error ??
-        payments30Res.error ??
-        pendingRes.error ??
-        activeRes.error ??
-        recruitersRes.error ??
-        candidatesRes.error
-      if (firstError) throw firstError
-
-      const pendingModeration = (pendingRes.data ?? []).filter(
-        (j) =>
-          j.payment_status === 'paid' || j.source_kind === 'linkedin_import'
-      ).length
+      if (!accessToken) throw new Error('missing_access_token')
+      const response = await apiGet<{ stats: unknown }>(
+        '/api/admin/dashboard-stats',
+        accessToken
+      )
+      const data = response.stats
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('invalid_admin_dashboard_stats')
+      }
+      const row = data as Record<string, unknown>
 
       return {
-        revenueAllTimeInr: sumPaidInr(paymentsAllRes.data ?? []),
-        revenue30dInr: sumPaidInr(payments30Res.data ?? []),
-        pendingModeration,
-        activeListings: activeRes.count ?? 0,
-        recruiterCount: recruitersRes.count ?? 0,
-        candidateCount: candidatesRes.count ?? 0,
+        revenueAllTimeInr: numberField(row, 'revenue_all_time_inr'),
+        revenue30dInr: numberField(row, 'revenue_30d_inr'),
+        pendingModeration: numberField(row, 'pending_moderation'),
+        activeListings: numberField(row, 'active_listings'),
+        recruiterCount: numberField(row, 'recruiter_count'),
+        candidateCount: numberField(row, 'candidate_count'),
+        campaignsNeedingAttention: numberField(
+          row,
+          'campaigns_needing_attention'
+        ),
+        emailFailures7d: numberField(row, 'email_failures_7d'),
       }
     },
   })

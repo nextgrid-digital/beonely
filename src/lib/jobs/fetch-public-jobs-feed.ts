@@ -59,7 +59,9 @@ function applyLivePaidFilters<Q extends LivePaidQuery<Q>>(
     .eq('approval_status', 'approved')
     .eq('payment_status', 'paid')
     .in('source_kind', ['recruiter_posted', 'linkedin_import'])
-    .or(`listing_expires_at.is.null,listing_expires_at.gt.${new Date().toISOString()}`)
+    .or(
+      `listing_expires_at.is.null,listing_expires_at.gt.${new Date().toISOString()}`
+    )
   if (featuredOnly) {
     query = query.eq('featured', true)
   }
@@ -78,7 +80,7 @@ export async function fetchPublicJobsPage(
     return { rows: [], total: 0 }
   }
   const sb = getSupabaseBrowserClient()
-  let q = sb.from('jobs').select(JOB_LIST_COLUMNS, { count: 'exact' })
+  let q = sb.from('public_jobs').select(JOB_LIST_COLUMNS, { count: 'exact' })
   q = applyLivePaidFilters(q, featuredOnly)
   q = applyPublishedJobFilters(q, filters)
   const { data, count, error } = await q
@@ -98,7 +100,7 @@ export async function fetchPublicJobsCount(
   if (!getSupabaseConfigured()) return 0
   const sb = getSupabaseBrowserClient()
   let q = sb
-    .from('jobs')
+    .from('public_jobs')
     .select(JOB_LIST_COLUMNS, { count: 'exact', head: true })
   q = applyLivePaidFilters(q, featuredOnly)
   q = applyPublishedJobFilters(q, filters)

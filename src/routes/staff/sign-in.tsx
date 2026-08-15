@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import { fetchSessionPersona } from '@/lib/auth/route-guards'
 import {
   getSupabaseBrowserClient,
@@ -26,10 +27,7 @@ export const Route = createFileRoute('/staff/sign-in')({
     if (!isAllowlistedAdminEmail(email)) return
     const persona = await fetchSessionPersona()
     if (persona !== 'admin') return
-    const dest =
-      search.redirect && search.redirect.startsWith('/')
-        ? search.redirect
-        : '/admin'
+    const dest = sanitizeRedirectPath(search.redirect) ?? '/admin'
     throw redirect({ to: dest })
   },
   component: StaffSignIn,

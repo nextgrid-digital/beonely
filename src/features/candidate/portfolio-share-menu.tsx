@@ -22,7 +22,9 @@ import {
 } from '@/components/ui/tooltip'
 
 function canUseNativeShare(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  return (
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  )
 }
 
 export function PortfolioShareMenu(props: {
@@ -36,7 +38,10 @@ export function PortfolioShareMenu(props: {
 }) {
   const [open, setOpen] = useState(false)
   const url = publicPortfolioUrl(props.handle)
-  const title = portfolioShareTitle({ name: props.name, headline: props.headline })
+  const title = portfolioShareTitle({
+    name: props.name,
+    headline: props.headline,
+  })
   const message = portfolioShareMessage({
     name: props.name,
     headline: props.headline,

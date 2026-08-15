@@ -38,8 +38,10 @@ const resumeContentItemSchema = z.object({
   subTitle: z.string().default(''),
   date: z.string(),
   description: z.string(),
-  /** Public URL of an uploaded file (certificate image/PDF) for certificate sections. */
+  /** Short-lived signed URL used only for the current rendered session. */
   fileUrl: z.string().default(''),
+  /** Durable private Storage path; never rendered directly as a link. */
+  filePath: z.string().default(''),
 })
 
 const resumeSectionSchema = z.object({
@@ -103,6 +105,7 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
             description:
               '• Skill or domain one\n• Skill or domain two\n• Tools, frameworks, or certifications',
             fileUrl: '',
+            filePath: '',
           },
         ],
       },
@@ -124,6 +127,7 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
             date: '2024 — Present',
             description: 'What you shipped, led, or improved.',
             fileUrl: '',
+            filePath: '',
           },
           {
             title: 'Earlier role',
@@ -136,6 +140,7 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
             date: '2016 — 2020',
             description: 'Scope and outcomes.',
             fileUrl: '',
+            filePath: '',
           },
         ],
       },
@@ -153,6 +158,7 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
             date: '2012 — 2016',
             description: '',
             fileUrl: '',
+            filePath: '',
           },
         ],
       },
@@ -170,6 +176,7 @@ export function defaultResumeStructured(): ResumeStructuredV1 {
             date: 'Year',
             description: 'What you learned or built (optional).',
             fileUrl: '',
+            filePath: '',
           },
         ],
       },

@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { OtpForm } from './components/otp-form'
@@ -15,9 +14,9 @@ export function Otp() {
     <AuthLayout>
       <Card className='max-w-md gap-4'>
         <CardHeader>
-          <CardTitle className='text-base tracking-tight'>
+          <h1 className='text-base leading-none font-semibold tracking-tight'>
             Two-factor Authentication
-          </CardTitle>
+          </h1>
           <CardDescription>
             Please enter the authentication code. <br /> We have sent the
             authentication code to your email.

@@ -128,6 +128,7 @@ export function ScrollEdgeCue({
       style={
         {
           position: 'absolute',
+          pointerEvents: 'none',
           opacity: visible ? 1 : 0,
           transition: `opacity ${visible ? 160 : 120}ms ease`,
           ...(mode === 'sticky'
@@ -175,7 +176,11 @@ export function ScrollEdgeCue({
   )
 
   if (mode === 'absolute') {
-    return <div aria-hidden>{band}</div>
+    return (
+      <div aria-hidden style={{ pointerEvents: 'none' }}>
+        {band}
+      </div>
+    )
   }
 
   return (

@@ -1,5 +1,6 @@
+import { serverSiteOrigin } from './site-origin.js'
+
 const BRAND = 'Beonely'
-const DEFAULT_SITE_ORIGIN = 'https://beonely.vercel.app'
 
 function escapeHtml(s: string): string {
   return s
@@ -9,19 +10,13 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function siteOrigin(): string {
-  const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
-  if (raw) return raw.replace(/\/$/, '')
-  return DEFAULT_SITE_ORIGIN
-}
-
 /** Marketing email shell with unsubscribe footer (required). */
 export function beonelyMarketingHtml(opts: {
   previewText?: string | null
   bodyHtml: string
   unsubscribeUrl: string
 }): string {
-  const origin = siteOrigin()
+  const origin = serverSiteOrigin()
   const logoUrl = `${origin}/images/beonely-logo.svg`
   const preview = opts.previewText?.trim()
     ? `<span style="display:none;max-height:0;overflow:hidden;">${escapeHtml(opts.previewText!.trim())}</span>`

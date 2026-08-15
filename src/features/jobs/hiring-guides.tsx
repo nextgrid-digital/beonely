@@ -1,8 +1,8 @@
-import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
-import { Button } from '@/components/ui/button'
 import { publicSiteOrigin } from '@/lib/site/site-origin'
+import { Button } from '@/components/ui/button'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
@@ -57,7 +57,8 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
     ],
     faqs: [
       {
-        question: 'When should I hire contract ServiceNow talent instead of making a permanent hire?',
+        question:
+          'When should I hire contract ServiceNow talent instead of making a permanent hire?',
         answer:
           'Choose contract talent when the work is tied to a defined implementation phase, urgent backlog, platform remediation, or temporary spike in delivery demand. If the long-term need is still unclear, contract hiring can reduce time-to-start and decision friction.',
       },
@@ -67,7 +68,8 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
           'Be clear about the project phase, expected duration, scope of work, desired start date, role depth, and whether the contractor is expected to ship independently or alongside an internal team.',
       },
       {
-        question: 'Can contract ServiceNow talent work for architecture or consulting roles too?',
+        question:
+          'Can contract ServiceNow talent work for architecture or consulting roles too?',
         answer:
           'Yes. Contract hiring is not limited to developers. It can work for architects, consultants, admins, or mixed platform specialists when the engagement has a clear delivery window or a specific recovery objective.',
       },
@@ -104,7 +106,8 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
           'Often yes, especially for platform delivery, consulting, architecture, and admin work where documentation, stakeholder coordination, and implementation discipline are strong. The main requirement is clarity on collaboration and overlap expectations.',
       },
       {
-        question: 'What should I screen for when hiring remote ServiceNow talent?',
+        question:
+          'What should I screen for when hiring remote ServiceNow talent?',
         answer:
           'Screen for both ServiceNow depth and remote execution habits: documentation quality, async communication, handoff reliability, stakeholder management, and the ability to work without constant in-person escalation.',
       },
@@ -141,7 +144,8 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
     ],
     faqs: [
       {
-        question: 'When should I hire a ServiceNow developer instead of a consultant?',
+        question:
+          'When should I hire a ServiceNow developer instead of a consultant?',
         answer:
           'Choose a developer when the main need is execution inside the platform: building workflows, forms, catalog items, scripts, integrations, and backlog delivery. Choose a consultant when the need is broader process design, stakeholder alignment, and operating-model guidance.',
       },
@@ -267,7 +271,8 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
     ],
     faqs: [
       {
-        question: 'What is the difference between a ServiceNow admin and a developer?',
+        question:
+          'What is the difference between a ServiceNow admin and a developer?',
         answer:
           'Admins usually focus more on platform operations, user support, configuration upkeep, and day-to-day reliability. Developers are usually closer to building custom logic, deeper platform changes, and implementation delivery.',
       },
@@ -285,7 +290,9 @@ export const hiringRoleGuides: HiringRoleGuide[] = [
   },
 ]
 
-const roleGuideMap = new Map(hiringRoleGuides.map((guide) => [guide.path, guide]))
+const roleGuideMap = new Map(
+  hiringRoleGuides.map((guide) => [guide.path, guide])
+)
 
 function guideByPath(path: string) {
   const guide = roleGuideMap.get(path)
@@ -354,7 +361,9 @@ function HiringGuideShell({
         >
           <div className='w-full pt-2'>
             <PublicSiteStickySubheader
-              breadcrumb={<HiringGuideBreadcrumb currentLabel={breadcrumbLabel} />}
+              breadcrumb={
+                <HiringGuideBreadcrumb currentLabel={breadcrumbLabel} />
+              }
             />
             {children}
           </div>
@@ -400,7 +409,9 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
 
   return (
     <>
-      <script type='application/ld+json'>{JSON.stringify(serviceJsonLd)}</script>
+      <script type='application/ld+json'>
+        {JSON.stringify(serviceJsonLd)}
+      </script>
       <script type='application/ld+json'>{JSON.stringify(faqJsonLd)}</script>
       <HiringGuideShell
         title={guide.metaTitle}
@@ -430,7 +441,12 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
                   <ArrowRight className='size-4' aria-hidden />
                 </Link>
               </Button>
-              <Button asChild size='lg' variant='outline' className='min-w-[13rem]'>
+              <Button
+                asChild
+                size='lg'
+                variant='outline'
+                className='min-w-[13rem]'
+              >
                 <Link to='/hire/sign-up' search={{ redirect: guide.path }}>
                   Create recruiter account
                   <ArrowRight className='size-4' aria-hidden />
@@ -457,21 +473,28 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
               </ul>
             </article>
             <article className='rounded-2xl border bg-muted/40 p-6'>
-              <h2 className='text-xl font-semibold tracking-tight'>Next step</h2>
+              <h2 className='text-xl font-semibold tracking-tight'>
+                Next step
+              </h2>
               <p className='mt-3 text-sm leading-6 text-muted-foreground'>
-                If the role is urgent, difficult to scope, or too niche for a generic board,
-                use the shortlist request so buyer intent goes into Beonely&apos;s hiring
-                workflow instead of disappearing into generic traffic.
+                If the role is urgent, difficult to scope, or too niche for a
+                generic board, use the shortlist request so buyer intent goes
+                into Beonely&apos;s hiring workflow instead of disappearing into
+                generic traffic.
               </p>
               <Button asChild className='mt-6 w-full sm:w-auto'>
-                <Link to='/hire' hash='hiring-request-form'>Open hiring brief</Link>
+                <Link to='/hire' hash='hiring-request-form'>
+                  Open hiring brief
+                </Link>
               </Button>
             </article>
           </section>
 
           <section className='grid gap-4 md:grid-cols-2'>
             <article className='rounded-2xl border bg-card p-6 shadow-sm'>
-              <h2 className='text-xl font-semibold tracking-tight'>What to screen for</h2>
+              <h2 className='text-xl font-semibold tracking-tight'>
+                What to screen for
+              </h2>
               <ul className='mt-4 space-y-3 text-sm leading-6 text-muted-foreground'>
                 {guide.screeningSignals.map((item) => (
                   <li key={item} className='flex gap-2'>
@@ -485,7 +508,9 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
               </ul>
             </article>
             <article className='rounded-2xl border bg-card p-6 shadow-sm'>
-              <h2 className='text-xl font-semibold tracking-tight'>How to engage</h2>
+              <h2 className='text-xl font-semibold tracking-tight'>
+                How to engage
+              </h2>
               <ul className='mt-4 space-y-3 text-sm leading-6 text-muted-foreground'>
                 {guide.engagementOptions.map((item) => (
                   <li key={item} className='flex gap-2'>
@@ -512,7 +537,9 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
             <div className='mt-6 space-y-4'>
               {guide.faqs.map((faq) => (
                 <article key={faq.question} className='rounded-xl border p-5'>
-                  <h3 className='text-base font-semibold tracking-tight'>{faq.question}</h3>
+                  <h3 className='text-base font-semibold tracking-tight'>
+                    {faq.question}
+                  </h3>
                   <p className='mt-2 text-sm leading-6 text-muted-foreground'>
                     {faq.answer}
                   </p>
@@ -524,7 +551,9 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
           <section className='rounded-2xl border bg-muted/40 p-6 sm:p-8'>
             <div className='flex flex-col gap-6 md:flex-row md:items-end md:justify-between'>
               <div className='max-w-2xl'>
-                <p className='text-sm font-medium text-muted-foreground'>Related hiring pages</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Related hiring pages
+                </p>
                 <h2 className='mt-2 text-2xl font-semibold tracking-tight'>
                   Explore other ServiceNow hiring paths
                 </h2>
@@ -540,7 +569,9 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
                   to={entry.path}
                   className='rounded-2xl border bg-background p-5 text-sm transition hover:border-foreground/30 hover:shadow-sm'
                 >
-                  <div className='font-semibold text-foreground'>{entry.title}</div>
+                  <div className='font-semibold text-foreground'>
+                    {entry.title}
+                  </div>
                   <p className='mt-2 line-clamp-3 leading-6 text-muted-foreground'>
                     {entry.description}
                   </p>
@@ -556,7 +587,8 @@ export function HiringRoleGuidePage({ path }: { path: string }) {
 
 const hiringFaqs: HiringGuideFaq[] = [
   {
-    question: 'How do I hire ServiceNow talent without using a generic job board?',
+    question:
+      'How do I hire ServiceNow talent without using a generic job board?',
     answer:
       'Start with a role-specific brief, stay explicit about the ServiceNow scope, and use channels or pages built around ServiceNow intent rather than broad hiring traffic. On Beonely, that means either posting a focused paid role or sending a shortlist request through the hiring brief.',
   },
@@ -616,13 +648,15 @@ export function HiringFaqPage() {
       >
         <div className='mx-auto max-w-4xl space-y-10 pt-4 pb-16 sm:pt-6'>
           <section className='space-y-5'>
-            <p className='text-sm font-medium text-muted-foreground'>Answer engine page</p>
+            <p className='text-sm font-medium text-muted-foreground'>
+              Answer engine page
+            </p>
             <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl'>
               ServiceNow hiring FAQ
             </h1>
             <p className='max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg'>
-              Straight answers to common questions about hiring ServiceNow developers,
-              architects, consultants, and admins.
+              Straight answers to common questions about hiring ServiceNow
+              developers, architects, consultants, and admins.
             </p>
             <div className='flex flex-col gap-3 sm:flex-row'>
               <Button asChild size='lg' className='min-w-[13rem]'>
@@ -631,7 +665,12 @@ export function HiringFaqPage() {
                   <ArrowRight className='size-4' aria-hidden />
                 </Link>
               </Button>
-              <Button asChild size='lg' variant='outline' className='min-w-[13rem]'>
+              <Button
+                asChild
+                size='lg'
+                variant='outline'
+                className='min-w-[13rem]'
+              >
                 <Link to='/hire/sign-up' search={{ redirect: '/hire/faq' }}>
                   Create recruiter account
                   <ArrowRight className='size-4' aria-hidden />
@@ -644,7 +683,9 @@ export function HiringFaqPage() {
             <div className='space-y-4'>
               {hiringFaqs.map((faq) => (
                 <article key={faq.question} className='rounded-xl border p-5'>
-                  <h2 className='text-lg font-semibold tracking-tight'>{faq.question}</h2>
+                  <h2 className='text-lg font-semibold tracking-tight'>
+                    {faq.question}
+                  </h2>
                   <p className='mt-2 text-sm leading-6 text-muted-foreground'>
                     {faq.answer}
                   </p>
@@ -655,7 +696,9 @@ export function HiringFaqPage() {
 
           <section className='rounded-2xl border bg-muted/40 p-6 sm:p-8'>
             <div className='max-w-2xl'>
-              <p className='text-sm font-medium text-muted-foreground'>Role-specific pages</p>
+              <p className='text-sm font-medium text-muted-foreground'>
+                Role-specific pages
+              </p>
               <h2 className='mt-2 text-2xl font-semibold tracking-tight'>
                 Continue into employer-intent landing pages
               </h2>
@@ -667,7 +710,9 @@ export function HiringFaqPage() {
                   to={entry.path}
                   className='rounded-2xl border bg-background p-5 text-sm transition hover:border-foreground/30 hover:shadow-sm'
                 >
-                  <div className='font-semibold text-foreground'>{entry.title}</div>
+                  <div className='font-semibold text-foreground'>
+                    {entry.title}
+                  </div>
                   <p className='mt-2 line-clamp-3 leading-6 text-muted-foreground'>
                     {entry.description}
                   </p>

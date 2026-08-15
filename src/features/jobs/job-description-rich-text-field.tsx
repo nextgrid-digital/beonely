@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useId } from 'react'
 import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
 import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
@@ -35,7 +35,7 @@ const PROSEMIRROR_CONTAINMENT =
   '[&_.ProseMirror]:max-w-full [&_.ProseMirror]:overflow-x-hidden [&_.ProseMirror]:break-words'
 
 const JOB_EDITOR_CONTENT_CLASS = cn(
-  'max-h-[min(32rem,50vh)] min-h-[12rem] overflow-y-auto overflow-x-hidden',
+  'max-h-[min(32rem,50vh)] min-h-[12rem] overflow-x-hidden overflow-y-auto',
   PROSEMIRROR_CONTAINMENT,
   JOB_EDITOR_BODY,
   '[&_p]:my-0 [&_p]:block [&_p+_p]:mt-3',
@@ -47,7 +47,7 @@ const JOB_EDITOR_CONTENT_CLASS = cn(
 )
 
 const JOB_READ_CLASS = cn(
-  'min-w-0 w-full max-w-full overflow-x-hidden break-words text-sm leading-relaxed text-foreground',
+  'w-full max-w-full min-w-0 overflow-x-hidden text-sm leading-relaxed break-words text-foreground',
   '[&_*]:max-w-full [&_*]:break-words',
   '[&_p]:my-0 [&_p+_p]:mt-3',
   '[&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight',
@@ -83,6 +83,8 @@ export function JobDescriptionRichTextRead({
 }
 
 export type JobDescriptionRichTextFieldProps = {
+  id?: string
+  ariaLabel?: string
   value: string
   onChange: (html: string) => void
   editable: boolean
@@ -96,6 +98,8 @@ export type JobDescriptionRichTextFieldProps = {
  * Rich text for job descriptions (Tiptap when editing; sanitized HTML or plain when reading).
  */
 export function JobDescriptionRichTextField({
+  id,
+  ariaLabel = 'Job description',
   value,
   onChange,
   editable,
@@ -108,6 +112,8 @@ export function JobDescriptionRichTextField({
   }
   return (
     <JobDescriptionRichTextEdit
+      id={id}
+      ariaLabel={ariaLabel}
       value={value}
       onChange={onChange}
       variant={variant}
@@ -118,12 +124,14 @@ export function JobDescriptionRichTextField({
 }
 
 const JOB_INLINE_EDITOR_CONTENT_CLASS = cn(
-  'max-h-none min-h-[12rem] overflow-y-auto overflow-x-hidden',
+  'max-h-none min-h-[12rem] overflow-x-hidden overflow-y-auto',
   PROSEMIRROR_CONTAINMENT,
   JOB_READ_CLASS
 )
 
 function JobDescriptionRichTextEdit({
+  id,
+  ariaLabel = 'Job description',
   value,
   onChange,
   variant = 'default',
@@ -131,6 +139,8 @@ function JobDescriptionRichTextEdit({
   editorClassName,
 }: Omit<JobDescriptionRichTextFieldProps, 'editable'>) {
   const isInline = variant === 'inline'
+  const generatedId = useId()
+  const editorId = id ?? generatedId
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -154,6 +164,10 @@ function JobDescriptionRichTextEdit({
     content: contentFromJobDescriptionRichValue(value),
     editorProps: {
       attributes: {
+        id: editorId,
+        role: 'textbox',
+        'aria-label': ariaLabel,
+        'aria-multiline': 'true',
         class: cn(
           'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
           isInline ? JOB_INLINE_EDITOR_CONTENT_CLASS : JOB_EDITOR_CONTENT_CLASS,
@@ -241,9 +255,14 @@ function JobDescriptionRichTextEdit({
   if (!editor) {
     return (
       <div
+        role='toolbar'
+        aria-label={`${ariaLabel} formatting`}
+        aria-controls={editorId}
         className={cn(
           'min-h-[12rem]',
-          isInline ? 'bg-transparent' : 'rounded-md border border-border bg-muted/20',
+          isInline
+            ? 'bg-transparent'
+            : 'rounded-md border border-border bg-muted/20',
           className
         )}
       />
@@ -253,7 +272,7 @@ function JobDescriptionRichTextEdit({
   return (
     <div
       className={cn(
-        'min-w-0 w-full overflow-hidden motion-reduce:transition-none',
+        'w-full min-w-0 overflow-hidden motion-reduce:transition-none',
         isInline
           ? 'border-0 bg-transparent shadow-none'
           : 'rounded-md border border-border bg-background',
@@ -271,96 +290,109 @@ function JobDescriptionRichTextEdit({
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Bold'
+          aria-pressed={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
-          <Bold className='size-4' />
+          <Bold className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Italic'
+          aria-pressed={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
-          <Italic className='size-4' />
+          <Italic className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('underline') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Underline'
+          aria-pressed={editor.isActive('underline')}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
-          <UnderlineIcon className='size-4' />
+          <UnderlineIcon className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={
+            editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'
+          }
           className='size-8'
           aria-label='Heading 2'
+          aria-pressed={editor.isActive('heading', { level: 2 })}
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
         >
-          <Heading2 className='size-4' />
+          <Heading2 className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={
+            editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'
+          }
           className='size-8'
           aria-label='Heading 3'
+          aria-pressed={editor.isActive('heading', { level: 3 })}
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 3 }).run()
           }
         >
-          <Heading3 className='size-4' />
+          <Heading3 className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('blockquote') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Quote'
+          aria-pressed={editor.isActive('blockquote')}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
-          <Quote className='size-4' />
+          <Quote className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Bullet list'
+          aria-pressed={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
-          <List className='size-4' />
+          <List className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
           className='size-8'
           aria-label='Numbered list'
+          aria-pressed={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
-          <ListOrdered className='size-4' />
+          <ListOrdered className='size-4' aria-hidden />
         </Button>
         <Button
           type='button'
           size='icon'
-          variant='ghost'
+          variant={editor.isActive('link') ? 'secondary' : 'ghost'}
           className='size-8'
-          aria-label='Link'
+          aria-label='Add or edit link'
+          aria-pressed={editor.isActive('link')}
           onClick={setLink}
         >
-          <LinkIcon className='size-4' />
+          <LinkIcon className='size-4' aria-hidden />
         </Button>
       </div>
       <div

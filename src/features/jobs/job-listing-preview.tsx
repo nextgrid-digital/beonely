@@ -27,6 +27,8 @@ export type JobListingPreviewData = {
 export function JobListingPreview(props: {
   data: JobListingPreviewData
   className?: string
+  /** Allow an editor-created blob URL that never reaches the public page. */
+  allowLocalLogoPreview?: boolean
   /** When true, shows "Candidate preview" label above the listing. */
   showBanner?: boolean
   /** `public` matches the live job detail page typography. */
@@ -71,10 +73,11 @@ export function JobListingPreview(props: {
           <CompanyLogoAvatar
             companyName={company}
             logoUrl={data.companyLogo?.trim() || null}
+            allowLocalPreview={props.allowLocalLogoPreview}
             className='size-14 shrink-0'
           />
           <div className='min-w-0 flex-1'>
-            <h1 className='break-words text-2xl font-semibold tracking-tight sm:text-3xl'>
+            <h1 className='text-2xl font-semibold tracking-tight break-words sm:text-3xl'>
               {title}
             </h1>
             <p className='mt-2 text-base text-muted-foreground sm:text-lg'>
@@ -105,17 +108,16 @@ export function JobListingPreview(props: {
         <CompanyLogoAvatar
           companyName={company}
           logoUrl={data.companyLogo?.trim() || null}
+          allowLocalPreview={props.allowLocalLogoPreview}
           className='size-14'
         />
       }
       title={
-        <h2 className='break-words text-xl font-semibold tracking-tight'>
+        <h2 className='text-xl font-semibold tracking-tight break-words'>
           {title}
         </h2>
       }
-      company={
-        <p className='mt-1 text-sm text-muted-foreground'>{company}</p>
-      }
+      company={<p className='mt-1 text-sm text-muted-foreground'>{company}</p>}
       meta={meta}
       body={<JobListingAboutSection>{descriptionBody}</JobListingAboutSection>}
     />

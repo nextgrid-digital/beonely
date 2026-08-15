@@ -3,17 +3,46 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "framework": null,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' https://checkout.razorpay.com https://challenges.cloudflare.com https://va.vercel-scripts.com; script-src-elem 'self' 'unsafe-inline' https://checkout.razorpay.com https://challenges.cloudflare.com https://va.vercel-scripts.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vitals.vercel-insights.com https://checkout.razorpay.com https://api.razorpay.com https://challenges.cloudflare.com; frame-src https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com; worker-src 'self' blob:; form-action 'self' https://api.razorpay.com; upgrade-insecure-requests"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        }
+      ]
+    }
+  ],
   "functions": {
-    "api/create-order.ts": {
-      "maxDuration": 60
-    },
-    "api/verify-payment.ts": {
+    "api/payments.ts": {
       "maxDuration": 60
     },
     "api/sitemap.ts": {
       "maxDuration": 60
     },
     "api/job-preview.ts": {
+      "maxDuration": 30
+    },
+    "api/assets.ts": {
       "maxDuration": 30
     },
     "api/og-job.tsx": {
@@ -40,7 +69,7 @@
   "crons": [
     {
       "path": "/api/cron/weekly-digest",
-      "schedule": "0 9 * * 1"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/listing-expiry-reminders",
@@ -49,12 +78,32 @@
   ],
   "rewrites": [
     {
+      "source": "/api/create-order",
+      "destination": "/api/payments?route=create-order"
+    },
+    {
+      "source": "/api/verify-payment",
+      "destination": "/api/payments?route=verify-payment"
+    },
+    {
+      "source": "/api/public-portfolio",
+      "destination": "/api/assets?route=public-portfolio"
+    },
+    {
+      "source": "/api/application-asset",
+      "destination": "/api/assets?route=application-asset"
+    },
+    {
       "source": "/api/subscribe",
       "destination": "/api/marketing?route=subscribe"
     },
     {
       "source": "/api/unsubscribe",
       "destination": "/api/marketing?route=unsubscribe"
+    },
+    {
+      "source": "/api/confirm-subscription",
+      "destination": "/api/marketing?route=confirm-subscription"
     },
     {
       "source": "/api/marketing-consent",

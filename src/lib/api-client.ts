@@ -29,6 +29,58 @@ function proxyHintMessage(status: number): string {
 
 const API_POST_TIMEOUT_MS = 30_000
 
+export async function apiGet<T>(
+  path: string,
+  accessToken: string | undefined
+): Promise<T> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), API_POST_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${apiBaseUrl()}${path}`, {
+      headers: accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : undefined,
+      signal: controller.signal,
+    })
+    const rawText = await res.text()
+    let parsed: unknown
+    try {
+      parsed = parseApiResponseBody(rawText)
+    } catch {
+      throw new Error(
+        `Invalid JSON from server (${res.status}).${vercelFunctionCrashHint(path, rawText)} Body: ${rawText.slice(0, 160)}`
+      )
+    }
+    if (!res.ok) {
+      const message =
+        parsed &&
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        'error' in parsed &&
+        typeof (parsed as { error: unknown }).error === 'string'
+          ? (parsed as { error: string }).error
+          : `Request failed (${res.status})`
+      throw new Error(message)
+    }
+    if (parsed === undefined) throw new Error('Empty response from server')
+    return parsed as T
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new Error(
+        `Request timed out after ${API_POST_TIMEOUT_MS / 1_000}s.`
+      )
+      Object.defineProperty(timeoutError, 'cause', {
+        value: error,
+        configurable: true,
+      })
+      throw timeoutError
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export async function apiPost<T>(
   path: string,
   body: unknown,

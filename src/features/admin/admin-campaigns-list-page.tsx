@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, Plus } from 'lucide-react'
 import {
   fetchAdminCampaigns,
@@ -14,6 +14,7 @@ import type { InboxRowData } from '@/components/inbox/inbox-list-row'
 import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
 import { PeekPanel } from '@/components/peek/peek-panel'
 import { AdminCampaignDetailPage } from '@/features/admin/admin-campaign-detail-page'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 
 type CampaignsTab = 'all' | 'draft' | 'sending' | 'sent' | 'failed'
 
@@ -100,33 +101,57 @@ export function AdminCampaignsListPage() {
         </div>
       ) : null}
 
-      <InboxList<CampaignsTab>
-        className='h-auto'
-        title='Campaigns'
-        titleActions={
-          <Button type='button' asChild size='sm'>
-            <Link to='/admin/email/campaigns/new'>
-              <Plus className='size-4' />
-              New campaign
-            </Link>
-          </Button>
-        }
-        search={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder='Search campaigns...'
-        pills={tabPills}
-        activeFilter={tab}
-        onFilterChange={setTab}
-        layoutId='admin-campaigns'
-        rows={rows}
-        selectedId={peekCampaign?.id ?? null}
-        onSelect={(id) => {
-          const next = campaigns.find((c) => c.id === id)
-          if (next) setPeekCampaign({ id: next.id, subject: next.subject })
-        }}
-        loading={campaignsQuery.isLoading}
-        emptyMessage='No campaigns in this view.'
-      />
+      {campaignsQuery.isError ? (
+        <div className='px-4'>
+          <AdminQueryError
+            title='Could not load campaigns'
+            error={campaignsQuery.error}
+            retrying={campaignsQuery.isFetching}
+            onRetry={() => void campaignsQuery.refetch()}
+          />
+        </div>
+      ) : null}
+
+      {statsQuery.isError ? (
+        <div className='px-4'>
+          <AdminQueryError
+            title='Audience totals are unavailable'
+            error={statsQuery.error}
+            retrying={statsQuery.isFetching}
+            onRetry={() => void statsQuery.refetch()}
+          />
+        </div>
+      ) : null}
+
+      {!campaignsQuery.isError ? (
+        <InboxList<CampaignsTab>
+          className='h-auto'
+          title='Campaigns'
+          titleActions={
+            <Button type='button' asChild size='sm'>
+              <Link to='/admin/email/campaigns/new'>
+                <Plus className='size-4' />
+                New campaign
+              </Link>
+            </Button>
+          }
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder='Search campaigns...'
+          pills={tabPills}
+          activeFilter={tab}
+          onFilterChange={setTab}
+          layoutId='admin-campaigns'
+          rows={rows}
+          selectedId={peekCampaign?.id ?? null}
+          onSelect={(id) => {
+            const next = campaigns.find((c) => c.id === id)
+            if (next) setPeekCampaign({ id: next.id, subject: next.subject })
+          }}
+          loading={campaignsQuery.isLoading}
+          emptyMessage='No campaigns in this view.'
+        />
+      ) : null}
 
       <PeekPanel
         open={Boolean(peekCampaign)}

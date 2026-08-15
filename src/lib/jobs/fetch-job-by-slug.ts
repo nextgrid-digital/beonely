@@ -10,7 +10,7 @@ export async function fetchJobBySlug(slug: string): Promise<JobRow | null> {
   if (!getSupabaseConfigured()) return null
   const sb = getSupabaseBrowserClient()
   const { data, error } = await sb
-    .from('jobs')
+    .from('public_jobs')
     .select('*')
     .eq('job_slug', slug)
     .maybeSingle()

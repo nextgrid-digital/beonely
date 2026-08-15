@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
+import { trustedCompanyLogoUrl } from '@/features/jobs/company-logo-avatar'
 import { JobListingPreview } from '@/features/jobs/job-listing-preview'
 import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
 import { JobListingInlineEditor } from '@/features/recruiter/job-listing-inline-editor'
@@ -110,8 +111,7 @@ export function defaultFormValues(job: JobRow | null): JobEditorValues {
 }
 
 function companyLogoForSave(value: string | undefined): string | null {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : null
+  return trustedCompanyLogoUrl(value)
 }
 
 const CHROME_BTN = 'h-7 rounded-md px-2.5 text-xs font-medium'
@@ -450,6 +450,7 @@ export function RecruiterJobEditorPage(props: {
       ) : (
         <JobListingPreview
           data={previewData}
+          allowLocalLogoPreview
           variant='public'
           showBanner={false}
         />

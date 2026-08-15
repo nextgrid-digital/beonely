@@ -35,7 +35,7 @@ const RESERVED_HANDLES = new Set([
 ])
 
 /** Build a candidate handle from a display name. May be shorter than the min. */
-export function slugifyHandle (name: string): string {
+export function slugifyHandle(name: string): string {
   return name
     .toLowerCase()
     .trim()
@@ -45,16 +45,16 @@ export function slugifyHandle (name: string): string {
     .replace(/-+$/g, '')
 }
 
-export function isReservedHandle (handle: string): boolean {
+export function isReservedHandle(handle: string): boolean {
   return RESERVED_HANDLES.has(handle.trim().toLowerCase())
 }
 
-export function isValidHandle (handle: string): boolean {
+export function isValidHandle(handle: string): boolean {
   return PORTFOLIO_HANDLE_RE.test(handle)
 }
 
 /** Returns a human-readable error, or null when the handle is well-formed and allowed. */
-export function validateHandle (handle: string): string | null {
+export function validateHandle(handle: string): string | null {
   const value = handle.trim()
   if (value.length < PORTFOLIO_HANDLE_MIN) {
     return `Use at least ${PORTFOLIO_HANDLE_MIN} characters.`

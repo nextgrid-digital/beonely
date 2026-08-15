@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 
 export function AdminEmailAutomationsPage() {
   const { session } = useAuth()
@@ -36,8 +37,6 @@ export function AdminEmailAutomationsPage() {
     onError: () => toast.error('Update failed'),
   })
 
-  if (query.isLoading) return <Skeleton className='h-64 w-full' />
-
   return (
     <div className='space-y-6'>
       <div>
@@ -46,42 +45,64 @@ export function AdminEmailAutomationsPage() {
           Transactional emails sent automatically on lifecycle events.
         </p>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Trigger</TableHead>
-            <TableHead>Last 7d sent</TableHead>
-            <TableHead>Failed</TableHead>
-            <TableHead className='text-end'>Enabled</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {(query.data ?? []).map((rule) => (
-            <TableRow key={rule.trigger_key}>
-              <TableCell>
-                <p className='font-medium'>{rule.label}</p>
-                <p className='text-xs text-muted-foreground'>
-                  {rule.trigger_key}
-                </p>
-              </TableCell>
-              <TableCell>{rule.last_7d.sent}</TableCell>
-              <TableCell>{rule.last_7d.failed}</TableCell>
-              <TableCell className='text-end'>
-                <Switch
-                  checked={rule.enabled}
-                  disabled={toggle.isPending}
-                  onCheckedChange={(enabled) =>
-                    toggle.mutate({
-                      trigger_key: rule.trigger_key,
-                      enabled,
-                    })
-                  }
-                />
-              </TableCell>
+      {query.isError ? (
+        <AdminQueryError
+          title='Could not load automations'
+          error={query.error}
+          retrying={query.isFetching}
+          onRetry={() => void query.refetch()}
+        />
+      ) : null}
+      {query.isLoading ? <Skeleton className='h-64 w-full' /> : null}
+      {!query.isLoading && !query.isError ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Trigger</TableHead>
+              <TableHead>Last 7d sent</TableHead>
+              <TableHead>Failed</TableHead>
+              <TableHead className='text-end'>Enabled</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {query.data?.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className='h-24 text-center text-muted-foreground'
+                >
+                  No automation rules are configured.
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {(query.data ?? []).map((rule) => (
+              <TableRow key={rule.trigger_key}>
+                <TableCell>
+                  <p className='font-medium'>{rule.label}</p>
+                  <p className='text-xs text-muted-foreground'>
+                    {rule.trigger_key}
+                  </p>
+                </TableCell>
+                <TableCell>{rule.last_7d.sent}</TableCell>
+                <TableCell>{rule.last_7d.failed}</TableCell>
+                <TableCell className='text-end'>
+                  <Switch
+                    aria-label={`${rule.enabled ? 'Disable' : 'Enable'} ${rule.label}`}
+                    checked={rule.enabled}
+                    disabled={toggle.isPending}
+                    onCheckedChange={(enabled) =>
+                      toggle.mutate({
+                        trigger_key: rule.trigger_key,
+                        enabled,
+                      })
+                    }
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
       <div className='space-y-6'>
         <h2 className='text-lg font-medium'>Template previews</h2>
         {previews.map((p) => (

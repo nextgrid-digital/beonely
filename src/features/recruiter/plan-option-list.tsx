@@ -15,7 +15,11 @@ export function FeaturedBoostPlanList(props: {
 }) {
   const plans: PaymentPlan[] = ['featured_week', 'featured_month']
   return (
-    <div className='grid gap-2' role='radiogroup' aria-label='Featured duration'>
+    <div
+      className='grid gap-2'
+      role='radiogroup'
+      aria-label='Featured duration'
+    >
       {plans.map((p) => {
         const selected = props.value === p
         return (
@@ -45,15 +49,15 @@ export function FeaturedBoostPlanList(props: {
                 </Badge>
               ) : null}
             </span>
-            <span className='shrink-0 tabular-nums font-semibold'>
+            <span className='shrink-0 font-semibold tabular-nums'>
               {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[p])}
             </span>
           </label>
         )
       })}
       <p className='text-xs text-muted-foreground'>
-        Extends Featured visibility from your current expiry. Prices include
-        18% GST.
+        Extends Featured visibility from your current expiry. Prices include 18%
+        GST.
       </p>
     </div>
   )
@@ -90,7 +94,7 @@ export function PlanOptionList(props: {
               />
               <span className='font-medium'>{PLAN_LABEL[p]}</span>
             </span>
-            <span className='shrink-0 tabular-nums font-semibold'>
+            <span className='shrink-0 font-semibold tabular-nums'>
               {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[p])}
             </span>
           </label>

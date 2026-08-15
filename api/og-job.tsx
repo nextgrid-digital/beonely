@@ -1,23 +1,30 @@
 import type { ReactElement } from 'react'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchPublicJobBySlug, type PublicJobRow } from './_lib/public-job.js'
 import { jobOgMetaChips, truncateText } from './_lib/job-og-meta.js'
+import { portfolioOgChips } from './_lib/portfolio-og-meta.js'
+import { fetchPublicJobBySlug, type PublicJobRow } from './_lib/public-job.js'
 import {
   fetchPublicPortfolioBySlug,
   type PublicPortfolio,
 } from './_lib/public-portfolio.js'
-import { portfolioOgChips } from './_lib/portfolio-og-meta.js'
+import { isValidJobSlug, isValidPortfolioSlug } from './_lib/public-slug.js'
+import { isRateLimitError, rateLimitOrThrow } from './_lib/rate-limit.js'
+import { requestIp } from './_lib/request-ip.js'
 
-function initials (name: string): string {
+function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return 'B'
   if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase()
-  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase()
+  return (
+    parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)
+  ).toUpperCase()
 }
 
-function OgPortfolioCardInline ({ portfolio }: { portfolio: PublicPortfolio }) {
+function OgPortfolioCardInline({ portfolio }: { portfolio: PublicPortfolio }) {
   const name = truncateText(portfolio.name, 56)
-  const headline = portfolio.headline ? truncateText(portfolio.headline, 64) : null
+  const headline = portfolio.headline
+    ? truncateText(portfolio.headline, 64)
+    : null
   const chips = portfolioOgChips(portfolio)
 
   return (
@@ -173,17 +180,11 @@ function OgPortfolioCardInline ({ portfolio }: { portfolio: PublicPortfolio }) {
   )
 }
 
-function OgJobCardInline ({
-  job,
-}: {
-  job: PublicJobRow
-}) {
+function OgJobCardInline({ job }: { job: PublicJobRow }) {
   const chips = jobOgMetaChips(job)
   const title = truncateText(job.job_title, 72)
   const company = truncateText(job.company_name, 48)
-  const location = job.location?.trim()
-    ? truncateText(job.location, 56)
-    : null
+  const location = job.location?.trim() ? truncateText(job.location, 56) : null
 
   return (
     <div
@@ -295,7 +296,7 @@ function OgJobCardInline ({
   )
 }
 
-export default async function handler (req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).end()
   }
@@ -306,8 +307,18 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
   }
 
   const isPortfolio = req.query.type === 'portfolio'
+  const validSlug = isPortfolio
+    ? isValidPortfolioSlug(slug)
+    : isValidJobSlug(slug)
+  if (!validSlug) {
+    return res.status(400).send('Invalid slug')
+  }
 
   try {
+    await rateLimitOrThrow(`og-image:${requestIp(req)}`, {
+      limit: 30,
+      windowSeconds: 300,
+    })
     let element: ReactElement
     if (isPortfolio) {
       const portfolio = await fetchPublicPortfolioBySlug(slug)
@@ -331,9 +342,16 @@ export default async function handler (req: VercelRequest, res: VercelResponse) 
 
     const buffer = Buffer.from(await image.arrayBuffer())
     res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400')
+    res.setHeader(
+      'Cache-Control',
+      isPortfolio ? 'private, no-store' : 'public, max-age=3600, s-maxage=86400'
+    )
     return res.status(200).send(buffer)
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      res.setHeader('Retry-After', String(error.retryAfterSeconds))
+      return res.status(error.statusCode).send(error.code)
+    }
     return res.status(500).send('error')
   }
 }

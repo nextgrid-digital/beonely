@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 
 export function AdminEmailAnalyticsPage() {
   const { session } = useAuth()
@@ -25,9 +26,12 @@ export function AdminEmailAnalyticsPage() {
   if (query.isLoading) return <Skeleton className='h-64 w-full' />
   if (query.isError) {
     return (
-      <p className='text-sm text-destructive'>
-        {query.error instanceof Error ? query.error.message : 'Load failed'}
-      </p>
+      <AdminQueryError
+        title='Could not load email analytics'
+        error={query.error}
+        retrying={query.isFetching}
+        onRetry={() => void query.refetch()}
+      />
     )
   }
 

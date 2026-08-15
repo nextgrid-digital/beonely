@@ -15,7 +15,7 @@ Beonely is a **brownfield** Vite SPA with Supabase Auth/DB and Vercel serverless
 | Routing | TanStack Router (file-based) | `src/routes/`, `src/routeTree.gen.ts` |
 | Data | Supabase JS client | `src/lib/supabase/client.ts`, `src/lib/supabase/database.types.ts` |
 | API | Vercel functions | `api/*.ts` |
-| Payments | Razorpay + server verify | `api/create-order.ts`, `api/verify-payment.ts` |
+| Payments | Razorpay + server verify | `api/payments.ts`, `api/_handlers/payments/` |
 
 ## Decisions
 

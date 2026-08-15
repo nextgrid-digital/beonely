@@ -114,9 +114,7 @@ describe('recruiterJobWorkspaceJobId', () => {
         '/recruiter/jobs/550e8400-e29b-41d4-a716-446655440000/edit'
       )
     ).toBe('550e8400-e29b-41d4-a716-446655440000')
-    expect(recruiterJobWorkspaceJobId('/recruiter/jobs/x/applicants')).toBe(
-      'x'
-    )
+    expect(recruiterJobWorkspaceJobId('/recruiter/jobs/x/applicants')).toBe('x')
   })
 
   it('returns null elsewhere', () => {

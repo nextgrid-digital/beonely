@@ -1,11 +1,23 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireStaffAdmin } from '../../_lib/admin-auth.js'
 import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
+const triggerSchema = z.enum([
+  'candidate_signup',
+  'recruiter_signup',
+  'job_submitted',
+  'job_approved',
+  'job_rejected',
+  'application_received',
+  'application_confirmation',
+  'payment_received',
+  'listing_expiry_reminder',
+])
+
 const patchSchema = z.object({
-  trigger_key: z.string(),
+  trigger_key: triggerSchema,
   enabled: z.boolean(),
 })
 
@@ -20,6 +32,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   application_received: 'Application received (recruiter)',
   application_confirmation: 'Application confirmation (candidate)',
   payment_received: 'Payment received',
+  listing_expiry_reminder: 'Listing expiry reminder',
 }
 
 export async function handle(req: VercelRequest, res: VercelResponse) {
@@ -33,36 +46,26 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
   const sb = sbInit.client
 
   if (req.method === 'GET') {
-    const { data: rules } = await sb
-      .from('email_automation_rules')
-      .select('*')
-      .order('trigger_key')
-
-    const since = new Date()
-    since.setDate(since.getDate() - 7)
-
-    const { data: logs } = await sb
-      .from('email_send_log')
-      .select('trigger_key, status')
-      .gte('created_at', since.toISOString())
-      .not('trigger_key', 'is', null)
-
-    const counts: Record<string, { sent: number; failed: number }> = {}
-    for (const row of logs ?? []) {
-      const key = row.trigger_key as string
-      if (!counts[key]) counts[key] = { sent: 0, failed: 0 }
-      if (row.status === 'failed' || row.status === 'bounced') {
-        counts[key].failed += 1
-      } else {
-        counts[key].sent += 1
-      }
+    const [
+      { data: rules, error: rulesError },
+      { data: counts, error: countsError },
+    ] = await Promise.all([
+      sb.from('email_automation_rules').select('*').order('trigger_key'),
+      sb.rpc('get_admin_email_automation_counts'),
+    ])
+    if (rulesError || countsError) {
+      return res.status(503).json({ error: 'automations_unavailable' })
     }
+    const countMap =
+      counts && typeof counts === 'object' && !Array.isArray(counts)
+        ? (counts as Record<string, { sent: number; failed: number }>)
+        : {}
 
     return res.status(200).json({
       rules: ((rules ?? []) as AutomationRuleRow[]).map((r) => ({
         ...r,
         label: TRIGGER_LABELS[r.trigger_key as string] ?? r.trigger_key,
-        last_7d: counts[r.trigger_key as string] ?? { sent: 0, failed: 0 },
+        last_7d: countMap[r.trigger_key as string] ?? { sent: 0, failed: 0 },
       })),
     })
   }
@@ -76,16 +79,19 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
     if (!parsed.success) {
       return res.status(400).json({ error: 'invalid_body' })
     }
-    const { error } = await sb
+    const { data: updated, error } = await sb
       .from('email_automation_rules')
       .update({
         enabled: parsed.data.enabled,
         updated_at: new Date().toISOString(),
       })
       .eq('trigger_key', parsed.data.trigger_key)
+      .select('trigger_key')
+      .maybeSingle()
     if (error) {
       return res.status(500).json({ error: error.message })
     }
+    if (!updated) return res.status(404).json({ error: 'automation_not_found' })
     return res.status(200).json({ ok: true })
   }
 

@@ -2,7 +2,6 @@ import {
   Briefcase,
   IndianRupee,
   LayoutDashboard,
-  ListTodo,
   Settings,
   Shield,
   UserCircle,
@@ -93,12 +92,6 @@ export const sidebarData: SidebarData = {
           url: '/candidate/profile',
           icon: UserCircle,
           forRoles: ['candidate'],
-        },
-        {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: ListTodo,
-          forRoles: ['recruiter'],
         },
         {
           title: 'Jobs (public)',

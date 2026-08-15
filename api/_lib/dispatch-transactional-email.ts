@@ -1,4 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { randomUUID } from 'node:crypto'
+import {
+  claimEmailDelivery,
+  finishEmailDelivery,
+} from './email-delivery-claim.js'
+import { beonelyTransactionalHtml } from './email-layout.js'
 import {
   applicationConfirmationCandidateEmail,
   applicationReceivedRecruiterEmail,
@@ -6,9 +12,11 @@ import {
   jobApprovedRecruiterEmail,
   jobRejectedRecruiterEmail,
   jobSubmittedRecruiterEmail,
+  listingExpiryReminderEmail,
   recruiterSignupEmail,
 } from './email-templates.js'
 import { sendTransactionalEmail } from './resend.js'
+import { serverSiteOrigin } from './site-origin.js'
 
 export type TransactionalTriggerKey =
   | 'candidate_signup'
@@ -18,15 +26,10 @@ export type TransactionalTriggerKey =
   | 'job_rejected'
   | 'application_received'
   | 'application_confirmation'
+  | 'listing_expiry_reminder'
   | 'payment_received'
 
 export type DispatchPayload = Record<string, unknown>
-
-function siteOrigin(): string {
-  const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
-  if (raw) return raw.replace(/\/$/, '')
-  return 'https://beonely.vercel.app'
-}
 
 function renderEmail(
   trigger: TransactionalTriggerKey,
@@ -56,22 +59,36 @@ function renderEmail(
       return jobRejectedRecruiterEmail({
         jobTitle: String(payload.job_title),
         companyName: String(payload.company_name),
-        reason:
-          typeof payload.reason === 'string' ? payload.reason : null,
+        reason: typeof payload.reason === 'string' ? payload.reason : null,
       })
     case 'application_received':
       return applicationReceivedRecruiterEmail({
         jobTitle: String(payload.job_title),
         candidateName: String(payload.candidate_name),
-        recruiterPortalUrl: `${siteOrigin()}/recruiter`,
+        recruiterPortalUrl: `${serverSiteOrigin()}/recruiter`,
       })
     case 'application_confirmation':
       return applicationConfirmationCandidateEmail({
         jobTitle: String(payload.job_title),
         companyName: String(payload.company_name),
       })
+    case 'listing_expiry_reminder':
+      return listingExpiryReminderEmail({
+        jobTitle: String(payload.job_title),
+        companyName: String(payload.company_name),
+        daysRemaining: Number(payload.days_remaining),
+        recruiterPortalUrl: `${serverSiteOrigin()}/recruiter`,
+      })
     case 'payment_received':
-      return null
+      return {
+        subject: String(payload.subject ?? 'Beonely — payment received'),
+        html: beonelyTransactionalHtml({
+          headline: String(payload.headline ?? 'Payment received'),
+          bodyParagraphs: Array.isArray(payload.body_paragraphs)
+            ? payload.body_paragraphs.map(String)
+            : ['Your Beonely payment was received.'],
+        }),
+      }
     default: {
       const _exhaustive: never = trigger
       return _exhaustive
@@ -102,7 +119,7 @@ export async function dispatchTransactionalEmail(
     metadata?: Record<string, unknown>
     /** Test sends and staff overrides — ignore automation off toggles. */
     bypass_automation_rule?: boolean
-    /** Skip dedupe lookup (test sends use unique keys each time). */
+    /** Force a unique claim (test sends must be deliverable more than once). */
     skip_dedupe_check?: boolean
   }
 ): Promise<DispatchResult> {
@@ -121,82 +138,80 @@ export async function dispatchTransactionalEmail(
     }
   }
 
-  if (opts.dedupe_key && !opts.skip_dedupe_check) {
-    const { data: existing, error: dedupeErr } = await sb
-      .from('email_send_log')
-      .select('id')
-      .filter('metadata->>dedupe_key', 'eq', opts.dedupe_key)
-      .maybeSingle()
-    if (dedupeErr) {
-      return { ok: false, error: `dedupe_check_failed: ${dedupeErr.message}` }
-    }
-    if (existing?.id) return { ok: true, skipped: true, reason: 'dedupe' }
-  }
-
   const rendered = renderEmail(opts.trigger_key, opts.payload ?? {})
   if (!rendered) return { ok: false, error: 'unknown_trigger' }
+
+  const requestedDedupeKey = opts.dedupe_key?.trim()
+  const dedupeKey =
+    requestedDedupeKey && !opts.skip_dedupe_check
+      ? requestedDedupeKey
+      : `dispatch:${randomUUID()}`
+
+  let claim
+  try {
+    claim = await claimEmailDelivery(sb, {
+      triggerKey: opts.trigger_key,
+      recipientEmail: email,
+      recipientRole: opts.recipient_role,
+      subject: rendered.subject,
+      dedupeKey,
+      metadata: {
+        ...(opts.metadata ?? {}),
+        ...(requestedDedupeKey && opts.skip_dedupe_check
+          ? { requested_dedupe_key: requestedDedupeKey }
+          : {}),
+      },
+    })
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'delivery_claim_failed',
+    }
+  }
+
+  if (!claim.claimed) {
+    return { ok: true, skipped: true, reason: claim.reason }
+  }
 
   try {
     const result = await sendTransactionalEmail({
       to: email,
       subject: rendered.subject,
       html: rendered.html,
+      idempotencyKey: `transactional/${claim.logId}`,
     })
 
-    const status = result.skipped ? 'skipped' : 'sent'
-    const { data: logRow, error: logErr } = await sb
-      .from('email_send_log')
-      .insert({
-        trigger_key: opts.trigger_key,
-        recipient_email: email,
-        recipient_role: opts.recipient_role,
-        subject: rendered.subject,
-        resend_message_id: result.skipped ? null : result.messageId,
-        status,
-        error_message: result.skipped ? 'resend_not_configured' : null,
-        metadata: {
-          ...(opts.metadata ?? {}),
-          ...(opts.dedupe_key ? { dedupe_key: opts.dedupe_key } : {}),
-        },
-      })
-      .select('id')
-      .single()
-
-    if (logErr) {
-      if (!result.skipped) {
-        return {
-          ok: true,
-          skipped: false,
-          messageId: result.messageId,
-          logId: null,
-          resend_skipped: false,
-          log_error: logErr.message,
-        }
-      }
-      return { ok: false, error: `log_insert_failed: ${logErr.message}` }
-    }
+    await finishEmailDelivery(sb, {
+      logId: claim.logId,
+      claimToken: claim.claimToken,
+      status: result.skipped ? 'skipped' : 'sent',
+      messageId: result.skipped ? null : result.messageId,
+      errorMessage: result.skipped ? 'resend_not_configured' : null,
+    })
 
     return {
       ok: true,
       skipped: false,
       messageId: result.skipped ? null : result.messageId,
-      logId: logRow.id as string,
+      logId: claim.logId,
       resend_skipped: result.skipped,
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'send_failed'
-    await sb.from('email_send_log').insert({
-      trigger_key: opts.trigger_key,
-      recipient_email: email,
-      recipient_role: opts.recipient_role,
-      subject: rendered.subject,
-      status: 'failed',
-      error_message: msg,
-      metadata: {
-        ...(opts.metadata ?? {}),
-        ...(opts.dedupe_key ? { dedupe_key: opts.dedupe_key } : {}),
-      },
-    })
+    try {
+      await finishEmailDelivery(sb, {
+        logId: claim.logId,
+        claimToken: claim.claimToken,
+        status: 'failed',
+        errorMessage: msg.slice(0, 500),
+      })
+    } catch (finishError) {
+      const finishMessage =
+        finishError instanceof Error
+          ? finishError.message
+          : 'delivery_finalize_failed'
+      return { ok: false, error: `${msg}; ${finishMessage}` }
+    }
     return { ok: false, error: msg }
   }
 }

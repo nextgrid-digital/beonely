@@ -40,16 +40,20 @@ export async function sendTransactionalEmail(opts: {
   to: string
   subject: string
   html: string
+  idempotencyKey?: string
 }): Promise<SendEmailResult> {
   const from = transactionalFromEmail()
   const resend = resendClient()
   if (!resend || !from) return { skipped: true }
-  const { data, error } = await resend.emails.send({
-    from,
-    to: opts.to,
-    subject: opts.subject,
-    html: opts.html,
-  })
+  const { data, error } = await resend.emails.send(
+    {
+      from,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+    },
+    opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : undefined
+  )
   if (error) throw error
   return { skipped: false, messageId: data?.id ?? null }
 }
@@ -59,18 +63,40 @@ export async function sendMarketingEmail(opts: {
   subject: string
   html: string
   audienceHint?: string
+  idempotencyKey?: string
 }): Promise<SendEmailResult> {
   const from = marketingFromEmail(opts.audienceHint)
   const resend = resendClient()
   if (!resend || !from) return { skipped: true }
-  const { data, error } = await resend.emails.send({
-    from,
-    to: opts.to,
-    subject: opts.subject,
-    html: opts.html,
-  })
+  const { data, error } = await resend.emails.send(
+    {
+      from,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+    },
+    opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : undefined
+  )
   if (error) throw error
   return { skipped: false, messageId: data?.id ?? null }
+}
+
+export function verifyResendWebhook(opts: {
+  payload: string
+  id: string
+  timestamp: string
+  signature: string
+  webhookSecret: string
+}) {
+  return new Resend().webhooks.verify({
+    payload: opts.payload,
+    headers: {
+      id: opts.id,
+      timestamp: opts.timestamp,
+      signature: opts.signature,
+    },
+    webhookSecret: opts.webhookSecret,
+  })
 }
 
 export const CAMPAIGN_BATCH_SIZE = 50

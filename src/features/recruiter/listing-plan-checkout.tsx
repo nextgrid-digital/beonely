@@ -23,6 +23,7 @@ export function ListingPlanCheckout(props: {
   plan: PaymentPlan
   onChange: (plan: PaymentPlan) => void
 }) {
+  const { onChange } = props
   const renewal = props.renewal ?? false
   const showFeatured = props.showFeaturedOption ?? !renewal
 
@@ -37,26 +38,26 @@ export function ListingPlanCheckout(props: {
   )
 
   useEffect(() => {
-    props.onChange(plan)
-  }, [plan, props.onChange])
+    onChange(plan)
+  }, [onChange, plan])
 
   const standardWeek = paymentPlanFromSelection('week', false, renewal)
   const standardMonth = paymentPlanFromSelection('month', false, renewal)
-  const featuredForDuration = paymentPlanFromSelection(
-    duration,
-    true,
-    renewal
-  )
+  const featuredForDuration = paymentPlanFromSelection(duration, true, renewal)
   const featuredAddonPaise = featuredAddonBasePaise(duration, renewal)
 
   const selectDuration = (next: ListingDuration) => {
     setDuration(next)
-    props.onChange(paymentPlanFromSelection(next, featured, renewal))
+    onChange(paymentPlanFromSelection(next, featured, renewal))
   }
 
   return (
     <div className='grid gap-4'>
-      <div className='grid gap-2' role='radiogroup' aria-label='Listing duration'>
+      <div
+        className='grid gap-2'
+        role='radiogroup'
+        aria-label='Listing duration'
+      >
         <p className='text-sm font-medium'>How long should it stay live?</p>
         <label
           className={cn(
@@ -79,7 +80,7 @@ export function ListingPlanCheckout(props: {
               Recommended
             </Badge>
           </span>
-          <span className='shrink-0 tabular-nums font-semibold'>
+          <span className='shrink-0 font-semibold tabular-nums'>
             {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[standardMonth])}
           </span>
         </label>
@@ -102,7 +103,7 @@ export function ListingPlanCheckout(props: {
             <span className='font-medium'>1 week · Standard</span>
             <span className='text-xs text-muted-foreground'>Urgent roles</span>
           </span>
-          <span className='shrink-0 tabular-nums font-semibold'>
+          <span className='shrink-0 font-semibold tabular-nums'>
             {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[standardWeek])}
           </span>
         </label>
@@ -130,9 +131,7 @@ export function ListingPlanCheckout(props: {
                 onCheckedChange={(checked) => {
                   const next = checked === true
                   setFeatured(next)
-                  props.onChange(
-                    paymentPlanFromSelection(duration, next, renewal)
-                  )
+                  onChange(paymentPlanFromSelection(duration, next, renewal))
                 }}
               />
               <span className='grid gap-1'>
@@ -143,19 +142,20 @@ export function ListingPlanCheckout(props: {
                   </Badge>
                 </span>
                 <span className='text-xs text-muted-foreground'>
-                  Boost visibility with homepage placement and priority
-                  listing.
+                  Boost visibility with homepage placement and priority listing.
                 </span>
               </span>
             </span>
             <span className='shrink-0 text-end'>
               <span className='block text-xs text-muted-foreground'>Adds</span>
-              <span className='tabular-nums text-base font-semibold text-primary'>
+              <span className='text-base font-semibold text-primary tabular-nums'>
                 +{formatInrFromPaise(featuredAddonPaise)}
               </span>
               {featured ? (
                 <span className='mt-0.5 block text-[11px] text-muted-foreground'>
-                  {formatInrFromPaise(PLAN_AMOUNT_INR_PAISE[featuredForDuration])}{' '}
+                  {formatInrFromPaise(
+                    PLAN_AMOUNT_INR_PAISE[featuredForDuration]
+                  )}{' '}
                   total
                 </span>
               ) : (

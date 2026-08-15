@@ -16,7 +16,7 @@ export function FooterNewsletterSubscribe() {
     setBusy(true)
     try {
       await subscribeNewsletter(trimmed)
-      toast.success('Subscribed to ServiceNow job updates')
+      toast.success('Check your inbox to confirm your subscription')
       setEmail('')
     } catch {
       toast.error('Could not subscribe. Try again later.')

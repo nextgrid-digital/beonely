@@ -13,15 +13,15 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { Helmet } from 'react-helmet-async'
-import { publishedJobsFilterSchema } from '@/lib/jobs/fetch-published-jobs'
+import { getPostAuthPath } from '@/lib/auth/post-auth-path'
+import { currentPathWithSearch } from '@/lib/auth/redirect-path'
 import {
   fetchPublicJobsCount,
   fetchPublicJobsPage,
   PUBLIC_FEED_PAGE_SIZE,
 } from '@/lib/jobs/fetch-public-jobs-feed'
+import { publishedJobsFilterSchema } from '@/lib/jobs/fetch-published-jobs'
 import type { PublishedJobsFilters } from '@/lib/jobs/published-jobs-query'
-import { currentPathWithSearch } from '@/lib/auth/redirect-path'
-import { getPostAuthPath } from '@/lib/auth/post-auth-path'
 import { publicSiteOrigin } from '@/lib/site/site-origin'
 import {
   getSupabaseBrowserClient,
@@ -29,13 +29,12 @@ import {
 } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { InboxList } from '@/components/inbox/inbox-list'
 import type { InboxRowData } from '@/components/inbox/inbox-list-row'
 import { CompanyLogoAvatar } from '@/features/jobs/company-logo-avatar'
-import { JobPeek, JOB_PEEK_PARAM } from '@/features/jobs/job-peek'
 import { jobPublicPills } from '@/features/jobs/job-inbox-row'
+import { JobPeek, JOB_PEEK_PARAM } from '@/features/jobs/job-peek'
 import {
   PublicSiteFooter,
   PublicSiteHeader,
@@ -128,7 +127,7 @@ function LandingPageContent() {
   const { user, profile } = useAuth()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const { setup, peek } = search
+  const { peek } = search
   const activeTab: HomeTab = search.tab ?? 'all'
   const jobFilters = publishedJobFiltersFromHomeSearch(search)
 
@@ -153,7 +152,7 @@ function LandingPageContent() {
   const featuredOnly = activeTab === 'featured'
 
   const feedQuery = useInfiniteQuery({
-    queryKey: ['public-jobs', 'feed', jobFilters, activeTab],
+    queryKey: ['public-jobs', 'feed', jobFilters, featuredOnly],
     queryFn: ({ pageParam }) =>
       fetchPublicJobsPage(jobFilters, {
         offset: pageParam,
@@ -188,7 +187,8 @@ function LandingPageContent() {
   )
 
   const rows = useMemo(
-    () => feedQuery.data?.pages.flatMap((page) => page.rows.map(jobToRow)) ?? [],
+    () =>
+      feedQuery.data?.pages.flatMap((page) => page.rows.map(jobToRow)) ?? [],
     [feedQuery.data]
   )
   const currentRedirect = currentPathWithSearch()
@@ -216,13 +216,19 @@ function LandingPageContent() {
         <title>Beonely | ServiceNow jobs and hiring</title>
         <meta name='description' content={description} />
         <link rel='canonical' href={canonical} />
-        <meta property='og:title' content='Beonely | ServiceNow jobs and hiring' />
+        <meta
+          property='og:title'
+          content='Beonely | ServiceNow jobs and hiring'
+        />
         <meta property='og:description' content={description} />
         <meta property='og:url' content={canonical} />
         <meta property='og:type' content='website' />
         <meta property='og:image' content={ogImage} />
         <meta name='twitter:card' content='summary_large_image' />
-        <meta name='twitter:title' content='Beonely | ServiceNow jobs and hiring' />
+        <meta
+          name='twitter:title'
+          content='Beonely | ServiceNow jobs and hiring'
+        />
         <meta name='twitter:description' content={description} />
         <meta name='twitter:image' content={ogImage} />
       </Helmet>
@@ -233,17 +239,6 @@ function LandingPageContent() {
           id='main-content'
           className={`${PUBLIC_SITE_MAIN_COLUMN} flex min-w-0 flex-1 flex-col gap-8 overflow-x-clip py-8 sm:py-10`}
         >
-          {setup === 'supabase' && (
-            <Alert variant='destructive'>
-              <AlertTitle>Supabase required</AlertTitle>
-              <AlertDescription>
-                Add <code className='text-xs'>VITE_SUPABASE_URL</code> and{' '}
-                <code className='text-xs'>VITE_SUPABASE_ANON_KEY</code> to your
-                environment, then reload.
-              </AlertDescription>
-            </Alert>
-          )}
-
           <section className='max-w-2xl space-y-5 sm:space-y-6'>
             <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl'>
               ServiceNow Careers,
@@ -252,8 +247,8 @@ function LandingPageContent() {
             </h1>
             <p className='text-base text-muted-foreground sm:text-lg'>
               Focused roles for developers, architects, consultants, and admins.
-              Paid listings and concierge hiring support for partners and enterprise
-              teams—no generic noise.
+              Paid listings and concierge hiring support for partners and
+              enterprise teams—no generic noise.
             </p>
             <div className='flex flex-col gap-3 sm:flex-row'>
               <Button asChild size='lg' className='sm:w-auto'>
@@ -274,7 +269,7 @@ function LandingPageContent() {
             </div>
           </section>
 
-          <div className='min-w-0'>
+          <div id='open-roles' className='min-w-0 scroll-mt-20'>
             {isError ? (
               <p className='px-4 py-12 text-center text-sm text-destructive'>
                 Could not load jobs. Configure Supabase or try again later.

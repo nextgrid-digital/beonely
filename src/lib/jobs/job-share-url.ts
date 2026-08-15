@@ -15,7 +15,9 @@ export function jobOgImageUrl(jobSlug: string): string {
   return origin ? `${origin}/api/og/job?${query}` : `/api/og/job?${query}`
 }
 
-export function jobShareMessage(job: Pick<JobRow, 'job_title' | 'company_name' | 'location' | 'job_slug'>): string {
+export function jobShareMessage(
+  job: Pick<JobRow, 'job_title' | 'company_name' | 'location' | 'job_slug'>
+): string {
   const url = publicJobUrl(job.job_slug)
   const location = job.location?.trim()
   const parts = [
@@ -26,6 +28,8 @@ export function jobShareMessage(job: Pick<JobRow, 'job_title' | 'company_name' |
   return parts.join('\n')
 }
 
-export function jobShareTitle(job: Pick<JobRow, 'job_title' | 'company_name'>): string {
+export function jobShareTitle(
+  job: Pick<JobRow, 'job_title' | 'company_name'>
+): string {
   return `${job.job_title} · ${job.company_name}`
 }

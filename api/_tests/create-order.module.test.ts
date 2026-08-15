@@ -10,7 +10,7 @@ const envKeys = [
   'TURNSTILE_SECRET_KEY',
 ] as const
 
-describe('api/create-order serverless module', () => {
+describe('create-order serverless handler', () => {
   const saved: Partial<Record<(typeof envKeys)[number], string | undefined>> =
     {}
 
@@ -35,7 +35,7 @@ describe('api/create-order serverless module', () => {
   })
 
   it('loads create-order default handler without module-eval errors', async () => {
-    const mod = await import('../create-order.js')
+    const mod = await import('../_handlers/payments/create-order.js')
     expect(typeof mod.default).toBe('function')
   })
 

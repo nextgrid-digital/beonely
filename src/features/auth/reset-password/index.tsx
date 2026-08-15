@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { ResetPasswordForm } from './components/reset-password-form'
@@ -15,9 +14,9 @@ export function ResetPassword() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
+          <h1 className='text-lg leading-none font-semibold tracking-tight'>
             Set a new password
-          </CardTitle>
+          </h1>
           <CardDescription>
             Choose a new password for your account, then sign in again.
           </CardDescription>

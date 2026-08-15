@@ -1,5 +1,7 @@
+import { publicSiteOrigin } from '@/lib/site/site-origin'
+
 const BRAND = 'Beonely'
-const DEFAULT_SITE_ORIGIN = 'https://beonely.vercel.app'
+const DEFAULT_SITE_ORIGIN = 'https://beonely.in'
 
 function escapeHtml(s: string): string {
   return s
@@ -10,9 +12,7 @@ function escapeHtml(s: string): string {
 }
 
 function siteOrigin(): string {
-  const raw = import.meta.env.VITE_PUBLIC_SITE_URL?.trim()
-  if (raw) return raw.replace(/\/$/, '')
-  return DEFAULT_SITE_ORIGIN
+  return publicSiteOrigin() || DEFAULT_SITE_ORIGIN
 }
 
 /** Client-safe copy of api/_lib/email-layout.ts for admin previews. */

@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchJobBySlug } from '@/lib/jobs/fetch-job-by-slug'
+import { formatPostedDate } from '@/lib/jobs/format-posted-date'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PeekPanel } from '@/components/peek/peek-panel'
 import { usePeekSearch } from '@/components/peek/use-peek-search'
-import { formatPostedDate } from '@/lib/jobs/format-posted-date'
 import {
   JobDetailApplySection,
   JobDetailView,

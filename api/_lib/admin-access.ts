@@ -8,10 +8,7 @@ export function parseAdminAllowlist(raw: string | undefined): string[] {
 }
 
 export function getAdminAllowlistFromServerEnv(): string[] {
-  const raw =
-    process.env.ADMIN_EMAIL_ALLOWLIST ??
-    process.env.VITE_ADMIN_EMAIL_ALLOWLIST
-  return parseAdminAllowlist(raw)
+  return parseAdminAllowlist(process.env.ADMIN_EMAIL_ALLOWLIST)
 }
 
 export function isAllowlistedAdminEmail(

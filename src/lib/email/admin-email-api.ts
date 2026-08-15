@@ -317,10 +317,11 @@ export async function testSendEmail(
 
 export async function fetchCampaignDetail(
   accessToken: string,
-  campaignId: string
+  campaignId: string,
+  page = 1
 ) {
   const res = await fetch(
-    `/api/admin/email/campaign-recipients?campaign_id=${encodeURIComponent(campaignId)}`,
+    `/api/admin/email/campaign-recipients?campaign_id=${encodeURIComponent(campaignId)}&page=${page}&page_size=50`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   )
   const json = await res.json()
@@ -342,6 +343,7 @@ export async function fetchCampaignDetail(
       sent_at: string | null
     }>
     delivery_counts: Record<string, number>
+    pagination: { page: number; page_size: number; total: number }
   }
 }
 

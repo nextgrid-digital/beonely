@@ -22,7 +22,7 @@ export async function fetchRecruiterPublishedJobs(
   }
   const sb = getSupabaseBrowserClient()
   let q = sb
-    .from('jobs')
+    .from('public_jobs')
     .select('*')
     .eq('source_kind', 'recruiter_posted')
     .eq('approval_status', 'approved')

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { JobRow } from '@/lib/supabase/database.types'
 import {
   isRecruiterOwnedJob,
   recruiterOwnsJob,
   RECRUITER_OWNED_JOB_SOURCE,
 } from '@/lib/jobs/recruiter-owned-job'
+import type { JobRow } from '@/lib/supabase/database.types'
 
 function job(
   overrides: Partial<Pick<JobRow, 'source_kind' | 'recruiter_id'>>

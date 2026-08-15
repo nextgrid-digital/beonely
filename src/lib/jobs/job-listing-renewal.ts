@@ -15,13 +15,19 @@ export function listingExpiryDate(job: JobRow): Date | null {
   return new Date(job.listing_expires_at)
 }
 
-export function daysUntilListingExpiry(job: JobRow, now = new Date()): number | null {
+export function daysUntilListingExpiry(
+  job: JobRow,
+  now = new Date()
+): number | null {
   const exp = listingExpiryDate(job)
   if (!exp) return null
   return Math.ceil((exp.getTime() - now.getTime()) / msPerDay())
 }
 
-export function daysSinceListingExpiry(job: JobRow, now = new Date()): number | null {
+export function daysSinceListingExpiry(
+  job: JobRow,
+  now = new Date()
+): number | null {
   const exp = listingExpiryDate(job)
   if (!exp) return null
   const diff = now.getTime() - exp.getTime()

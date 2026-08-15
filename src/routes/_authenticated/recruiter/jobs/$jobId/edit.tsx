@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
 import { RecruiterJobEditorPage } from '@/features/recruiter/recruiter-job-editor-page'
+import { useRecruiterJobWorkspace } from '@/features/recruiter/recruiter-job-workspace-context'
 
 export const Route = createFileRoute(
   '/_authenticated/recruiter/jobs/$jobId/edit'

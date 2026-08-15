@@ -18,6 +18,7 @@ import {
   showLinkedInBrand,
 } from '@/lib/jobs/apply-target'
 import { submitBeonelyApplication } from '@/lib/jobs/submit-beonely-application'
+import { safeHttpsUrl } from '@/lib/security/safe-url'
 import {
   getSupabaseBrowserClient,
   getSupabaseConfigured,
@@ -171,7 +172,12 @@ export function ApplyWithCandidateAuth({ job }: { job: ApplyJob }) {
     })
 
   const openExternalApply = useCallback(() => {
-    window.open(job.apply_url, '_blank', 'noopener,noreferrer')
+    const applyUrl = safeHttpsUrl(job.apply_url)
+    if (!applyUrl) {
+      toast.error('This application link is unavailable or unsafe.')
+      return
+    }
+    window.open(applyUrl, '_blank', 'noopener,noreferrer')
   }, [job.apply_url])
 
   const goProfileOrApply = useCallback(

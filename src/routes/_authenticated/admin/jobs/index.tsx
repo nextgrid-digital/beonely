@@ -3,14 +3,14 @@ import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { mutateAdminJob } from '@/lib/admin/admin-jobs-api'
+import { apiGet } from '@/lib/api-client'
 import { notifyJobStatus } from '@/lib/email/admin-email-api'
 import { formatQueryError } from '@/lib/format-query-error'
 import {
   plainTextFromJobDescription,
   sanitizeJobDescriptionHtml,
 } from '@/lib/jobs/sanitize-job-description-html'
-import { listingDurationToDays } from '@/lib/payments/plans'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { JobRow } from '@/lib/supabase/database.types'
 import { useAuth } from '@/context/auth-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -109,26 +109,26 @@ function AdminJobsPage() {
   const [peekJobId, setPeekJobId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const jobsQuery = useQuery({
-    queryKey: ['admin-jobs'],
+    queryKey: ['admin-jobs', accessToken],
     queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return (data ?? []) as JobRow[]
+      if (!accessToken) throw new Error('missing_access_token')
+      const result = await apiGet<{ jobs: JobRow[] }>(
+        '/api/admin/jobs-list',
+        accessToken
+      )
+      return result.jobs
     },
+    enabled: Boolean(accessToken),
   })
 
   const rejectJob = useMutation({
     mutationFn: async (input: { id: string; reason: string }) => {
-      const sb = getSupabaseBrowserClient()
-      const { error } = await sb
-        .from('jobs')
-        .update({ approval_status: 'rejected' })
-        .eq('id', input.id)
-      if (error) throw error
+      if (!accessToken) throw new Error('missing_access_token')
+      await mutateAdminJob(accessToken, {
+        action: 'reject',
+        job_id: input.id,
+        reason: input.reason.trim() || null,
+      })
       return input
     },
     onSuccess: async ({ id: jobId, reason }) => {
@@ -157,24 +157,11 @@ function AdminJobsPage() {
 
   const approveListing = useMutation({
     mutationFn: async (job: JobRow) => {
-      const sb = getSupabaseBrowserClient()
-      const days = listingDurationToDays(job.listing_duration)
-      const published = new Date()
-      const expires = new Date(published)
-      expires.setDate(expires.getDate() + days)
-
-      const { error } = await sb
-        .from('jobs')
-        .update({
-          approval_status: 'approved',
-          listing_expires_at: expires.toISOString(),
-          featured_expiry:
-            job.featured && job.listing_tier === 'featured'
-              ? expires.toISOString()
-              : null,
-        })
-        .eq('id', job.id)
-      if (error) throw error
+      if (!accessToken) throw new Error('missing_access_token')
+      return mutateAdminJob(accessToken, {
+        action: 'approve',
+        job_id: job.id,
+      })
     },
     onSuccess: async (_data, job) => {
       if (accessToken) {
@@ -200,17 +187,12 @@ function AdminJobsPage() {
 
   const toggleFeatured = useMutation({
     mutationFn: async (job: JobRow) => {
-      const sb = getSupabaseBrowserClient()
-      const next = !job.featured
-      const { error } = await sb
-        .from('jobs')
-        .update({
-          featured: next,
-          featured_expiry:
-            next && job.listing_expires_at ? job.listing_expires_at : null,
-        })
-        .eq('id', job.id)
-      if (error) throw error
+      if (!accessToken) throw new Error('missing_access_token')
+      return mutateAdminJob(accessToken, {
+        action: 'set_featured',
+        job_id: job.id,
+        featured: !job.featured,
+      })
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-jobs'] })
@@ -225,12 +207,12 @@ function AdminJobsPage() {
       job_slug: string
       description: string
     }) => {
-      const sb = getSupabaseBrowserClient()
-      const { error } = await sb
-        .from('jobs')
-        .update({ job_description: input.description })
-        .eq('id', input.id)
-      if (error) throw error
+      if (!accessToken) throw new Error('missing_access_token')
+      await mutateAdminJob(accessToken, {
+        action: 'update_description',
+        job_id: input.id,
+        description: input.description,
+      })
       return input
     },
     onSuccess: (input) => {
@@ -333,6 +315,8 @@ function AdminJobsPage() {
                 <div className='space-y-2 pt-2'>
                   <Label htmlFor='admin-job-description'>Description</Label>
                   <JobDescriptionRichTextField
+                    id='admin-job-description'
+                    ariaLabel='Job description'
                     value={descriptionDraft}
                     onChange={setDescriptionDraft}
                     editable

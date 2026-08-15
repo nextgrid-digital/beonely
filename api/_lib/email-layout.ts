@@ -1,8 +1,8 @@
-const BRAND = 'Beonely'
-/** Fallback when `VITE_PUBLIC_SITE_URL` is unset in serverless (e.g. local `vercel dev` without env). */
-const DEFAULT_SITE_ORIGIN = 'https://beonely.vercel.app'
+import { serverSiteOrigin } from './site-origin.js'
 
-function escapeHtml (s: string): string {
+const BRAND = 'Beonely'
+
+function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -10,20 +10,15 @@ function escapeHtml (s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function siteOrigin (): string {
-  const raw = process.env.VITE_PUBLIC_SITE_URL?.trim()
-  if (raw) return raw.replace(/\/$/, '')
-  return DEFAULT_SITE_ORIGIN
-}
-
 /**
  * Branded HTML shell for Resend transactional email. Inline styles for client compatibility.
  */
-export function beonelyTransactionalHtml (opts: {
+export function beonelyTransactionalHtml(opts: {
   headline: string
   bodyParagraphs: string[]
+  action?: { label: string; href: string }
 }): string {
-  const origin = siteOrigin()
+  const origin = serverSiteOrigin()
   const logoUrl = `${origin}/images/beonely-logo.svg`
   const safeHeadline = escapeHtml(opts.headline)
   const body = opts.bodyParagraphs
@@ -32,6 +27,9 @@ export function beonelyTransactionalHtml (opts: {
       return `<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151;font-family:Inter,system-ui,-apple-system,sans-serif;">${t}</p>`
     })
     .join('')
+  const action = opts.action
+    ? `<p style="margin:24px 0;"><a href="${escapeHtml(opts.action.href)}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#18181b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">${escapeHtml(opts.action.label)}</a></p>`
+    : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -50,6 +48,7 @@ export function beonelyTransactionalHtml (opts: {
             <td style="padding:24px 28px 32px;font-family:Inter,system-ui,-apple-system,sans-serif;">
               <h1 style="margin:0 0 20px;font-size:18px;line-height:1.35;font-weight:600;color:#18181b;">${safeHeadline}</h1>
               ${body}
+              ${action}
               <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#71717a;">— The ${BRAND} team<br/><a href="${escapeHtml(origin)}" style="color:#2563eb;text-decoration:underline;">${escapeHtml(origin)}</a></p>
             </td>
           </tr>

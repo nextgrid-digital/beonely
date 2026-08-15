@@ -84,13 +84,19 @@ function ChangelogPage() {
         <title>Beonely product updates | Changelog</title>
         <meta name='description' content={description} />
         <link rel='canonical' href={canonical} />
-        <meta property='og:title' content='Beonely product updates | Changelog' />
+        <meta
+          property='og:title'
+          content='Beonely product updates | Changelog'
+        />
         <meta property='og:description' content={description} />
         <meta property='og:url' content={canonical} />
         <meta property='og:type' content='website' />
         <meta property='og:image' content={ogImage} />
         <meta name='twitter:card' content='summary_large_image' />
-        <meta name='twitter:title' content='Beonely product updates | Changelog' />
+        <meta
+          name='twitter:title'
+          content='Beonely product updates | Changelog'
+        />
         <meta name='twitter:description' content={description} />
         <meta name='twitter:image' content={ogImage} />
       </Helmet>

@@ -1,7 +1,10 @@
-import type { Database } from '@/lib/supabase/database.types'
-import { beonelyMarketingHtml, marketingEmailSiteOrigin } from '@/lib/email/beonely-marketing-html'
+import {
+  beonelyMarketingHtml,
+  marketingEmailSiteOrigin,
+} from '@/lib/email/beonely-marketing-html'
 import { beonelyTransactionalHtml } from '@/lib/email/beonely-transactional-html'
 import { sanitizeJobDescriptionHtml } from '@/lib/jobs/sanitize-job-description-html'
+import type { Database } from '@/lib/supabase/database.types'
 
 export type EmailTemplateRow =
   Database['public']['Tables']['email_templates']['Row']

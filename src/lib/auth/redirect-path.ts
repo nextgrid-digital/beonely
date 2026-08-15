@@ -1,7 +1,19 @@
 export function sanitizeRedirectPath(
   redirect: string | undefined | null
 ): string | undefined {
-  if (!redirect || !redirect.startsWith('/')) return undefined
+  const hasControlCharacter = Array.from(redirect ?? '').some((character) => {
+    const code = character.charCodeAt(0)
+    return code <= 31 || code === 127
+  })
+  if (
+    !redirect ||
+    !redirect.startsWith('/') ||
+    redirect.startsWith('//') ||
+    redirect.includes('\\') ||
+    hasControlCharacter
+  ) {
+    return undefined
+  }
   return redirect
 }
 

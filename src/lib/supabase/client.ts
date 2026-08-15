@@ -1,21 +1,28 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const publicSupabaseUrl = 'https://qxqkfgiyuqoxthpnsmyo.supabase.co'
-const publicSupabaseAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4cWtmZ2l5dXFveHRocG5zbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTA3NTksImV4cCI6MjA5MzcyNjc1OX0.tqy5XgQLzks5VONW-wxNit78Xb5cAioQNTEN973sSU4'
-
-const url =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ||
-  publicSupabaseUrl
-const anonKey =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() ||
-  publicSupabaseAnonKey
+function browserConfig(): { url: string; anonKey: string } {
+  return {
+    url: (
+      (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ''
+    ).trim(),
+    anonKey: (
+      (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? ''
+    ).trim(),
+  }
+}
 
 export function getSupabaseConfigured(): boolean {
+  const { url, anonKey } = browserConfig()
   return Boolean(url && anonKey)
 }
 
+/** Public project origin used to resolve app-owned Storage object paths. */
+export function getSupabaseUrl(): string {
+  return browserConfig().url
+}
+
 export function createSupabaseBrowserClient(): SupabaseClient {
+  const { url, anonKey } = browserConfig()
   if (!url || !anonKey) {
     throw new Error(
       'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Add them to .env for Beonely.'

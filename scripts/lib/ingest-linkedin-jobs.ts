@@ -53,12 +53,20 @@ export function normalizeLinkedInApplyUrl(raw: string): string {
   const trimmed = raw.trim()
   try {
     const u = new URL(trimmed)
+    if (
+      u.protocol !== 'https:' ||
+      u.username ||
+      u.password ||
+      (u.hostname !== 'linkedin.com' && u.hostname !== 'www.linkedin.com')
+    ) {
+      return ''
+    }
     if (u.hostname === 'linkedin.com') u.hostname = 'www.linkedin.com'
     u.search = ''
     u.hash = ''
     return u.toString().replace(/\/$/, '')
   } catch {
-    return trimmed
+    return ''
   }
 }
 
@@ -140,6 +148,11 @@ export function buildIngestJobRow(
   recruiter: { id: string; email: string; name: string }
 ) {
   const applyUrl = normalizeLinkedInApplyUrl(job.apply_url)
+  if (!applyUrl) {
+    throw new Error(
+      'LinkedIn imports require a canonical HTTPS LinkedIn apply_url'
+    )
+  }
   return {
     recruiter_id: recruiter.id,
     recruiter_email: recruiter.email,
@@ -193,6 +206,10 @@ export function parseIngestJobsFile(raw: string): IngestLinkedInJobInput[] {
         `Job at index ${index} missing job_title, company_name, apply_url, or job_description`
       )
     }
+    const normalizedApplyUrl = normalizeLinkedInApplyUrl(apply_url)
+    if (!normalizedApplyUrl) {
+      throw new Error(`Job at index ${index} has an invalid LinkedIn apply_url`)
+    }
     return {
       external_id:
         row.external_id != null ? String(row.external_id) : undefined,
@@ -203,7 +220,7 @@ export function parseIngestJobsFile(raw: string): IngestLinkedInJobInput[] {
       company_website:
         row.company_website != null ? String(row.company_website) : undefined,
       location: row.location != null ? String(row.location) : undefined,
-      apply_url,
+      apply_url: normalizedApplyUrl,
       job_description,
       posted_at: row.posted_at != null ? String(row.posted_at) : undefined,
       employment_type:

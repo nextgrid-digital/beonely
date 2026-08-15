@@ -4,11 +4,14 @@ import { Menu, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Logo } from '@/assets/logo'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { FacebookIcon } from '@/components/icons/facebook-icon'
-import { InstagramIcon } from '@/components/icons/instagram-icon'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { LinkedinIcon } from '@/components/icons/linkedin-icon'
-import { YoutubeIcon } from '@/components/icons/youtube-icon'
 import { FooterNewsletterSubscribe } from '@/features/jobs/footer-newsletter-subscribe'
 import { PublicSiteAccountNav } from '@/features/jobs/public-site-account-nav'
 
@@ -53,7 +56,6 @@ const footerLinkGroups = [
     links: [
       { label: 'Home', to: '/' },
       { label: 'Open roles', to: '/', hash: 'open-roles' },
-      { label: 'LinkedIn roles', to: '/', hash: 'linkedin-roles' },
       { label: 'Changelog', to: '/changelog' },
     ],
   },
@@ -118,9 +120,13 @@ export function PublicSiteHeader() {
               <SheetContent
                 side='right'
                 className='flex w-[min(92vw,22rem)] flex-col gap-0 p-0'
+                hideCloseButton
               >
+                <SheetDescription className='sr-only'>
+                  Navigate public Beonely pages and account actions.
+                </SheetDescription>
                 <div className='flex items-center justify-between border-b border-border px-4 py-3'>
-                  <span className='text-sm font-medium'>Menu</span>
+                  <SheetTitle className='text-sm font-medium'>Menu</SheetTitle>
                   <Button
                     type='button'
                     variant='ghost'
@@ -155,19 +161,6 @@ export function PublicSiteHeader() {
                       Open roles
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant='ghost'
-                    className='h-11 justify-start px-3 text-sm'
-                  >
-                    <Link
-                      to='/'
-                      hash='linkedin-roles'
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      Roles from LinkedIn
-                    </Link>
-                  </Button>
                 </div>
                 <div className='border-t border-border px-4 py-4'>
                   <PublicSiteAccountNav />
@@ -187,9 +180,6 @@ const footerSocialLinks = [
     href: 'https://www.linkedin.com/company/beonely',
     icon: LinkedinIcon,
   },
-  { label: 'Facebook', href: '#', icon: FacebookIcon },
-  { label: 'Instagram', href: '#', icon: InstagramIcon },
-  { label: 'YouTube', href: '#', icon: YoutubeIcon },
 ] as const
 
 export function PublicSiteFooter() {

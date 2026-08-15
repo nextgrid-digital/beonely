@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import type { RecruiterJobWorkspaceTab } from '@/features/recruiter/recruiter-nav-ia'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { RecruiterJobWorkspaceTab } from '@/features/recruiter/recruiter-nav-ia'
 
 export function RecruiterJobWorkspaceTabs(props: {
   jobId: string

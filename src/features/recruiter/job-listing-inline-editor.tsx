@@ -12,7 +12,10 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { companyInitials } from '@/features/jobs/company-logo-avatar'
+import {
+  companyInitials,
+  trustedCompanyLogoUrl,
+} from '@/features/jobs/company-logo-avatar'
 import { JobDescriptionRichTextField } from '@/features/jobs/job-description-rich-text-field'
 import { JobListingMetaEditor } from '@/features/jobs/job-listing-meta-editor'
 import {
@@ -35,10 +38,18 @@ export function JobListingInlineEditor(props: {
   logoBusy: boolean
   hasPendingLogo: boolean
 }) {
-  const { form, logoInputRef, onLogoFileChange, clearLogo, logoBusy, hasPendingLogo } =
-    props
+  const {
+    form,
+    logoInputRef,
+    onLogoFileChange,
+    clearLogo,
+    logoBusy,
+    hasPendingLogo,
+  } = props
   const companyName = form.watch('company')
-  const logoPreviewUrl = form.watch('company_logo')?.trim() || undefined
+  const logoPreviewUrl = trustedCompanyLogoUrl(form.watch('company_logo'), {
+    allowLocalPreview: true,
+  })
 
   return (
     <JobListingShell

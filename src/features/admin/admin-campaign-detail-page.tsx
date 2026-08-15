@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { fetchCampaignDetail } from '@/lib/email/admin-email-api'
@@ -13,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 
 export function AdminCampaignDetailPage({
   campaignId,
@@ -21,19 +23,33 @@ export function AdminCampaignDetailPage({
 }) {
   const { session } = useAuth()
   const token = session?.access_token
+  const [page, setPage] = useState(1)
 
   const query = useQuery({
-    queryKey: ['admin-campaign-detail', token, campaignId],
+    queryKey: [
+      'admin-campaign-detail',
+      session?.user.id,
+      token,
+      campaignId,
+      page,
+    ],
     enabled: Boolean(token),
-    queryFn: () => fetchCampaignDetail(token!, campaignId),
+    queryFn: () => fetchCampaignDetail(token!, campaignId, page),
   })
 
   if (query.isLoading) return <Skeleton className='h-64 w-full' />
   if (query.isError || !query.data) {
-    return <p className='text-sm text-destructive'>Could not load campaign.</p>
+    return (
+      <AdminQueryError
+        title='Could not load campaign'
+        error={query.error}
+        retrying={query.isFetching}
+        onRetry={() => void query.refetch()}
+      />
+    )
   }
 
-  const { campaign, recipients, delivery_counts } = query.data
+  const { campaign, recipients, delivery_counts, pagination } = query.data
 
   return (
     <div className='space-y-6'>
@@ -84,6 +100,31 @@ export function AdminCampaignDetailPage({
           ))}
         </TableBody>
       </Table>
+      <div className='flex items-center justify-between gap-3 text-sm text-muted-foreground'>
+        <span>
+          Showing {recipients.length} of {pagination.total} recipients
+        </span>
+        <div className='flex gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            Previous
+          </Button>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            disabled={page * pagination.page_size >= pagination.total}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { isAllowlistedAdminEmail } from '@/lib/auth/admin-access'
+import { sanitizeRedirectPath } from '@/lib/auth/redirect-path'
 import { fetchSessionPersona } from '@/lib/auth/route-guards'
 import {
   getSupabaseBrowserClient,
@@ -13,7 +14,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { UserAuthForm } from '../sign-in/components/user-auth-form'
@@ -47,7 +47,7 @@ export function StaffSignIn() {
       return
     }
 
-    const dest = redirect && redirect.startsWith('/') ? redirect : '/admin'
+    const dest = sanitizeRedirectPath(redirect) ?? '/admin'
     void navigate({ to: dest, replace: true })
   }
 
@@ -57,9 +57,9 @@ export function StaffSignIn() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
+          <h1 className='text-lg leading-none font-semibold tracking-tight'>
             Staff sign in
-          </CardTitle>
+          </h1>
           <CardDescription>
             Internal use only. Your email must be on the staff allowlist and
             your account must have admin access in Beonely.

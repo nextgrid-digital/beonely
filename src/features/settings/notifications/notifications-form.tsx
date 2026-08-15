@@ -1,10 +1,15 @@
+import { useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { updateMarketingConsent } from '@/lib/email/marketing-opt-in'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { useAuth } from '@/context/auth-provider'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -12,208 +17,147 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Switch } from '@/components/ui/switch'
 
 const notificationsFormSchema = z.object({
-  type: z.enum(['all', 'mentions', 'none'], {
-    error: (iss) =>
-      iss.input === undefined
-        ? 'Please select a notification type.'
-        : undefined,
-  }),
-  mobile: z.boolean().default(false).optional(),
-  communication_emails: z.boolean().default(false).optional(),
-  social_emails: z.boolean().default(false).optional(),
-  marketing_emails: z.boolean().default(false).optional(),
-  security_emails: z.boolean(),
+  marketing_emails: z.boolean(),
 })
 
 type NotificationsFormValues = z.infer<typeof notificationsFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<NotificationsFormValues> = {
-  communication_emails: false,
-  marketing_emails: false,
-  social_emails: true,
-  security_emails: true,
-}
-
 export function NotificationsForm() {
+  const { user, profile, session } = useAuth()
+  const queryClient = useQueryClient()
+  const audience = profile?.role === 'candidate' ? 'candidate' : 'recruiter'
+  const queryKey = ['marketing-preference', audience, user?.id] as const
+
+  const preferenceQuery = useQuery({
+    queryKey,
+    enabled: Boolean(user?.id),
+    queryFn: async () => {
+      const sb = getSupabaseBrowserClient()
+      const table =
+        audience === 'candidate' ? 'job_seeker_profiles' : 'recruiters'
+      const { data, error } = await sb
+        .from(table)
+        .select('marketing_opt_in')
+        .eq('user_id', user!.id)
+        .maybeSingle()
+      if (error) throw error
+      return data?.marketing_opt_in === true
+    },
+  })
+
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsFormSchema),
-    defaultValues,
+    defaultValues: { marketing_emails: false },
   })
+
+  useEffect(() => {
+    if (preferenceQuery.data !== undefined) {
+      form.reset({ marketing_emails: preferenceQuery.data })
+    }
+  }, [form, preferenceQuery.data])
+
+  const saveMutation = useMutation({
+    mutationFn: async (marketingOptIn: boolean) => {
+      const accessToken = session?.access_token
+      if (!accessToken) throw new Error('missing_access_token')
+      await updateMarketingConsent({
+        marketing_opt_in: marketingOptIn,
+        audience,
+        accessToken,
+      })
+    },
+    onSuccess: (_data, marketingOptIn) => {
+      queryClient.setQueryData(queryKey, marketingOptIn)
+      form.reset({ marketing_emails: marketingOptIn })
+      toast.success('Email preferences updated')
+    },
+    onError: () => toast.error('Could not update email preferences'),
+  })
+
+  if (preferenceQuery.isLoading) {
+    return <Loader2 className='size-6 animate-spin text-muted-foreground' />
+  }
+
+  if (preferenceQuery.isError) {
+    return (
+      <Alert variant='destructive'>
+        <AlertTitle>Could not load email preferences</AlertTitle>
+        <AlertDescription className='mt-3 flex flex-wrap items-center gap-3'>
+          Your current preference was not changed.
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            onClick={() => void preferenceQuery.refetch()}
+          >
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
-        className='space-y-8'
+        onSubmit={form.handleSubmit((values) =>
+          saveMutation.mutate(values.marketing_emails)
+        )}
+        className='space-y-6'
       >
-        <FormField
-          control={form.control}
-          name='type'
-          render={({ field }) => (
-            <FormItem className='relative space-y-3'>
-              <FormLabel>Notify me about...</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className='flex flex-col gap-2'
-                >
-                  <FormItem className='flex items-center'>
-                    <FormControl>
-                      <RadioGroupItem value='all' />
-                    </FormControl>
-                    <FormLabel className='font-normal'>
-                      All new messages
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className='flex items-center'>
-                    <FormControl>
-                      <RadioGroupItem value='mentions' />
-                    </FormControl>
-                    <FormLabel className='font-normal'>
-                      Direct messages and mentions
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className='flex items-center'>
-                    <FormControl>
-                      <RadioGroupItem value='none' />
-                    </FormControl>
-                    <FormLabel className='font-normal'>Nothing</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className='relative'>
-          <h3 className='mb-4 text-lg font-medium'>Email Notifications</h3>
-          <div className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='communication_emails'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-base'>
-                      Communication emails
-                    </FormLabel>
-                    <FormDescription>
-                      Receive emails about your account activity.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='marketing_emails'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-base'>
-                      Marketing emails
-                    </FormLabel>
-                    <FormDescription>
-                      Receive emails about new products, features, and more.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='social_emails'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-base'>Social emails</FormLabel>
-                    <FormDescription>
-                      Receive emails for friend requests, follows, and more.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='security_emails'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel className='text-base'>Security emails</FormLabel>
-                    <FormDescription>
-                      Receive emails about your account activity and security.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled
-                      aria-readonly
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        <div className='space-y-4'>
+          <FormField
+            control={form.control}
+            name='marketing_emails'
+            render={({ field }) => (
+              <FormItem className='flex flex-row items-center justify-between gap-4 rounded-lg border p-4'>
+                <div className='space-y-1'>
+                  <FormLabel htmlFor='marketing-emails' className='text-base'>
+                    Marketing emails
+                  </FormLabel>
+                  <FormDescription>
+                    Receive relevant{' '}
+                    {audience === 'candidate' ? 'job' : 'hiring'} and product
+                    updates. You can opt out again at any time.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    id='marketing-emails'
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={saveMutation.isPending}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className='flex flex-row items-center justify-between gap-4 rounded-lg border p-4'>
+            <div className='space-y-1'>
+              <p className='text-base font-medium'>
+                Account and security emails
+              </p>
+              <p className='text-sm text-muted-foreground'>
+                Required messages such as sign-in, receipts, applications, and
+                account security are not marketing and remain enabled.
+              </p>
+            </div>
+            <Switch checked disabled aria-label='Account emails are required' />
           </div>
         </div>
-        <FormField
-          control={form.control}
-          name='mobile'
-          render={({ field }) => (
-            <FormItem className='relative flex flex-row items-start'>
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className='space-y-1 leading-none'>
-                <FormLabel>
-                  Use different settings for my mobile devices
-                </FormLabel>
-                <FormDescription>
-                  You can manage your mobile notifications in the{' '}
-                  <Link
-                    to='/settings'
-                    className='underline decoration-dashed underline-offset-4 hover:decoration-solid'
-                  >
-                    mobile settings
-                  </Link>{' '}
-                  page.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-        <Button type='submit'>Update notifications</Button>
+
+        <Button
+          type='submit'
+          disabled={saveMutation.isPending || !form.formState.isDirty}
+        >
+          {saveMutation.isPending ? <Loader2 className='animate-spin' /> : null}
+          Save preferences
+        </Button>
       </form>
     </Form>
   )

@@ -1,14 +1,11 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { LayoutGroup } from 'motion/react'
 import { Loader2, Search } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { LayoutGroup } from 'motion/react'
 import { groupByDate } from '@/lib/list/group-by-date'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  InboxFilterPills,
-  type InboxFilterPill,
-} from './inbox-filter-pills'
+import { InboxFilterPills, type InboxFilterPill } from './inbox-filter-pills'
 import { InboxListRow, type InboxRowData } from './inbox-list-row'
 
 interface InboxListProps<T extends string> {
@@ -184,7 +181,10 @@ export function InboxList<T extends string>({
                   >
                     {group.label ? (
                       <div
-                        className={cn('sticky z-10 bg-background', stickyTopClassName)}
+                        className={cn(
+                          'sticky z-10 bg-background',
+                          stickyTopClassName
+                        )}
                       >
                         <h2 className='px-4 py-2.5 text-xs font-medium text-muted-foreground'>
                           {group.label}

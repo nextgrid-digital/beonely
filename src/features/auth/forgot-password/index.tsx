@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '../auth-layout'
 import { ForgotPasswordForm } from './components/forgot-password-form'
@@ -15,9 +14,9 @@ export function ForgotPassword() {
     <AuthLayout>
       <Card className='w-full gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
+          <h1 className='text-lg leading-none font-semibold tracking-tight'>
             Forgot Password
-          </CardTitle>
+          </h1>
           <CardDescription>
             Enter your registered email and we will send you a link to reset
             your password.

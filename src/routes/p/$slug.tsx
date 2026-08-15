@@ -8,13 +8,13 @@ import { publicSiteOrigin } from '@/lib/site/site-origin'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PortfolioShareMenu } from '@/features/candidate/portfolio-share-menu'
+import { ReadCvResumePreview } from '@/features/candidate/resume-builder/read-cv-resume-preview'
 import {
   PUBLIC_SITE_BREADCRUMB_LINK,
   PUBLIC_SITE_BREADCRUMB_LIST,
   PUBLIC_SITE_MAIN_COLUMN,
   PublicSiteStickySubheader,
 } from '@/features/jobs/public-site-layout'
-import { ReadCvResumePreview } from '@/features/candidate/resume-builder/read-cv-resume-preview'
 
 export const Route = createFileRoute('/p/$slug')({
   component: PortfolioPage,
@@ -79,7 +79,9 @@ function PortfolioPage() {
       >
         <div className='w-full pt-2'>
           <PublicSiteStickySubheader
-            breadcrumb={<PortfolioBreadcrumb currentLabel='Portfolio not found' />}
+            breadcrumb={
+              <PortfolioBreadcrumb currentLabel='Portfolio not found' />
+            }
           />
           <div className='mx-auto max-w-3xl pt-6 pb-16'>
             <h1 className='text-lg font-semibold sm:text-xl'>
@@ -105,8 +107,10 @@ function PortfolioPage() {
   const ogImage = portfolioOgImageUrl(portfolio.slug)
   const title = `${portfolio.name} · Beonely`
   const description =
-    [portfolio.headline, portfolio.about].filter(Boolean).join(' — ').slice(0, 160) ||
-    `${portfolio.name} · ServiceNow profile on Beonely`
+    [portfolio.headline, portfolio.about]
+      .filter(Boolean)
+      .join(' — ')
+      .slice(0, 160) || `${portfolio.name} · ServiceNow profile on Beonely`
 
   return (
     <>

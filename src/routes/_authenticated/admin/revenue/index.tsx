@@ -82,6 +82,7 @@ function AdminRevenuePage() {
               <TableHead>Recruiter</TableHead>
               <TableHead>Job</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Checkout</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Razorpay</TableHead>
             </TableRow>
@@ -90,7 +91,7 @@ function AdminRevenuePage() {
             {revenue.data.map((row) => (
               <TableRow key={row.id}>
                 <TableCell className='text-sm whitespace-nowrap tabular-nums'>
-                  {new Date(row.created_at).toLocaleString()}
+                  {new Date(row.paid_at ?? row.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <div className='text-sm'>{row.recruiter_email}</div>
@@ -102,10 +103,41 @@ function AdminRevenuePage() {
                   {row.job_title ?? '—'}
                 </TableCell>
                 <TableCell className='tabular-nums'>
-                  {formatInrFromPaise(row.amount)}
+                  <div>{formatInrFromPaise(row.amount)}</div>
+                  {row.refunded_amount + row.chargeback_amount > 0 ? (
+                    <div className='text-xs text-muted-foreground'>
+                      Net{' '}
+                      {formatInrFromPaise(
+                        Math.max(
+                          row.amount -
+                            Math.min(
+                              row.refunded_amount + row.chargeback_amount,
+                              row.amount
+                            ),
+                          0
+                        )
+                      )}
+                    </div>
+                  ) : null}
+                </TableCell>
+                <TableCell className='text-xs'>
+                  <div className='capitalize'>{row.payment_kind}</div>
+                  <div className='text-muted-foreground'>
+                    {row.plan.replace(/_/g, ' ')}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant='outline'>{row.status}</Badge>
+                  <div className='flex flex-col items-start gap-1'>
+                    <Badge variant='outline'>{row.status}</Badge>
+                    {row.requires_manual_review ? (
+                      <Badge variant='destructive'>Review</Badge>
+                    ) : null}
+                    {row.risk_status ? (
+                      <span className='text-xs text-muted-foreground'>
+                        {row.risk_status.replace(/_/g, ' ')}
+                      </span>
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell className='max-w-48 truncate font-mono text-xs text-muted-foreground'>
                   {row.razorpay_payment_id ?? row.razorpay_order_id ?? '—'}

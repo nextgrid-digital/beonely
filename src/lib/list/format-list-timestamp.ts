@@ -30,8 +30,6 @@ export function formatListTimestamp(value: string | Date): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
-    ...(date.getFullYear() !== now.getFullYear()
-      ? { year: 'numeric' }
-      : {}),
+    ...(date.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
   }).format(date)
 }

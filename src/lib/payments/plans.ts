@@ -70,9 +70,13 @@ export const PLAN_AMOUNT_INR_PAISE: Record<PaymentPlan, number> = {
   featured_week: withGst(PLAN_BASE_AMOUNT_INR_PAISE.featured_week),
   featured_month: withGst(PLAN_BASE_AMOUNT_INR_PAISE.featured_month),
   standard_week_renew: withGst(PLAN_BASE_AMOUNT_INR_PAISE.standard_week_renew),
-  standard_month_renew: withGst(PLAN_BASE_AMOUNT_INR_PAISE.standard_month_renew),
+  standard_month_renew: withGst(
+    PLAN_BASE_AMOUNT_INR_PAISE.standard_month_renew
+  ),
   featured_week_renew: withGst(PLAN_BASE_AMOUNT_INR_PAISE.featured_week_renew),
-  featured_month_renew: withGst(PLAN_BASE_AMOUNT_INR_PAISE.featured_month_renew),
+  featured_month_renew: withGst(
+    PLAN_BASE_AMOUNT_INR_PAISE.featured_month_renew
+  ),
 }
 
 export const PLAN_LABEL: Record<PaymentPlan, string> = {

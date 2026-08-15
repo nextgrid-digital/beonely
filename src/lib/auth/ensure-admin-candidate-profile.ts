@@ -20,8 +20,8 @@ export async function ensureAdminCandidateProfile(user: User): Promise<void> {
     email,
     resume_structured: defaultResumeStructured(),
     resume_source: 'user_edit',
-    notification_opt_in: true,
-    marketing_opt_in: true,
-    marketing_opt_in_at: new Date().toISOString(),
+    notification_opt_in: false,
+    marketing_opt_in: false,
+    marketing_opt_in_at: null,
   })
 }

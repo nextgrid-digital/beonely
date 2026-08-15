@@ -22,6 +22,7 @@ export async function startRazorpayJobCheckout(opts: {
   jobId: string
   plan: PaymentPlan
   accessToken: string
+  turnstileToken?: string
   onPaid: () => void
   onError: (message: string) => void
   /** Called when the user closes the checkout modal without paying. */
@@ -40,7 +41,11 @@ export async function startRazorpayJobCheckout(opts: {
       keyId: string
     }>(
       '/api/create-order',
-      { jobId: opts.jobId, plan: opts.plan },
+      {
+        jobId: opts.jobId,
+        plan: opts.plan,
+        turnstileToken: opts.turnstileToken,
+      },
       opts.accessToken
     )
 
@@ -58,7 +63,16 @@ export async function startRazorpayJobCheckout(opts: {
         razorpay_signature: string
       }) => {
         try {
-          await apiPost('/api/verify-payment', response, opts.accessToken)
+          const verification = await apiPost<{
+            entitlementApplied: boolean
+            manualReview: boolean
+          }>('/api/verify-payment', response, opts.accessToken)
+          if (!verification.entitlementApplied || verification.manualReview) {
+            opts.onError(
+              'Payment was received but needs a manual review before the listing is updated. Contact support with your Razorpay payment ID.'
+            )
+            return
+          }
           opts.onPaid()
         } catch {
           opts.onError('Verification failed — contact support')

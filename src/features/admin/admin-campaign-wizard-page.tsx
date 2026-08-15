@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AdminQueryError } from '@/features/admin/admin-query-error'
 import { EmailBodyRichTextField } from '@/features/admin/email-body-rich-text-field'
 
 type CampaignAudience = Database['public']['Enums']['campaign_audience']
@@ -207,21 +208,31 @@ export function AdminCampaignWizardPage({
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      let id = savedCampaignId
-      if (!id) {
-        const created = await saveDraftMutation.mutateAsync()
-        id = created.id
-        setSavedCampaignId(id)
-      }
-      let cursor: number | undefined
+      const saved = await saveDraftMutation.mutateAsync()
+      const id = saved.id
+      setSavedCampaignId(id)
+      let cursor = 0
       let done = false
+      const seenCursors = new Set<number>()
+      let batches = 0
       while (!done) {
+        if (seenCursors.has(cursor) || batches >= 10_000) {
+          throw new Error('Campaign send stopped because progress stalled')
+        }
+        seenCursors.add(cursor)
+        batches += 1
         const progress = await sendAdminCampaign(token!, {
-          campaign_id: id!,
+          campaign_id: id,
           cursor,
         })
         done = progress.done
-        cursor = progress.next_cursor ?? undefined
+        if (!done) {
+          const next = progress.next_cursor
+          if (next === null || next <= cursor) {
+            throw new Error('Campaign send stopped because progress stalled')
+          }
+          cursor = next
+        }
       }
     },
     onSuccess: () => {
@@ -234,16 +245,15 @@ export function AdminCampaignWizardPage({
 
   const testSendMutation = useMutation({
     mutationFn: async () => {
-      let id = savedCampaignId
-      if (!id) {
-        const created = await saveDraftMutation.mutateAsync()
-        id = created.id
-        setSavedCampaignId(id)
-      }
       const to = testEmail.trim()
-      if (!to) throw new Error('Enter a test email')
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        throw new Error('Enter a valid test email')
+      }
+      const saved = await saveDraftMutation.mutateAsync()
+      const id = saved.id
+      setSavedCampaignId(id)
       return sendAdminCampaign(token!, {
-        campaign_id: id!,
+        campaign_id: id,
         test_email: to,
       })
     },
@@ -287,8 +297,24 @@ export function AdminCampaignWizardPage({
         ))}
       </div>
 
+      {statsQuery.isError || templatesQuery.isError ? (
+        <AdminQueryError
+          title='Could not load campaign setup data'
+          error={statsQuery.error ?? templatesQuery.error}
+          retrying={statsQuery.isFetching || templatesQuery.isFetching}
+          onRetry={() => {
+            void statsQuery.refetch()
+            void templatesQuery.refetch()
+          }}
+        />
+      ) : null}
+
       {step === 0 ? (
-        <div className='grid gap-3 sm:grid-cols-2'>
+        <div
+          className='grid gap-3 sm:grid-cols-2'
+          role='radiogroup'
+          aria-label='Campaign audience'
+        >
           {AUDIENCE_OPTIONS.map((opt) => (
             <Card
               key={opt.value}
@@ -296,7 +322,20 @@ export function AdminCampaignWizardPage({
                 'cursor-pointer transition-colors hover:border-primary/50',
                 audience === opt.value && 'border-primary ring-1 ring-primary'
               )}
-              onClick={() => setAudience(opt.value)}
+              role='radio'
+              aria-checked={audience === opt.value}
+              tabIndex={0}
+              onClick={() => {
+                setAudience(opt.value)
+                setConfirmedOptIn(false)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  setAudience(opt.value)
+                  setConfirmedOptIn(false)
+                }
+              }}
             >
               <CardHeader className='pb-2'>
                 <CardTitle className='text-base'>{opt.label}</CardTitle>
@@ -342,6 +381,15 @@ export function AdminCampaignWizardPage({
                   applyTemplate(t)
                   setStep(2)
                 }}
+                role='button'
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    applyTemplate(t)
+                    setStep(2)
+                  }
+                }}
               >
                 <CardHeader className='pb-2'>
                   <CardTitle className='text-sm font-medium'>
@@ -376,13 +424,25 @@ export function AdminCampaignWizardPage({
             />
           </div>
           {!advancedHtml ? (
-            <EmailBodyRichTextField value={bodyValue} onChange={setBody} />
+            <div className='space-y-2'>
+              <Label htmlFor='campaign-body'>Campaign body</Label>
+              <EmailBodyRichTextField
+                id='campaign-body'
+                ariaLabel='Campaign body'
+                value={bodyValue}
+                onChange={setBody}
+              />
+            </div>
           ) : (
-            <textarea
-              className='min-h-[12rem] w-full rounded-md border border-border bg-background p-3 font-mono text-xs'
-              value={bodyValue}
-              onChange={(e) => setBody(e.target.value)}
-            />
+            <div className='space-y-2'>
+              <Label htmlFor='campaign-html'>Campaign HTML</Label>
+              <textarea
+                id='campaign-html'
+                className='min-h-[12rem] w-full rounded-md border border-border bg-background p-3 font-mono text-xs'
+                value={bodyValue}
+                onChange={(e) => setBody(e.target.value)}
+              />
+            </div>
           )}
           <Collapsible open={advancedHtml} onOpenChange={setAdvancedHtml}>
             <CollapsibleTrigger asChild>

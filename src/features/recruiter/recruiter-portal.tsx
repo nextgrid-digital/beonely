@@ -12,6 +12,7 @@ import { formatQueryError } from '@/lib/format-query-error'
 import { jobListingIsLive } from '@/lib/jobs/job-listing-live'
 import { jobListingCanRenew } from '@/lib/jobs/job-listing-renewal'
 import { RECRUITER_OWNED_JOB_SOURCE } from '@/lib/jobs/recruiter-owned-job'
+import { usePaymentTurnstileChallenge } from '@/lib/payments/payment-turnstile'
 import {
   paymentPlanFromSelection,
   type PaymentPlan,
@@ -49,12 +50,12 @@ import type { InboxRowData } from '@/components/inbox/inbox-list-row'
 import type { InboxPillItem } from '@/components/inbox/inbox-status-pill'
 import { ExtendListingButton } from '@/features/recruiter/extend-listing-button'
 import { JobShareMenu } from '@/features/recruiter/job-share-menu'
-import { RecruiterJobPeek } from '@/features/recruiter/recruiter-job-peek'
 import {
   ListingPlanCheckout,
   selectedPlanPriceLabel,
 } from '@/features/recruiter/listing-plan-checkout'
 import { FeaturedBoostPlanList } from '@/features/recruiter/plan-option-list'
+import { RecruiterJobPeek } from '@/features/recruiter/recruiter-job-peek'
 
 const companySchema = z.object({
   company_name: z.string().min(2, 'Company name is required'),
@@ -266,15 +267,15 @@ export function RecruiterPortal() {
         (u.user_metadata?.full_name as string | undefined)?.trim() ||
         u.email?.split('@')[0] ||
         company_name
-      const now = new Date().toISOString()
+      const marketingOptIn = u.user_metadata?.marketing_opt_in === true
       const { error } = await sb.from('recruiters').insert({
         user_id: u.id,
         company_name,
         email: u.email ?? '',
         name: displayName,
         role: 'recruiter',
-        marketing_opt_in: true,
-        marketing_opt_in_at: now,
+        marketing_opt_in: marketingOptIn,
+        marketing_opt_in_at: marketingOptIn ? new Date().toISOString() : null,
       })
       if (error) throw error
     },
@@ -290,7 +291,7 @@ export function RecruiterPortal() {
           dedupe_key: `recruiter_signup:${user.id}`,
         }).catch(() => undefined)
         void updateMarketingConsent({
-          marketing_opt_in: true,
+          marketing_opt_in: user.user_metadata?.marketing_opt_in === true,
           audience: 'recruiter',
           accessToken: token,
         }).catch(() => undefined)
@@ -535,10 +536,15 @@ function PayJobButton(props: {
     paymentPlanFromSelection('month', false, false)
   )
   const [paying, setPaying] = useState(false)
+  const turnstile = usePaymentTurnstileChallenge()
 
   const startPay = async () => {
     if (!props.accessToken) {
       toast.error('Sign in again')
+      return
+    }
+    if (!turnstile.ready) {
+      toast.error('Complete the verification before starting checkout')
       return
     }
     setPaying(true)
@@ -547,6 +553,7 @@ function PayJobButton(props: {
         jobId: props.job.id,
         plan,
         accessToken: props.accessToken,
+        turnstileToken: turnstile.token ?? undefined,
         onPaid: () => {
           toast.success('Payment successful — pending review')
           setPlanOpen(false)
@@ -560,6 +567,7 @@ function PayJobButton(props: {
       })
     } finally {
       setPaying(false)
+      turnstile.reset()
     }
   }
 
@@ -583,6 +591,7 @@ function PayJobButton(props: {
             </DialogDescription>
           </DialogHeader>
           <ListingPlanCheckout plan={plan} onChange={setPlan} />
+          {turnstile.challenge}
           <DialogFooter className='flex-col gap-2 sm:flex-col sm:items-stretch'>
             <p className='text-center text-sm text-muted-foreground'>
               Total due:{' '}
@@ -590,7 +599,10 @@ function PayJobButton(props: {
                 {selectedPlanPriceLabel(plan)}
               </span>
             </p>
-            <Button disabled={paying} onClick={() => void startPay()}>
+            <Button
+              disabled={paying || !turnstile.ready}
+              onClick={() => void startPay()}
+            >
               {paying ? (
                 <>
                   <Loader2 className='size-4 animate-spin' aria-hidden />
@@ -616,10 +628,15 @@ function FeaturedBoostButton(props: {
   const [planOpen, setPlanOpen] = useState(false)
   const [plan, setPlan] = useState<PaymentPlan>('featured_month')
   const [paying, setPaying] = useState(false)
+  const turnstile = usePaymentTurnstileChallenge()
 
   const startPay = async () => {
     if (!props.accessToken) {
       toast.error('Sign in again')
+      return
+    }
+    if (!turnstile.ready) {
+      toast.error('Complete the verification before starting checkout')
       return
     }
     setPaying(true)
@@ -628,6 +645,7 @@ function FeaturedBoostButton(props: {
         jobId: props.job.id,
         plan,
         accessToken: props.accessToken,
+        turnstileToken: turnstile.token ?? undefined,
         onPaid: () => {
           toast.success(
             props.job.featured
@@ -645,6 +663,7 @@ function FeaturedBoostButton(props: {
       })
     } finally {
       setPaying(false)
+      turnstile.reset()
     }
   }
 
@@ -678,6 +697,7 @@ function FeaturedBoostButton(props: {
             value={plan}
             onChange={setPlan}
           />
+          {turnstile.challenge}
           <DialogFooter className='flex-col gap-2 sm:flex-col sm:items-stretch'>
             <p className='text-center text-sm text-muted-foreground'>
               Total due:{' '}
@@ -685,7 +705,10 @@ function FeaturedBoostButton(props: {
                 {selectedPlanPriceLabel(plan)}
               </span>
             </p>
-            <Button disabled={paying} onClick={() => void startPay()}>
+            <Button
+              disabled={paying || !turnstile.ready}
+              onClick={() => void startPay()}
+            >
               {paying ? (
                 <>
                   <Loader2 className='size-4 animate-spin' aria-hidden />

@@ -4,15 +4,6 @@ import {
   sortTaxonomyLabels,
   toggleInList,
 } from '@/lib/jobs/servicenow-job-taxonomy'
-
-export function appendTaxonomyOption(
-  value: string[],
-  option: string,
-  catalog: readonly string[]
-): string[] {
-  if (value.includes(option)) return value
-  return sortTaxonomyLabels([...value, option], catalog)
-}
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,6 +20,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+
+export function appendTaxonomyOption(
+  value: string[],
+  option: string,
+  catalog: readonly string[]
+): string[] {
+  if (value.includes(option)) return value
+  return sortTaxonomyLabels([...value, option], catalog)
+}
 
 export function TaxonomyChipRow(props: {
   label: string
@@ -91,7 +91,9 @@ export function TaxonomyChipRow(props: {
           </PopoverTrigger>
           <PopoverContent className='w-64 p-0' align='start'>
             <Command>
-              <CommandInput placeholder={`Search ${props.label.toLowerCase()}…`} />
+              <CommandInput
+                placeholder={`Search ${props.label.toLowerCase()}…`}
+              />
               <CommandList>
                 <CommandEmpty>No options left.</CommandEmpty>
                 <CommandGroup>

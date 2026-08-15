@@ -34,7 +34,9 @@ const AMOUNT_INPUT = cn(
   'rounded-none focus-visible:ring-0 focus-visible:ring-offset-0'
 )
 
-export function MetaSalaryField(props: { form: UseFormReturn<JobEditorValues> }) {
+export function MetaSalaryField(props: {
+  form: UseFormReturn<JobEditorValues>
+}) {
   const { form } = props
   const currencyError = form.formState.errors.salary_currency?.message
   const amountError = form.formState.errors.salary_amount?.message

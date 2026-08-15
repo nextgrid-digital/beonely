@@ -13,5 +13,9 @@ export default defineConfig({
     unstubEnvs: true,
     environment: 'node',
     include: ['api/**/*.test.ts', 'scripts/**/*.test.ts'],
+    // Several router/module smoke tests intentionally import the complete
+    // serverless graph. Allow cold Windows and shared CI workers to finish
+    // module transformation without turning a healthy import into a 5s flake.
+    testTimeout: 20_000,
   },
 })

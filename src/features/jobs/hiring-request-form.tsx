@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2, Mail } from 'lucide-react'
-import { useState } from 'react'
 import { toast } from 'sonner'
-import { submitHiringRequest, type HiringRequestInput } from '@/lib/hiring-requests'
+import {
+  submitHiringRequest,
+  type HiringRequestInput,
+} from '@/lib/hiring-requests'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,7 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 const shortlistMailto =
-  'mailto:nextgrid_os@agentmail.to?cc=hello@nextgrid.digital&subject=Beonely%20ServiceNow%20hiring%20request'
+  'mailto:hello@nextgrid.digital?subject=Beonely%20ServiceNow%20hiring%20request'
 
 type FormState = {
   company_name: string
@@ -104,8 +107,8 @@ export function HiringRequestForm() {
           Request a curated ServiceNow shortlist
         </h2>
         <p className='text-sm leading-6 text-muted-foreground sm:text-base'>
-          Tell Beonely what you need. This creates a hiring request for manual follow-up,
-          so buyer intent does not disappear into generic traffic.
+          Tell Beonely what you need. This creates a hiring request for manual
+          follow-up, so buyer intent does not disappear into generic traffic.
         </p>
       </div>
 
@@ -255,7 +258,7 @@ export function HiringRequestForm() {
             placeholder='Comp range, notice period expectations, must-have skills, timezone constraints...'
           />
         </div>
-        <div className='md:col-span-2 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between'>
+        <div className='flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between md:col-span-2'>
           <p className='text-sm text-muted-foreground'>
             Prefer email? You can also send the brief directly.
           </p>

@@ -41,7 +41,9 @@ describe('JobListingPreview', () => {
     )
 
     await expect
-      .element(screen.getByRole('heading', { level: 1, name: 'ServiceNow Developer' }))
+      .element(
+        screen.getByRole('heading', { level: 1, name: 'ServiceNow Developer' })
+      )
       .toBeVisible()
     await expect.element(screen.getByText('Role details')).toBeVisible()
   })

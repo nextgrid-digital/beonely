@@ -1,13 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchPublicPortfolioBySlug } from '../../_lib/public-portfolio.js'
 import {
   portfolioOgDescription,
   portfolioOgImageApiUrl,
   portfolioOgTitle,
   publicPortfolioPageUrl,
 } from '../../_lib/portfolio-og-meta.js'
+import { fetchPublicPortfolioBySlug } from '../../_lib/public-portfolio.js'
+import { isValidPortfolioSlug } from '../../_lib/public-slug.js'
+import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { requestIp } from '../../_lib/request-ip.js'
 
-function escapeHtml (s: string): string {
+function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -15,7 +18,7 @@ function escapeHtml (s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-export async function handlePortfolioShareHtml (
+export async function handlePortfolioShareHtml(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -24,11 +27,15 @@ export async function handlePortfolioShareHtml (
   }
 
   const slug = typeof req.query.slug === 'string' ? req.query.slug.trim() : ''
-  if (!slug) {
-    return res.status(400).send('Missing slug')
+  if (!isValidPortfolioSlug(slug)) {
+    return res.status(400).send('Invalid slug')
   }
 
   try {
+    await rateLimitOrThrow(`share-html:${requestIp(req)}`, {
+      limit: 120,
+      windowSeconds: 300,
+    })
     const portfolio = await fetchPublicPortfolioBySlug(slug)
     if (!portfolio) {
       return res.status(404).send('Portfolio not found')
@@ -65,9 +72,15 @@ export async function handlePortfolioShareHtml (
 </html>`
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600')
+    // A portfolio owner can unpublish at any time; do not retain personal data
+    // in shared caches after that state change.
+    res.setHeader('Cache-Control', 'private, no-store')
     return res.status(200).send(html)
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      res.setHeader('Retry-After', String(error.retryAfterSeconds))
+      return res.status(error.statusCode).send(error.code)
+    }
     return res.status(500).send('error')
   }
 }

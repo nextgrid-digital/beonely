@@ -140,7 +140,7 @@ async function main() {
       process.exit(1)
     }
     recruiter = data
-    console.log('Using recruiter for ingest:', recruiter.id, recruiter.email)
+    console.log('Using recruiter for ingest:', recruiter.id)
   }
 
   const jobsFile = resolveJobsFilePath()
