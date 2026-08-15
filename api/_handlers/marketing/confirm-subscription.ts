@@ -1,18 +1,21 @@
 import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
 
 const tokenSchema = z.string().uuid()
 
 function tokenFromRequest(req: VercelRequest): string {
   if (typeof req.query.token === 'string') return req.query.token
+  const bodyRead = readJsonObjectBody(req, 8 * 1024)
   if (
-    req.body &&
-    typeof req.body === 'object' &&
-    'token' in req.body &&
-    typeof (req.body as { token?: unknown }).token === 'string'
+    bodyRead.ok &&
+    bodyRead.value &&
+    typeof bodyRead.value === 'object' &&
+    'token' in bodyRead.value &&
+    typeof (bodyRead.value as { token?: unknown }).token === 'string'
   ) {
-    return (req.body as { token: string }).token
+    return (bodyRead.value as { token: string }).token
   }
   return ''
 }

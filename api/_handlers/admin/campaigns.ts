@@ -115,11 +115,13 @@ export async function handle(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'DELETE') {
+    const bodyRead = readJsonObjectBody(req, 8 * 1024)
+    const body = bodyRead.ok ? bodyRead.value : undefined
     const id =
       typeof req.query.id === 'string'
         ? req.query.id
-        : typeof req.body === 'object' && req.body !== null && 'id' in req.body
-          ? String((req.body as { id: unknown }).id)
+        : typeof body === 'object' && body !== null && 'id' in body
+          ? String((body as { id: unknown }).id)
           : ''
     const parsedId = z.string().uuid().safeParse(id)
     if (!parsedId.success) {

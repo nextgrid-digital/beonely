@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handle } from '../_handlers/marketing/unsubscribe.js'
 
+const validToken = '11111111-1111-4111-8111-111111111111'
+
 const mocks = vi.hoisted(() => ({
   tryGetServiceSupabase: vi.fn(),
   unsubscribeByToken: vi.fn(),
@@ -64,7 +66,7 @@ describe('unsubscribe confirmation boundary', () => {
     await handle(
       {
         method: 'GET',
-        query: { token: 'token" onmouseover="alert(1)' },
+        query: { token: validToken },
         headers: {},
       } as unknown as VercelRequest,
       res
@@ -74,7 +76,7 @@ describe('unsubscribe confirmation boundary', () => {
     expect(res.headers['Content-Type']).toBe('text/html; charset=utf-8')
     expect(res.headers['Cache-Control']).toBe('private, no-store')
     expect(String(res.body)).toContain('Confirm unsubscribe')
-    expect(String(res.body)).toContain('token&quot; onmouseover=&quot;alert(1)')
+    expect(String(res.body)).toContain(validToken)
     expect(mocks.tryGetServiceSupabase).not.toHaveBeenCalled()
     expect(mocks.unsubscribeByToken).not.toHaveBeenCalled()
   })
@@ -85,7 +87,7 @@ describe('unsubscribe confirmation boundary', () => {
     await handle(
       {
         method: 'POST',
-        query: { token: 'valid-token' },
+        query: { token: validToken },
         headers: { accept: 'application/json' },
       } as unknown as VercelRequest,
       res
@@ -94,9 +96,26 @@ describe('unsubscribe confirmation boundary', () => {
     expect(mocks.tryGetServiceSupabase).toHaveBeenCalledTimes(1)
     expect(mocks.unsubscribeByToken).toHaveBeenCalledWith(
       { service: true },
-      'valid-token'
+      validToken
     )
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({ ok: true, email: 'person@example.com' })
+  })
+
+  it('rejects malformed tokens before a database lookup', async () => {
+    const res = response()
+
+    await handle(
+      {
+        method: 'POST',
+        query: { token: 'not-a-token' },
+        headers: { accept: 'application/json' },
+      } as unknown as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(400)
+    expect(mocks.tryGetServiceSupabase).not.toHaveBeenCalled()
+    expect(mocks.unsubscribeByToken).not.toHaveBeenCalled()
   })
 })

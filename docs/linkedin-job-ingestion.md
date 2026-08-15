@@ -112,6 +112,7 @@ Each array element:
 | `SCRAPE_LINKEDIN_DELAY_MS`              | Delay between outbound requests                    | `1200`                    |
 | `SCRAPE_LINKEDIN_RETRY_MAX`             | Retry count for transient failures                 | `2`                       |
 | `SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS` | Only keep listings posted within this many seconds | `2678400` (31 days)       |
+| `SCRAPE_LINKEDIN_MAX_APPLICANTS`        | Skip listings above this reported applicant count  | `100`                     |
 | `SCRAPE_LINKEDIN_OUTPUT_FILE`           | Output JSON path for scrape results                | `data/linkedin-jobs.json` |
 
 ### Daily sync stale-check tuning (optional)

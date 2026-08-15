@@ -198,6 +198,24 @@ describe('ApplyWithCandidateAuth', () => {
     expect(maybeSingleProfile).not.toHaveBeenCalled()
   })
 
+  it('refuses an unsafe external application URL', async () => {
+    const screen = await renderWithQuery(
+      <ApplyWithCandidateAuth
+        job={{ ...linkedInJob, apply_url: 'javascript:alert(document.cookie)' }}
+      />
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply on LinkedIn/i })
+    )
+
+    await vi.waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith(
+        'This application link is unavailable or unsafe.'
+      )
+    )
+    expect(window.open).not.toHaveBeenCalled()
+  })
+
   it('opens auth when visitor clicks Beonely apply', async () => {
     const screen = await renderWithQuery(
       <ApplyWithCandidateAuth job={postedJob} />

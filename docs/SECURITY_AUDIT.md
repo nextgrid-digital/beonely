@@ -1,6 +1,6 @@
 # Beonely Security Audit and Remediation Register
 
-Audit date: 11–27 July 2026
+Audit date: 11–27 July 2026; follow-up verification: 15 August 2026
 Scope: application source, Vercel functions, Supabase migrations and Storage policies, payment and email integrations, dependencies, tests, build output, and administration UX.
 Status meaning: **Fixed in repository** means the source and forward migrations contain the remediation. It does not mean those migrations or environment changes have already been deployed.
 
@@ -17,7 +17,19 @@ Current source-level result:
 - Production dependency audit reports no known vulnerabilities.
 - No known source vulnerability is intentionally left open. The legacy migration-bootstrap defect still blocks a fully configured hosted preview.
 
-The original repository audit logged 33 findings. Final branch and deployment verification added three high-severity payment-capture persistence findings, two low/quality browser-accessibility findings, four dependency advisories, and one Vercel deployment-limit defect, for 43 findings in total.
+The original repository audit logged 33 findings. The July branch and deployment verification added payment-capture persistence, browser-accessibility, dependency, and Vercel deployment-limit findings. The August follow-up added the source and live-environment findings below.
+
+## August 2026 follow-up
+
+| ID   | Finding | Remediation or required action | Status |
+| ---- | ------- | ------------------------------ | ------ |
+| A-01 | The server admin allowlist fell back to the browser-visible `VITE_ADMIN_EMAIL_ALLOWLIST` when `ADMIN_EMAIL_ALLOWLIST` was absent. | Server authorization now reads only `ADMIN_EMAIL_ALLOWLIST` and fails closed; regression tests cover browser-only configuration. | Fixed in repository |
+| A-02 | The shared JSON reader was described as bounded but did not enforce a byte limit, and a few handlers read `req.body` directly. | The reader now enforces declared and materialized limits; all ordinary JSON/form handlers use it, with an 8 KiB cap for token/asset operations and a 256 KiB default. | Fixed in repository |
+| A-03 | Imported external application URLs could retain a non-HTTPS or non-LinkedIn scheme and were opened directly by the browser. | External application links require credential-free HTTPS. LinkedIn ingest additionally requires the exact `linkedin.com` or `www.linkedin.com` host before any database write. | Fixed in repository |
+| A-04 | The dependency graph resolved vulnerable DOMPurify and Nano ID versions. | DOMPurify resolves to 3.4.13 and Nano ID to 3.3.18; `pnpm audit --prod` reports no known vulnerabilities. | Fixed in repository |
+| A-05 | Live production still allowed anonymous reads from the base `jobs` table, including recruiter contact fields; the `public_jobs` view was absent. | Back up and reconcile migration history, stage the cumulative July hardening chain, deploy the matching frontend/API, validate role-specific RLS, and only then promote. Immediate revocation alone would break the current `main` frontend. | **Open in production** |
+
+Operational verification also found that the scheduled job-ingest workflow is disabled and its required Supabase repository secrets are absent. The live database had 191 imported listings with the newest posted date of 1 July 2026. A fresh local scrape produced 183 unique, fully described listings dated 18 July–15 August 2026, but they have not been written to production because no service-role credential was available.
 
 ## Severity definitions
 
@@ -86,7 +98,7 @@ The original repository audit logged 33 findings. Final branch and deployment ve
 | L-08 | CI and dependency hygiene did not enforce the full quality matrix.                                              | Added a quality workflow, Node/pnpm pinning, app/API typechecks, tests, build, Knip, formatting/diff checks, and production dependency audit. | Fixed in repository |
 | L-09 | Vercel Analytics attempted to load a Vercel-only script in self-hosted/local production previews.               | A local production preview logged a script parse error and obscured whether the application console was clean.                               | The analytics component is now compiled in only for actual Vercel builds; the rebuilt local production bundle emitted no new console warning/error.     | Fixed in repository |
 | L-10 | Standalone authentication screens exposed their visible page titles as generic text instead of headings.         | Screen-reader and keyboard users had a weaker page structure and navigation experience.                                                       | Sign-in, sign-up, staff sign-in, OTP, forgot-password, and reset-password titles are now semantic level-one headings.                                    | Fixed in repository |
-| L-11 | The dependency graph resolved `dompurify <=3.4.11`, allowing configured custom elements to bypass `afterSanitizeElements` (GHSA-c2j3-45gr-mqc4). | A sanitizer configuration using the affected custom-element hook could miss intended post-sanitization handling.                              | DOMPurify was upgraded to 3.4.12, the first patched release; sanitizer tests, the production build, and the audit pass.                                  | Fixed in repository |
+| L-11 | The dependency graph resolved DOMPurify versions with known sanitizer advisories. | A vulnerable sanitizer release could miss intended post-sanitization handling. | DOMPurify now resolves to 3.4.13; sanitizer tests, the production build, and the production dependency audit pass. | Fixed in repository |
 | L-12 | The repository produced 14 standalone Vercel Functions, exceeding the Hobby limit of 12 for non-framework `api/` entrypoints. | Builds completed but Vercel rejected deployment outputs, preventing any branch preview from becoming runnable.                                | Payment create/verify handlers now share `api/payments.ts`; public portfolio/application-asset handlers share `api/assets.ts`; rewrites preserve every public endpoint while reducing the deployment to 12 functions. | Fixed in repository |
 
 ## Verification performed
@@ -110,11 +122,11 @@ Branch status at final verification: `codex/repository-hardening-admin-redesign`
 
 No known source vulnerability is intentionally left open, but these release tasks require the deployment owner or a connected staging environment:
 
-1. Grant Git author `Zsw0rd` access to the Vercel project/team and redeploy the branch. Vercel rejected the check before creating any deployment or preview URL.
+1. Keep the currently green Vercel preview check as a release gate and re-run it after the final commit. The August preview deployment succeeded; the Supabase Preview check remains red for the historical clean-bootstrap defect described below.
 2. For an existing Supabase project, back up the database/Storage metadata, pull or otherwise reconcile the remote schema and `supabase_migrations.schema_migrations`, especially duplicated historical version `20260519120000`, then stage the July forward chain through `20260710300000_final_access_boundary.sql`.
 3. Do not replay the historical May chain unchanged for a new project. GitHub’s isolated Supabase Preview failed in `20260512120000_candidate_saved_applications_storage.sql` at statement 10 because `public.job_seeker_profiles` did not exist. Create and separately review a squashed/bootstrap baseline first.
 4. Check for duplicate non-null Razorpay order/payment IDs and test anonymous/candidate/recruiter/disabled-recruiter/admin-browser/service-role access in staging before applying the July chain.
-5. Configure strong server secrets: service role, Razorpay secret/webhook secret, Resend API/webhook secret, and `CRON_SECRET`.
+5. Configure strong server secrets: service role, Razorpay secret/webhook secret, Resend API/webhook secret, and `CRON_SECRET`. Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and preferably a dedicated `INGEST_RECRUITER_ID` as GitHub repository secrets before re-enabling the daily ingest workflow.
 6. Configure Razorpay events for capture/order payment plus the supported refund/dispute/failure lifecycle, and Resend delivery/bounce/complaint events.
 7. Reconcile legacy payment rows, especially captured payments lacking version-2 snapshots, and resolve `manual_review_reason` cases.
 8. Review pre-existing publicly accessible certificate/resume objects and migrate or delete them; policy changes do not retract URLs already copied elsewhere.
@@ -123,9 +135,9 @@ No known source vulnerability is intentionally left open, but these release task
 
 ## Review limitations
 
-- No production or staging credentials were used.
+- No privileged production or staging credential was available. The August follow-up used only the client-safe anonymous Supabase configuration already shipped by `main` to verify the public access boundary.
 - The automatic Supabase Preview did attempt a clean migration replay and failed in the legacy May chain before reaching the July hardening migrations: `relation "public.job_seeker_profiles" does not exist (SQLSTATE 42P01)` at statement 10 of `20260512120000_candidate_saved_applications_storage.sql`.
-- Vercel never created a runnable preview because Git author `Zsw0rd` lacked project/team access.
+- The August Vercel preview check succeeded. The Supabase Preview check still fails before the July chain because the historical May migration sequence is not a supported clean bootstrap.
 - No remote database migration, external email, payment, refund, dispute, or webhook event was executed.
 - Provider correctness was tested through signed fixtures/mocks and source review; a staging integration test remains required.
 - Populated admin visual QA still requires a signed-in staging admin and compatible database.

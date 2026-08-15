@@ -1,6 +1,10 @@
+import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { unsubscribeByToken } from '../../_lib/marketing-consent.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import { tryGetServiceSupabase } from '../../_lib/supabase.js'
+
+const unsubscribeTokenSchema = z.string().uuid()
 
 function escapeHtml(value: string): string {
   return value
@@ -12,15 +16,19 @@ function escapeHtml(value: string): string {
 }
 
 export async function handle(req: VercelRequest, res: VercelResponse) {
-  const token =
+  const bodyRead = readJsonObjectBody(req, 8 * 1024)
+  const body = bodyRead.ok ? bodyRead.value : undefined
+  const rawToken =
     typeof req.query.token === 'string'
       ? req.query.token
-      : typeof req.body === 'object' &&
-          req.body !== null &&
-          'token' in req.body &&
-          typeof (req.body as { token: unknown }).token === 'string'
-        ? (req.body as { token: string }).token
+      : typeof body === 'object' &&
+          body !== null &&
+          'token' in body &&
+          typeof (body as { token: unknown }).token === 'string'
+        ? (body as { token: string }).token
         : ''
+  const parsedToken = unsubscribeTokenSchema.safeParse(rawToken)
+  const token = parsedToken.success ? parsedToken.data : ''
 
   if (req.method === 'GET') {
     if (!token) {

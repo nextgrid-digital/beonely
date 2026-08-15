@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { isAllowlistedAdminEmail } from '../../_lib/admin-access.js'
 import { safeResumeStoragePath } from '../../_lib/private-assets.js'
 import { isRateLimitError, rateLimitOrThrow } from '../../_lib/rate-limit.js'
+import { readJsonObjectBody } from '../../_lib/request-json-body.js'
 import {
   getUserFromBearer,
   tryGetServiceSupabase,
@@ -20,7 +21,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await getUserFromBearer(token)
   if (!auth.user) return res.status(401).json({ error: 'unauthorized' })
 
-  const parsed = inputSchema.safeParse(req.body)
+  const bodyRead = readJsonObjectBody(req, 8 * 1024)
+  const parsed = inputSchema.safeParse(bodyRead.ok ? bodyRead.value : undefined)
   if (!parsed.success) return res.status(400).json({ error: 'invalid_request' })
 
   try {

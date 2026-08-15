@@ -23,6 +23,19 @@ describe('normalizeLinkedInApplyUrl', () => {
       )
     ).toBe('https://www.linkedin.com/jobs/view/123')
   })
+
+  it('rejects non-HTTPS, credentialed, and non-LinkedIn urls', () => {
+    expect(normalizeLinkedInApplyUrl('javascript:alert(1)')).toBe('')
+    expect(
+      normalizeLinkedInApplyUrl('http://www.linkedin.com/jobs/view/1')
+    ).toBe('')
+    expect(
+      normalizeLinkedInApplyUrl(
+        'https://user:pass@www.linkedin.com/jobs/view/1'
+      )
+    ).toBe('')
+    expect(normalizeLinkedInApplyUrl('https://linkedin.example/jobs/view/1')).toBe('')
+  })
 })
 
 describe('company url normalization', () => {
@@ -98,6 +111,20 @@ describe('buildIngestJobRow', () => {
     expect(row.employment_type).toBe('full_time')
     expect(row.job_type).toBe('other')
   })
+
+  it('rejects an unsafe apply url', () => {
+    expect(() =>
+      buildIngestJobRow(
+        {
+          job_title: 'Role',
+          company_name: 'Co',
+          apply_url: 'javascript:alert(1)',
+          job_description: 'Body',
+        },
+        recruiter
+      )
+    ).toThrow(/canonical HTTPS LinkedIn apply_url/)
+  })
 })
 
 describe('parseIngestJobsFile', () => {
@@ -139,5 +166,20 @@ describe('parseIngestJobsFile', () => {
 
   it('rejects invalid shape', () => {
     expect(() => parseIngestJobsFile('{}')).toThrow(/JSON array/)
+  })
+
+  it('rejects a non-LinkedIn apply url', () => {
+    expect(() =>
+      parseIngestJobsFile(
+        JSON.stringify([
+          {
+            job_title: 'Architect',
+            company_name: 'Partner',
+            apply_url: 'https://example.com/apply',
+            job_description: 'Desc',
+          },
+        ])
+      )
+    ).toThrow(/invalid LinkedIn apply_url/)
   })
 })
