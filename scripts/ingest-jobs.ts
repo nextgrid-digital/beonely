@@ -7,24 +7,22 @@
  * Batch file (default `data/linkedin-jobs.json`, override with INGEST_JOBS_FILE):
  *   Array of objects — see docs/linkedin-job-ingestion.md
  *
- * Single demo row (no batch file):
- *   INGEST_JOB_DESCRIPTION / INGEST_JOB_DESCRIPTION_FILE optional
+ * Validate without credentials or writes: pnpm ingest:jobs --dry-run
  */
+import { createClient } from '@supabase/supabase-js'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { createClient } from '@supabase/supabase-js'
 import {
   buildIngestJobRow,
+  buildIngestJobUpdate,
   normalizeCompanyLogoUrl,
   normalizeCompanyWebsiteUrl,
   normalizeLinkedInApplyUrl,
   parseIngestJobsFile,
-  type IngestLinkedInJobInput,
 } from './lib/ingest-linkedin-jobs'
+import './lib/load-local-env'
 
 const DEFAULT_JOBS_FILE = resolve(process.cwd(), 'data/linkedin-jobs.json')
-const DEFAULT_JOB_DESCRIPTION =
-  'Demo listing created by scripts/ingest-jobs.ts — replace with real pipeline output.'
 
 function isGeneratedFavicon(url: string): boolean {
   return /google\.com\/s2\/favicons/i.test(url)
@@ -46,23 +44,13 @@ function pickCompanyWebsiteForUpdate(input: {
   existingWebsite: string | null
   incomingWebsite: string | null
 }): string | null {
-  const existing = normalizeCompanyWebsiteUrl(input.existingWebsite ?? undefined)
-  const incoming = normalizeCompanyWebsiteUrl(input.incomingWebsite ?? undefined)
+  const existing = normalizeCompanyWebsiteUrl(
+    input.existingWebsite ?? undefined
+  )
+  const incoming = normalizeCompanyWebsiteUrl(
+    input.incomingWebsite ?? undefined
+  )
   return incoming ?? existing
-}
-
-function resolveIngestJobDescription(): string {
-  const filePath = process.env.INGEST_JOB_DESCRIPTION_FILE
-  if (filePath) {
-    if (!existsSync(filePath)) {
-      console.error('INGEST_JOB_DESCRIPTION_FILE not found:', filePath)
-      process.exit(1)
-    }
-    return readFileSync(filePath, 'utf8').trim()
-  }
-  const inline = process.env.INGEST_JOB_DESCRIPTION?.trim()
-  if (inline) return inline
-  return DEFAULT_JOB_DESCRIPTION
 }
 
 function resolveJobsFilePath(): string | null {
@@ -70,24 +58,6 @@ function resolveJobsFilePath(): string | null {
   if (explicit) return resolve(explicit)
   if (existsSync(DEFAULT_JOBS_FILE)) return DEFAULT_JOBS_FILE
   return null
-}
-
-function demoJob(): IngestLinkedInJobInput {
-  return {
-    external_id: `demo-${Date.now().toString(36)}`,
-    job_title: 'ServiceNow Architect (ingested demo)',
-    company_name: 'Demo Partner',
-    job_description: resolveIngestJobDescription(),
-    location: 'Remote',
-    employment_type: 'contract',
-    experience_level: 'senior',
-    work_mode: 'remote',
-    job_type: 'architect',
-    apply_url: 'https://www.linkedin.com/jobs/view/ingest-demo',
-    skills: [],
-    modules: [],
-    certifications: [],
-  }
 }
 
 function resolveSupabaseUrl(): string | undefined {
@@ -99,6 +69,25 @@ function resolveSupabaseUrl(): string | undefined {
 }
 
 async function main() {
+  const jobsFile = resolveJobsFilePath()
+  if (!jobsFile)
+    throw new Error('No job dump found. Run pnpm scrape:linkedin first.')
+  const inputs = parseIngestJobsFile(readFileSync(jobsFile, 'utf8'))
+  if (inputs.length === 0) throw new Error('Refusing an empty job dump')
+  console.log(`Loaded ${inputs.length} job(s) from ${jobsFile}`)
+  // Validate the entire batch before the first database write.
+  const validationOwner = {
+    id: 'dry-run',
+    email: '',
+    name: 'Import validation',
+  }
+  for (const input of inputs) buildIngestJobRow(input, validationOwner)
+  if (process.argv.includes('--dry-run')) {
+    console.log(
+      `Dry run passed: ${inputs.length} valid jobs; no database writes.`
+    )
+    return
+  }
   const url = resolveSupabaseUrl()
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   if (!url || !key) {
@@ -118,40 +107,18 @@ async function main() {
   if (recruiterId) {
     const { data, error: recErr } = await sb
       .from('recruiters')
-      .select('id, email, name')
+      .select('id, email, name, disabled')
       .eq('id', recruiterId)
       .maybeSingle()
-    if (recErr || !data) {
+    if (recErr || !data || data.disabled !== false) {
       console.error('Invalid INGEST_RECRUITER_ID', recErr?.message)
       process.exit(1)
     }
     recruiter = data
   } else {
-    const { data, error: recErr } = await sb
-      .from('recruiters')
-      .select('id, email, name')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-    if (recErr || !data) {
-      console.error(
-        'No INGEST_RECRUITER_ID and no row in public.recruiters. Create a recruiter account first.'
-      )
-      process.exit(1)
-    }
-    recruiter = data
-    console.log('Using recruiter for ingest:', recruiter.id)
-  }
-
-  const jobsFile = resolveJobsFilePath()
-  let inputs: IngestLinkedInJobInput[]
-  if (jobsFile) {
-    const raw = readFileSync(jobsFile, 'utf8')
-    inputs = parseIngestJobsFile(raw)
-    console.log(`Loaded ${inputs.length} job(s) from ${jobsFile}`)
-  } else {
-    inputs = [demoJob()]
-    console.log('No batch file found; ingesting single demo job')
+    throw new Error(
+      'Set INGEST_RECRUITER_ID to a dedicated system recruiter; refusing to use a hiring account.'
+    )
   }
 
   let inserted = 0
@@ -165,7 +132,9 @@ async function main() {
 
     const { data: existing, error: findErr } = await sb
       .from('jobs')
-      .select('id, job_slug, company_logo, company_website')
+      .select(
+        'id, job_slug, company_logo, company_website, source_kind, approval_status, payment_status, created_at, updated_at'
+      )
       .eq('apply_url', applyKey)
       .maybeSingle()
 
@@ -176,6 +145,18 @@ async function main() {
     }
 
     if (existing) {
+      if (
+        existing.source_kind !== 'linkedin_import' ||
+        existing.approval_status !== 'approved' ||
+        existing.payment_status !== 'paid'
+      ) {
+        console.log(
+          'Preserved existing ownership/moderation/payment state:',
+          existing.job_slug
+        )
+        skipped++
+        continue
+      }
       const companyLogo = pickCompanyLogoForUpdate({
         existingLogo: existing.company_logo,
         incomingLogo: row.company_logo,
@@ -185,35 +166,27 @@ async function main() {
         incomingWebsite: row.company_website,
       })
       const updatePayload = {
-        job_title: row.job_title,
-        company_name: row.company_name,
-        job_description: row.job_description,
-        location: row.location,
-        employment_type: row.employment_type,
-        experience_level: row.experience_level,
-        work_mode: row.work_mode,
-        job_type: row.job_type,
-        apply_url: row.apply_url,
-        approval_status: row.approval_status,
-        payment_status: row.payment_status,
-        listing_expires_at: row.listing_expires_at,
+        ...buildIngestJobUpdate(row, existing.created_at),
         company_logo: companyLogo,
         company_website: companyWebsite,
-        skills: row.skills,
-        modules: row.modules,
-        certifications: row.certifications,
-        source_kind: row.source_kind,
-        updated_at: new Date().toISOString(),
-        ...(row.created_at ? { created_at: row.created_at } : {}),
       }
 
-      const { error: updateErr } = await sb
+      const { data: updatedRow, error: updateErr } = await sb
         .from('jobs')
         .update(updatePayload)
         .eq('id', existing.id)
+        .eq('source_kind', 'linkedin_import')
+        .eq('approval_status', 'approved')
+        .eq('payment_status', 'paid')
+        .eq('updated_at', existing.updated_at)
+        .select('id')
+        .maybeSingle()
 
       if (updateErr) {
         console.error('Update failed:', existing.job_slug, updateErr.message)
+        failed++
+      } else if (!updatedRow) {
+        console.warn('Job changed during import; retry:', existing.job_slug)
         failed++
       } else {
         console.log('Updated:', existing.job_slug)
@@ -258,4 +231,7 @@ async function main() {
   if (failed > 0) process.exit(1)
 }
 
-void main()
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : 'Job import failed')
+  process.exitCode = 1
+})

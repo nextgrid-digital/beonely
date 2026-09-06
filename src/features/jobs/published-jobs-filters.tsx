@@ -3,6 +3,7 @@ import { MapPin, Search, SlidersHorizontal, X } from 'lucide-react'
 import type { PublishedJobsFilters } from '@/lib/jobs/fetch-published-jobs'
 import { SERVICENOW_JOB_MODULES } from '@/lib/jobs/servicenow-job-taxonomy'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -20,6 +21,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -72,6 +74,7 @@ const POSTED_OPTIONS: FilterOption[] = [
   { value: '24h', label: 'Last 24 hours' },
   { value: '7d', label: 'Last 7 days' },
   { value: '30d', label: 'Last 30 days' },
+  { value: '90d', label: 'Last 90 days' },
 ]
 
 /** Detailed (non-search) filters, used for the popover, chips, and active count. */
@@ -134,6 +137,51 @@ type FilterOrientation = 'horizontal' | 'vertical'
 type FilterControlsProps = {
   search: PublishedJobsSearchState
   navigate: PublishedJobsNavigate
+}
+
+/** Always-visible shortcuts; the same URL parameter powers detailed filters. */
+export function PublishedJobsDateFilters({
+  search,
+  navigate,
+}: FilterControlsProps) {
+  return (
+    <div
+      role='group'
+      aria-label='Date posted'
+      className='flex flex-wrap gap-1.5'
+    >
+      {POSTED_OPTIONS.filter((option) => option.value !== '24h').map(
+        (option) => (
+          <Button
+            key={option.value}
+            type='button'
+            variant={
+              (search.posted ?? '_any') === option.value ? 'secondary' : 'ghost'
+            }
+            size='sm'
+            className='h-9 px-3 text-xs'
+            aria-pressed={(search.posted ?? '_any') === option.value}
+            onClick={() =>
+              void navigate({
+                search: (prev) => ({
+                  ...prev,
+                  posted:
+                    option.value === '_any'
+                      ? undefined
+                      : (option.value as PublishedJobsFilters['posted']),
+                  page: undefined,
+                  linkedinPage: undefined,
+                }),
+                resetScroll: false,
+              })
+            }
+          >
+            {option.label}
+          </Button>
+        )
+      )}
+    </div>
+  )
 }
 
 /** Shared URL-backed filter state (debounced search + location, immediate params). */
@@ -459,12 +507,18 @@ function clearFilterParam(
   })
 }
 
-/** Compact "Filters" trigger that opens the detailed controls in a popover. */
+/** Compact trigger with a scrollable mobile sheet or desktop popover. */
 export function PublishedJobsFiltersButton({
   search,
   navigate,
 }: FilterControlsProps) {
+  const isMobile = useIsMobile()
   const count = countActiveDetailedFilters(search)
+  if (isMobile) {
+    return (
+      <PublishedJobsFiltersDrawer search={search} navigate={navigate} compact />
+    )
+  }
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -483,7 +537,11 @@ export function PublishedJobsFiltersButton({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align='end' className='max-h-[70vh] w-72 overflow-y-auto'>
+      <PopoverContent
+        align='end'
+        collisionPadding={8}
+        className='max-h-[min(70dvh,var(--radix-popover-content-available-height))] w-72 overflow-y-auto overscroll-contain'
+      >
         <PublishedJobsFilterControls
           search={search}
           navigate={navigate}
@@ -588,7 +646,9 @@ export function PublishedJobsFiltersSidebar(props: FilterControlsProps) {
 }
 
 /** Mobile "Filters" trigger that opens the vertical controls in a slide-in sheet. */
-export function PublishedJobsFiltersDrawer(props: FilterControlsProps) {
+export function PublishedJobsFiltersDrawer(
+  props: FilterControlsProps & { compact?: boolean }
+) {
   const filtersActive = hasActivePublishedJobFilters(props.search)
   return (
     <Sheet>
@@ -596,7 +656,10 @@ export function PublishedJobsFiltersDrawer(props: FilterControlsProps) {
         <Button
           type='button'
           variant='outline'
-          className='h-11 w-full justify-center gap-2 sm:w-auto'
+          className={cn(
+            'justify-center gap-2',
+            props.compact ? 'h-8 w-auto px-3 text-xs' : 'h-11 w-full sm:w-auto'
+          )}
         >
           <SlidersHorizontal className='size-4' aria-hidden />
           Filters
@@ -611,8 +674,9 @@ export function PublishedJobsFiltersDrawer(props: FilterControlsProps) {
       <SheetContent side='left' className='w-[min(90vw,22rem)]'>
         <SheetHeader>
           <SheetTitle>Filters</SheetTitle>
+          <SheetDescription>Refine the roles you see.</SheetDescription>
         </SheetHeader>
-        <div className='overflow-y-auto px-4 pb-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-4 pb-6'>
           <PublishedJobsFilterControls {...props} orientation='vertical' />
         </div>
       </SheetContent>
@@ -644,6 +708,7 @@ function FilterSelect(props: {
         onValueChange={(v) => props.onChange(v === '_any' ? undefined : v)}
       >
         <SelectTrigger
+          aria-label={props.label}
           className={cn(
             'h-11 border-border/80 bg-background/90 text-sm shadow-none transition-[background-color,border-color,box-shadow] duration-200 sm:h-9',
             'hover:bg-muted/40 focus-visible:bg-background data-[state=open]:bg-background',

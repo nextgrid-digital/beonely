@@ -43,6 +43,14 @@ const baseConfig: LinkedInScrapeConfig = {
   userAgent: 'test-agent',
 }
 
+describe('employment classification', () => {
+  it('does not classify internal or international teams as internships', () => {
+    expect(normalizeEmploymentType('Work with internal stakeholders and international teams')).toBe('full_time')
+    expect(normalizeEmploymentType('ServiceNow internship')).toBe('part_time')
+    expect(normalizeEmploymentType('Part-time ServiceNow administrator')).toBe('part_time')
+  })
+})
+
 describe('extractLinkedInJobId', () => {
   it('extracts job ids from linkedin urls and params', () => {
     expect(extractLinkedInJobId('https://www.linkedin.com/jobs/view/1234567890')).toBe('1234567890')

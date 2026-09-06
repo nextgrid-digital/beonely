@@ -57,11 +57,15 @@ export function normalizeLinkedInApplyUrl(raw: string): string {
       u.protocol !== 'https:' ||
       u.username ||
       u.password ||
+      u.port ||
+      !/^\/jobs\/view\/(?:[a-zA-Z0-9-]+-)?\d+\/?$/.test(u.pathname) ||
       (u.hostname !== 'linkedin.com' && u.hostname !== 'www.linkedin.com')
     ) {
       return ''
     }
     if (u.hostname === 'linkedin.com') u.hostname = 'www.linkedin.com'
+    const jobId = u.pathname.match(/(\d+)\/?$/)?.[1]
+    u.pathname = `/jobs/view/${jobId}`
     u.search = ''
     u.hash = ''
     return u.toString().replace(/\/$/, '')
@@ -83,7 +87,9 @@ function sanitizeHttpUrl(raw: string | undefined): string | null {
   }
 }
 
-export function normalizeCompanyLogoUrl(raw: string | undefined): string | null {
+export function normalizeCompanyLogoUrl(
+  raw: string | undefined
+): string | null {
   const sanitized = sanitizeHttpUrl(raw)
   if (!sanitized) return null
   const parsed = new URL(sanitized)
@@ -91,7 +97,9 @@ export function normalizeCompanyLogoUrl(raw: string | undefined): string | null 
   return parsed.toString()
 }
 
-export function normalizeCompanyWebsiteUrl(raw: string | undefined): string | null {
+export function normalizeCompanyWebsiteUrl(
+  raw: string | undefined
+): string | null {
   const sanitized = sanitizeHttpUrl(raw)
   if (!sanitized) return null
   const parsed = new URL(sanitized)
@@ -103,7 +111,10 @@ export function normalizeCompanyWebsiteUrl(raw: string | undefined): string | nu
 
 export function slugFromIngestJob(job: IngestLinkedInJobInput): string {
   if (job.job_slug?.trim()) {
-    return job.job_slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-')
+    return job.job_slug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
   }
   const idPart =
     job.external_id?.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() ??
@@ -129,12 +140,6 @@ function pickEnum<T extends string>(
   return fallback
 }
 
-export function listingExpiresAtIso(daysFromNow = 90): string {
-  const d = new Date()
-  d.setDate(d.getDate() + daysFromNow)
-  return d.toISOString()
-}
-
 function normalizeIsoDate(raw: string | undefined): string | undefined {
   const trimmed = raw?.trim()
   if (!trimmed) return undefined
@@ -153,6 +158,10 @@ export function buildIngestJobRow(
       'LinkedIn imports require a canonical HTTPS LinkedIn apply_url'
     )
   }
+  const postedAt = normalizeIsoDate(job.posted_at)
+  if (!postedAt || Date.parse(postedAt) > Date.now()) {
+    throw new Error('LinkedIn imports require a valid, non-future posted_at')
+  }
   return {
     recruiter_id: recruiter.id,
     recruiter_email: recruiter.email,
@@ -163,14 +172,14 @@ export function buildIngestJobRow(
     company_logo: normalizeCompanyLogoUrl(job.company_logo),
     company_website: normalizeCompanyWebsiteUrl(job.company_website),
     job_description: job.job_description.trim(),
-    created_at: normalizeIsoDate(job.posted_at),
+    created_at: postedAt,
     location: (job.location ?? '').trim() || 'Location TBD',
-    employment_type: pickEnum(job.employment_type, EMPLOYMENT_TYPES, 'full_time'),
-    experience_level: pickEnum(
-      job.experience_level,
-      EXPERIENCE_LEVELS,
-      'mid'
+    employment_type: pickEnum(
+      job.employment_type,
+      EMPLOYMENT_TYPES,
+      'full_time'
     ),
+    experience_level: pickEnum(job.experience_level, EXPERIENCE_LEVELS, 'mid'),
     work_mode: pickEnum(job.work_mode, WORK_MODES, 'remote'),
     job_type: pickEnum(job.job_type, JOB_TYPES, 'other'),
     apply_url: applyUrl,
@@ -178,12 +187,49 @@ export function buildIngestJobRow(
     payment_status: 'paid' as const,
     listing_duration: 'monthly' as const,
     listing_tier: 'standard' as const,
-    listing_expires_at: listingExpiresAtIso(),
+    listing_expires_at: new Date(
+      Date.parse(postedAt) + 90 * 86_400_000
+    ).toISOString(),
     featured: false,
     source_kind: 'linkedin_import' as const,
     certifications: job.certifications ?? [],
     modules: job.modules ?? [],
     skills: job.skills ?? [],
+  }
+}
+
+/** Refresh content only. Staff decisions and commercial state are never imported. */
+export function buildIngestJobUpdate(
+  row: ReturnType<typeof buildIngestJobRow>,
+  existingCreatedAt?: string
+) {
+  // Relative source dates can drift between scrapes. Once observed, a job's
+  // posted date must not move forward and make an old listing look new again.
+  const previousDate = normalizeIsoDate(existingCreatedAt)
+  const createdAt =
+    previousDate && previousDate < row.created_at
+      ? previousDate
+      : row.created_at
+  return {
+    job_title: row.job_title,
+    company_name: row.company_name,
+    job_description: row.job_description,
+    location: row.location,
+    employment_type: row.employment_type,
+    experience_level: row.experience_level,
+    work_mode: row.work_mode,
+    job_type: row.job_type,
+    apply_url: row.apply_url,
+    listing_expires_at: new Date(
+      Date.parse(createdAt) + 90 * 86_400_000
+    ).toISOString(),
+    company_logo: row.company_logo,
+    company_website: row.company_website,
+    skills: row.skills,
+    modules: row.modules,
+    certifications: row.certifications,
+    created_at: createdAt,
+    updated_at: new Date().toISOString(),
   }
 }
 
@@ -224,13 +270,9 @@ export function parseIngestJobsFile(raw: string): IngestLinkedInJobInput[] {
       job_description,
       posted_at: row.posted_at != null ? String(row.posted_at) : undefined,
       employment_type:
-        row.employment_type != null
-          ? String(row.employment_type)
-          : undefined,
+        row.employment_type != null ? String(row.employment_type) : undefined,
       experience_level:
-        row.experience_level != null
-          ? String(row.experience_level)
-          : undefined,
+        row.experience_level != null ? String(row.experience_level) : undefined,
       work_mode: row.work_mode != null ? String(row.work_mode) : undefined,
       job_type: row.job_type != null ? String(row.job_type) : undefined,
       skills: Array.isArray(row.skills)

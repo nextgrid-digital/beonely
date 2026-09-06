@@ -47,4 +47,4 @@ This repo uses [GitHub Spec Kit](https://github.com/github/spec-kit): principles
 
 Beonely application code in this repository is **proprietary** (not open source). See [`LICENSE`](LICENSE). Dependencies and upstream UI boilerplate remain under their own licenses (for example MIT for many npm packages).
 
-This GitHub repository is **private**; do not redistribute code or assets outside your organization without written permission.
+Repository visibility is managed separately in GitHub and does not change the proprietary license. Do not redistribute code or assets outside your organization without written permission.
