@@ -1,0 +1,304 @@
+{
+  "policies": [
+    {
+      "cmd": "SELECT",
+      "qual": "((user_id = auth.uid()) OR is_admin())",
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can read themselves",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can insert themselves",
+      "schemaname": "public",
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((user_id = auth.uid()) OR is_admin())",
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can update themselves",
+      "schemaname": "public",
+      "with_check": "((user_id = auth.uid()) OR is_admin())"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((approval_status = 'approved'::approval_status) AND (payment_status = 'paid'::payment_status))",
+      "roles": ["anon", "authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "Approved paid jobs are public",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can insert own jobs",
+      "schemaname": "public",
+      "with_check": "(recruiter_id IN ( SELECT recruiters.id\n FROM recruiters\n WHERE ((recruiters.user_id = auth.uid()) AND (recruiters.disabled = false))))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "recruiters_insert_own",
+      "schemaname": "public",
+      "with_check": "((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'recruiter'::recruiter_role) AND (disabled = false))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(is_admin() OR (recruiter_id IN ( SELECT recruiters.id\n FROM recruiters\n WHERE (recruiters.user_id = auth.uid()))))",
+      "roles": ["authenticated"],
+      "tablename": "payments",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can read own payments",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "roles": ["authenticated"],
+      "tablename": "email_subscribers",
+      "permissive": "PERMISSIVE",
+      "policyname": "Admins manage email subscribers",
+      "schemaname": "public",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "roles": ["authenticated"],
+      "tablename": "email_campaigns",
+      "permissive": "PERMISSIVE",
+      "policyname": "Admins manage campaigns",
+      "schemaname": "public",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "roles": ["authenticated"],
+      "tablename": "email_campaign_recipients",
+      "permissive": "PERMISSIVE",
+      "policyname": "Admins manage campaign recipients",
+      "schemaname": "public",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["anon", "authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "Public can apply to approved paid jobs",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n FROM jobs\n WHERE ((jobs.id = applications.job_id) AND (jobs.recruiter_id = applications.recruiter_id) AND (jobs.approval_status = 'approved'::approval_status) AND (jobs.payment_status = 'paid'::payment_status))))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(is_admin() OR (recruiter_id IN ( SELECT recruiters.id\n FROM recruiters\n WHERE (recruiters.user_id = auth.uid()))))",
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can read own applications",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(is_admin() OR (recruiter_id IN ( SELECT recruiters.id\n FROM recruiters\n WHERE (recruiters.user_id = auth.uid()))))",
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "Recruiters can update own application status",
+      "schemaname": "public",
+      "with_check": "(is_admin() OR (recruiter_id IN ( SELECT recruiters.id\n FROM recruiters\n WHERE (recruiters.user_id = auth.uid()))))"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "roles": ["authenticated"],
+      "tablename": "operator_feedback",
+      "permissive": "PERMISSIVE",
+      "policyname": "Admins manage operator feedback",
+      "schemaname": "public",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "is_admin()",
+      "roles": ["authenticated"],
+      "tablename": "job_seeker_profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "Admins manage job seeker profiles",
+      "schemaname": "public",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "job_seeker_profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "job_seeker_profiles_insert_own",
+      "schemaname": "public",
+      "with_check": "(( SELECT auth.uid() AS uid) = user_id)"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(( SELECT auth.uid() AS uid) = user_id)",
+      "roles": ["authenticated"],
+      "tablename": "job_seeker_profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "job_seeker_profiles_update_own",
+      "schemaname": "public",
+      "with_check": "(( SELECT auth.uid() AS uid) = user_id)"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(( SELECT auth.uid() AS uid) = user_id)",
+      "roles": ["authenticated"],
+      "tablename": "job_seeker_profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "job_seeker_profiles_delete_own",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(candidate_user_id = ( SELECT auth.uid() AS uid))",
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "applications_select_candidate_own",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "recruiters_update_own",
+      "schemaname": "public",
+      "with_check": "(user_id = ( SELECT auth.uid() AS uid))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = applications.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false))))",
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "applications_select_recruiter_own",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = applications.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false))))",
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "applications_update_recruiter_own",
+      "schemaname": "public",
+      "with_check": "(EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = applications.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false))))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "applications",
+      "permissive": "PERMISSIVE",
+      "policyname": "applications_insert_candidate",
+      "schemaname": "public",
+      "with_check": "((candidate_user_id = ( SELECT auth.uid() AS uid)) AND (status = 'new'::application_status) AND can_apply_to_job(job_id, recruiter_id))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": ["authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "jobs_insert_owned",
+      "schemaname": "public",
+      "with_check": "((source_kind = 'recruiter_posted'::job_source_kind) AND (approval_status = 'pending'::approval_status) AND (payment_status = 'unpaid'::payment_status) AND (EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = jobs.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false)))))"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((source_kind = 'recruiter_posted'::job_source_kind) AND (approval_status <> 'approved'::approval_status) AND (EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = jobs.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false)))))",
+      "roles": ["authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "jobs_update_owned_draft",
+      "schemaname": "public",
+      "with_check": "((source_kind = 'recruiter_posted'::job_source_kind) AND (approval_status <> 'approved'::approval_status) AND (EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = jobs.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false)))))"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((source_kind = 'recruiter_posted'::job_source_kind) AND (approval_status <> 'approved'::approval_status) AND (EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = jobs.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false)))))",
+      "roles": ["authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "jobs_delete_owned_draft",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+      "roles": ["authenticated"],
+      "tablename": "recruiters",
+      "permissive": "PERMISSIVE",
+      "policyname": "recruiters_select_own",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = jobs.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false))))",
+      "roles": ["authenticated"],
+      "tablename": "jobs",
+      "permissive": "PERMISSIVE",
+      "policyname": "jobs_owned_select",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+      "roles": ["authenticated"],
+      "tablename": "job_seeker_profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "job_seeker_profiles_select_own",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n FROM recruiters r\n WHERE ((r.id = payments.recruiter_id) AND (r.user_id = ( SELECT auth.uid() AS uid)) AND (r.disabled = false))))",
+      "roles": ["authenticated"],
+      "tablename": "payments",
+      "permissive": "PERMISSIVE",
+      "policyname": "payments_select_owned",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ]
+}

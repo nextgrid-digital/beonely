@@ -9,7 +9,7 @@ export const publishedJobsFilterSchema = z.object({
   location: z.string().optional(),
   type: z.string().optional(),
   module: z.string().optional(),
-  posted: z.string().optional(),
+  posted: z.enum(['24h', '7d', '30d', '90d']).optional().catch(undefined),
   org: z.string().optional(),
 })
 
@@ -28,7 +28,16 @@ export function postedSinceIso(
   raw: string | undefined,
   now: Date = new Date()
 ): string | undefined {
-  const days = raw === '24h' ? 1 : raw === '7d' ? 7 : raw === '30d' ? 30 : 0
+  const days =
+    raw === '24h'
+      ? 1
+      : raw === '7d'
+        ? 7
+        : raw === '30d'
+          ? 30
+          : raw === '90d'
+            ? 90
+            : 0
   if (days <= 0) return undefined
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString()
 }
@@ -56,8 +65,10 @@ export function applyPublishedJobFilters<Q extends FilterableJobsQuery>(
 ): Q {
   let query: FilterableJobsQuery = q
   if (filters.q) {
-    const safe = filters.q.replace(/%/g, '\\%').replace(/_/g, '\\_')
-    query = query.or(`job_title.ilike.%${safe}%,company_name.ilike.%${safe}%`)
+    // PostgREST's raw OR grammar requires quoting values containing commas,
+    // parentheses or quotes. Escape LIKE wildcards separately from that grammar.
+    const pattern = JSON.stringify(`%${escapeLikePattern(filters.q)}%`)
+    query = query.or(`job_title.ilike.${pattern},company_name.ilike.${pattern}`)
   }
   if (filters.role) {
     query = query.eq('job_type', filters.role)
@@ -73,7 +84,7 @@ export function applyPublishedJobFilters<Q extends FilterableJobsQuery>(
     query = query.eq('employment_type', filters.type)
   }
   if (filters.location) {
-    query = query.ilike('location', `%${filters.location}%`)
+    query = query.ilike('location', `%${escapeLikePattern(filters.location)}%`)
   }
   if (filters.module) {
     query = query.contains('modules', [filters.module])
@@ -83,4 +94,8 @@ export function applyPublishedJobFilters<Q extends FilterableJobsQuery>(
     query = query.gte('created_at', postedSince)
   }
   return query as Q
+}
+
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`)
 }

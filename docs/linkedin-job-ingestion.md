@@ -1,189 +1,118 @@
 # LinkedIn job ingestion
 
-## What the product expects
+The public board reads Supabase's public_jobs view. The saved data/linkedin-jobs.json file is importer input; changing the file alone does not update the live site.
 
-- **`source_kind`**: set to `linkedin_import` when the row originated from LinkedIn (or your LinkedIn export pipeline). The public job page uses this (and the apply URL host) to show **Apply on LinkedIn** with the LinkedIn mark.
-- **`apply_url`**: use the canonical LinkedIn job URL (typically `https://www.linkedin.com/jobs/view/...`). If the host is `linkedin.com` but `source_kind` was mis-set, the UI still treats it as LinkedIn apply when the URL matches.
-- **`job_description`**: store the **full** posting body your pipeline can obtain. Prefer **plain text** (line breaks preserved) or **sanitized HTML** matching the recruiter editor (paragraphs, headings, lists, links). If you only have raw HTML from LinkedIn, strip tags / decode entities server-side before insert or update unless you normalize to the same allowed tag subset.
+## Current refresh
 
-This app does **not** scrape LinkedIn from the browser app. Use server-side scripts only:
+**Production update:** signed-in Edge access resolved the account mismatch. All 200 jobs were imported into the live project: **156 inserted, 44 updated, zero failures**. The board displayed **340 active jobs** afterward. See the [production follow-up](PRODUCTION_RELEASE_2026-09-06.md) for the current deployment and workflow status; it supersedes the initial access limitations below. The user explicitly approved retaining the existing import owner for this refresh.
 
-- [`scripts/scrape-linkedin-jobs.ts`](../scripts/scrape-linkedin-jobs.ts) refreshes `data/linkedin-jobs.json`
-- [`scripts/ingest-jobs.ts`](../scripts/ingest-jobs.ts) upserts JSON rows into Supabase
-- [`scripts/sync-jobs-daily.ts`](../scripts/sync-jobs-daily.ts) runs scrape + ingest + stale imported job cleanup
+On 6 September 2026 the live board displayed 183 jobs, with the newest visible posting dated 15 August. The refreshed local dump contains **200 unique jobs** dated 8 July–5 September: **101 within 7 days, 191 within 30 days, and all 200 within 90 days** at validation time. The final scrape processed 287 unique detail pages across 36 search requests and completed with no unrecovered requests (one HTTP 429 recovered on retry). All 200 passed the import dry run. No production import has occurred: the correct database credentials and dedicated import recruiter are unavailable locally.
 
-## Public visibility (home page)
+The GitHub Ingest jobs workflow is disabled_manually and has no repository secrets. The accessible Vercel project zsw0rds-projects/beonely has no production environment variables; identify the actual project serving beonely.in before configuring or deploying.
 
-Imported jobs appear under **Roles from LinkedIn** on `/` when:
+## Commands
 
-- `source_kind = linkedin_import`
-- `approval_status = approved`
-- `payment_status = paid`
-- `listing_expires_at` is null or in the future
+Use pnpm@11.11.0 (or corepack pnpm). Scripts load an optional local .env; existing environment variables take precedence.
 
-The ingest script sets **approved + paid** automatically (no Razorpay). Admins can still reject or feature listings in **Admin → Moderation**.
+```sh
+# Refresh the dump only; no database credentials needed.
+pnpm scrape:linkedin
 
-## Batch ingest
+# Validate the complete batch without credentials or writes.
+pnpm ingest:jobs --dry-run
 
-| Variable                              | Purpose                                                                                                                                                                                                                                                           |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SUPABASE_SERVICE_ROLE_KEY`           | Same service role key already on Vercel for `/api` (never `VITE_*`)                                                                                                                                                                                               |
-| `SUPABASE_URL` or `VITE_SUPABASE_URL` | Same Supabase project URL as the browser app                                                                                                                                                                                                                      |
-| `INGEST_RECRUITER_ID`                 | Optional — UUID of a **dedicated system recruiter** used only for ingest metadata. Do not use a real hiring user's recruiter row; the recruiter portal lists only `source_kind = recruiter_posted` jobs. Defaults to your first `public.recruiters` row if unset. |
-| `INGEST_JOBS_FILE`                    | Path to JSON array (default: `data/linkedin-jobs.json` if present)                                                                                                                                                                                                |
-| `INGEST_JOB_DESCRIPTION`              | Single demo row only, when no batch file                                                                                                                                                                                                                          |
-| `INGEST_JOB_DESCRIPTION_FILE`         | File path for demo description                                                                                                                                                                                                                                    |
-
-Run locally:
-
-```bash
-# From repo root with the same `.env` as local dev / Vercel:
+# Import the existing validated dump into the configured database.
 pnpm ingest:jobs
-```
 
-Run scrape + ingest locally:
-
-```bash
-# Scrape LinkedIn guest endpoints to data/linkedin-jobs.json, then ingest to Supabase.
-pnpm scrape:linkedin && pnpm ingest:jobs
-```
-
-Upsert key: normalized `apply_url` (query stripped). Re-runs update title, description, the displayed posted date (`created_at`), and `listing_expires_at`.
-When present, `company_logo` and `company_website` are normalized to valid `http(s)` URLs. Existing non-empty logos are preserved unless a better non-favicon logo is discovered.
-
-### Posted date and freshness window
-
-- The scraper reads LinkedIn's `datePosted` (JSON-LD) and the topcard "posted X ago" text and writes the resolved date to `posted_at` in the JSON payload.
-- The search query is constrained with LinkedIn's `f_TPR=r<seconds>` window (`SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS`, default ~31 days), and each listing is re-checked against the same window; anything older is skipped.
-- Listings that are **no longer accepting applications** (closed marker or an elapsed `validThrough`) are dropped during parsing.
-- On ingest, `created_at` is set to `posted_at` (the date the board displays and sorts by). The 1-month window on the live feed is enforced by the daily freshness sweep below (and by dropping rows that age out of the scrape payload).
-
-Run the full daily job maintenance locally:
-
-```bash
-# Scrape + ingest + stale-close cleanup in one command
+# Scrape, import, and expire aged-out or confirmed closed listings.
 pnpm sync:jobs
 ```
 
-Stale cleanup policy (`pnpm sync:jobs`):
+Full sync validates configuration before scraping, invokes Node directly on Windows, uses one scrape/import file path and reads summaries unique to the current run. A failed pipeline does not run database cleanup. Partial scrape, database or liveness failures produce a nonzero exit code.
 
-- can check imported jobs currently live in Supabase but missing from the latest scrape payload
-- missing-from-payload expiry is disabled by default; when explicitly enabled it only runs after a complete, failure-free scrape with at least 25 results and at least 80% of the prior live count
-- **freshness sweep:** expires any live imported row older than `JOBS_SYNC_MAX_AGE_DAYS` (default `30`) so nothing more than a month old stays on the feed
-- **liveness recheck:** unless `JOBS_SYNC_CHECK_APPLY_URLS=0`, HTTP-checks each live row's `apply_url` and expires ones returning `404/410` or "no longer accepting applications"
-- does not hard-delete rows (soft-expire via `listing_expires_at = now()`)
-- skips the missing-from-payload check whenever source health cannot be established
+## Configuration
 
-### JSON schema (`data/linkedin-jobs.json`)
+| Variable                          | Purpose                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| SUPABASE_URL or VITE_SUPABASE_URL | Intended project; must match the deployed site.                                                  |
+| SUPABASE_SERVICE_ROLE_KEY         | Required server-only credential; never prefix with VITE\_.                                       |
+| INGEST_RECRUITER_ID               | Required enabled dedicated system recruiter; no first-account fallback.                          |
+| INGEST_JOBS_FILE                  | Optional input path; defaults to data/linkedin-jobs.json. Full sync also writes the scrape here. |
+| INGEST_SUMMARY_FILE               | Optional standalone importer summary output.                                                     |
+| JOBS_SYNC_SUMMARY_FILE            | Optional consolidated full-sync summary with scrape/import/cleanup counts.                       |
 
-Each array element:
+Empty dumps, missing files, non-LinkedIn job URLs and unknown/invalid/future posting dates fail before any writes. There is no automatic demo fallback.
+
+## Publication and freshness
+
+- New imports are approved, paid LinkedIn imports without creating a Razorpay payment.
+- Updates refresh only existing approved, paid LinkedIn imports. Recruiter-authored jobs and held/rejected imports are preserved. Approval, payment, source, ownership and featured state are never overwritten. A concurrent updated_at change fails the update for retry.
+- Identity is a canonical numeric HTTPS LinkedIn job URL. Named paths normalize to the numeric ID; query/hash are removed. Credentials, custom ports, other hosts and non-job paths are rejected.
+- posted_at becomes created_at, the board's displayed/filter date. Existing known dates cannot move forward on refresh. Listing expiry is 90 days after the posting date, never 90 days after each import.
+- The scraper defaults to a 90-day search, rechecks each posting date, and excludes explicit closed/expired jobs. The existing 100-applicant limit is retained.
+- Full sync expires imported rows older than JOBS_SYNC_MAX_AGE_DAYS (default 90), using listing_expires_at rather than deleting rows.
+- Liveness checks only request canonical LinkedIn job URLs and do not follow redirects. Only HTTP 404/410 or explicit closed content expires a job. Invalid URLs, redirects, throttling and server/network failures preserve the listing and count as inconclusive errors.
+- Missing from one scrape does not prove a job is closed. Missing-from-payload expiry is disabled by default. If explicitly enabled, it requires a successful scrape/import, zero failed scrape requests, 25 or more source URLs and at least 80% coverage of the prior active set.
+
+The public controls offer rolling Last 7 days, Last 30 days and Last 90 days. They combine with other filters and persist in URLs such as /?posted=90d&work=remote. The detailed dropdown retains Last 24 hours. Date windows only show active jobs; they do not revive closed listings.
+
+## JSON batch schema
 
 ```json
-{
-  "external_id": "linkedin-1234567890",
-  "job_title": "ServiceNow Developer",
-  "company_name": "Acme Corp",
-  "company_logo": "https://media.licdn.com/dms/image/v2/....png",
-  "company_website": "https://acme.example/careers",
-  "location": "Remote, India",
-  "apply_url": "https://www.linkedin.com/jobs/view/1234567890",
-  "job_description": "Full posting text…",
-  "posted_at": "2026-06-10T00:00:00.000Z",
-  "employment_type": "full_time",
-  "experience_level": "mid",
-  "work_mode": "remote",
-  "job_type": "developer",
-  "skills": ["JavaScript", "ServiceNow"],
-  "modules": ["ITSM"],
-  "certifications": []
-}
+[
+  {
+    "external_id": "linkedin-1234567890",
+    "job_title": "ServiceNow Developer",
+    "company_name": "Acme Corp",
+    "location": "Bengaluru, India",
+    "apply_url": "https://www.linkedin.com/jobs/view/1234567890",
+    "job_description": "Full posting text...",
+    "posted_at": "2026-09-01T00:00:00.000Z",
+    "employment_type": "full_time",
+    "experience_level": "mid",
+    "work_mode": "hybrid",
+    "job_type": "developer",
+    "skills": ["JavaScript", "ServiceNow"],
+    "modules": ["ITSM"],
+    "certifications": []
+  }
+]
 ```
 
-`job_slug` is optional; otherwise derived from `external_id` or `apply_url`.
-`company_logo`, `company_website`, and `posted_at` are optional. `posted_at` (ISO 8601) becomes the listing's `created_at` (the displayed posted date the board sorts by).
+Required: title, company, apply URL, description and a valid non-future posted date. company_logo, company_website, taxonomy arrays and job_slug are optional. Store the full description available from the source; the application still sanitizes rendered rich text. Logo rendering remains restricted to trusted sources.
 
-### Scraper tuning env vars (optional)
+## Tuning
 
-| Variable                                | Purpose                                            | Default                   |
-| --------------------------------------- | -------------------------------------------------- | ------------------------- |
-| `SCRAPE_LINKEDIN_MAX_PAGES`             | Search pages per keyword query                     | `3`                       |
-| `SCRAPE_LINKEDIN_PAGE_SIZE`             | Pagination stride (`start` offset increment)       | `25`                      |
-| `SCRAPE_LINKEDIN_TIMEOUT_MS`            | Request timeout per HTTP request                   | `25000`                   |
-| `SCRAPE_LINKEDIN_DELAY_MS`              | Delay between outbound requests                    | `1200`                    |
-| `SCRAPE_LINKEDIN_RETRY_MAX`             | Retry count for transient failures                 | `2`                       |
-| `SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS` | Only keep listings posted within this many seconds | `2678400` (31 days)       |
-| `SCRAPE_LINKEDIN_MAX_APPLICANTS`        | Skip listings above this reported applicant count  | `100`                     |
-| `SCRAPE_LINKEDIN_OUTPUT_FILE`           | Output JSON path for scrape results                | `data/linkedin-jobs.json` |
+| Variable                              | Default                 | Purpose                                                               |
+| ------------------------------------- | ----------------------- | --------------------------------------------------------------------- |
+| SCRAPE_LINKEDIN_MAX_PAGES             | 3                       | Search pages per keyword.                                             |
+| SCRAPE_LINKEDIN_PAGE_SIZE             | 25                      | Search offset stride; actual page size may differ.                    |
+| SCRAPE_LINKEDIN_POSTED_WITHIN_SECONDS | 7776000                 | Standalone lookback; full sync aligns it with JOBS_SYNC_MAX_AGE_DAYS. |
+| SCRAPE_LINKEDIN_MAX_APPLICANTS        | 100                     | Maximum reported applicant count.                                     |
+| SCRAPE_LINKEDIN_TIMEOUT_MS            | 25000                   | Request timeout.                                                      |
+| SCRAPE_LINKEDIN_DELAY_MS              | 1200                    | Request pacing.                                                       |
+| SCRAPE_LINKEDIN_RETRY_MAX             | 2                       | Bounded retries.                                                      |
+| SCRAPE_LINKEDIN_LOCATION              | India                   | Search location.                                                      |
+| SCRAPE_LINKEDIN_OUTPUT_FILE           | data/linkedin-jobs.json | Standalone output; full sync uses INGEST_JOBS_FILE.                   |
+| SCRAPE_LINKEDIN_SUMMARY_FILE          | unset                   | Standalone scrape summary.                                            |
+| JOBS_SYNC_MAX_AGE_DAYS                | 90                      | Maintenance age cutoff.                                               |
+| JOBS_SYNC_CHECK_APPLY_URLS            | 1                       | Set to 0 to skip direct checks.                                       |
+| JOBS_SYNC_APPLY_CHECK_LIMIT           | 250                     | Maximum checks per run.                                               |
+| JOBS_SYNC_APPLY_CHECK_DELAY_MS        | 800                     | Delay between liveness checks.                                        |
+| JOBS_SYNC_ENABLE_MISSING_EXPIRY       | 0                       | Opt in to guarded missing-from-source expiry.                         |
 
-### Daily sync stale-check tuning (optional)
+## Scheduled operation
 
-| Variable                          | Purpose                                               | Default   |
-| --------------------------------- | ----------------------------------------------------- | --------- |
-| `JOBS_SYNC_SUMMARY_FILE`          | Full sync summary JSON output path                    | unset     |
-| `JOBS_SYNC_ENABLE_MISSING_EXPIRY` | Set `1` to enable guarded missing-from-payload expiry | `0` (off) |
-| `JOBS_SYNC_MAX_AGE_DAYS`          | Expire live imported rows older than this many days   | `30`      |
-| `JOBS_SYNC_CHECK_APPLY_URLS`      | Set `0` to skip the apply-url liveness recheck        | `1` (on)  |
-| `JOBS_SYNC_APPLY_CHECK_LIMIT`     | Max live rows to liveness-check per run               | `250`     |
-| `JOBS_SYNC_APPLY_CHECK_DELAY_MS`  | Delay between apply-url checks                        | `800`     |
+The [existing workflow](../.github/workflows/ingest-jobs.yml) schedules full maintenance at 06:00 UTC daily and supports manual dispatch. It serializes runs, allows 45 minutes and preserves failure diagnostics.
 
-### System recruiter (`INGEST_RECRUITER_ID`)
+Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and INGEST_RECRUITER_ID as GitHub secrets before re-enabling it. Run manual imports serially as well. Reconcile the remote migration history and stage the complete July hardening chain first; do not blindly replay the legacy May files into an empty database. See the [repository review](REPOSITORY_REVIEW_2026-09-06.md) and [security register](SECURITY_AUDIT.md).
 
-Create or pick a recruiter row in Supabase (SQL editor):
+A scheduled run refreshes the runner's dump and Supabase; it does not commit the JSON back to GitHub. A successful database import changes public_jobs without another frontend deployment. The new date controls require a frontend deployment.
 
-```sql
-SELECT id, email, name FROM public.recruiters LIMIT 5;
-```
+Do not bulk approve historical held/rejected imports to populate the board. Review their moderation and source liveness individually.
 
-Use that `id` as `INGEST_RECRUITER_ID` in GitHub Actions secrets and local runs.
+## Data-quality limits
 
-## GitHub Actions / Codex automation
+LinkedIn can return partial results and approximate relative dates. A complete run covers the configured queries/pages, not every LinkedIn vacancy. Unknown work mode currently defaults to remote, and seniority still relies on description heuristics; both are recorded as follow-up work. The internship matcher now distinguishes intern/internship from internal/international.
 
-Workflow: [`.github/workflows/ingest-jobs.yml`](../.github/workflows/ingest-jobs.yml)
-
-- **Schedule:** daily 06:00 UTC
-- **Manual:** Actions → Ingest jobs → Run workflow
-- **Pipeline:** `pnpm sync:jobs` (`scrape → ingest → stale-close cleanup`)
-
-Required repository secrets (same Supabase project as Production on Vercel):
-
-- `SUPABASE_SERVICE_ROLE_KEY` — copy from Vercel Production env
-- `SUPABASE_URL` — same value as `VITE_SUPABASE_URL` on Vercel (scripts do not read `VITE_*` in GitHub Actions)
-- `INGEST_RECRUITER_ID` — optional if you only have one recruiter row
-
-Typical Codex loop:
-
-1. Merge scraper or ingestion updates to `main`.
-2. Workflow scrapes and refreshes `data/linkedin-jobs.json`.
-3. Workflow ingests JSON into Supabase (`source_kind = linkedin_import`).
-4. Workflow expires stale imported listings missing from the latest scrape payload.
-5. LinkedIn section on `/` updates without a frontend redeploy (only data changes).
-
-## Legal / ToS note
-
-LinkedIn explicitly states in `robots.txt` that automated access without express permission is prohibited, and their crawling terms require permission before automated crawling. Keep this scraper conservative:
-
-- low request rate and bounded retries
-- predictable schedule (no aggressive burst jobs)
-- transparent user agent
-- fail fast when blocked (`SCRAPE_SUMMARY` and workflow failure)
-
-If LinkedIn enforcement increases, switch to an approved/licensed jobs data source before scaling.
-
-## Legacy rows (pending / unpaid imports)
-
-Older demo ingests may have `approval_status = pending` and `payment_status = unpaid`. They will not appear on `/` until backfilled:
-
-```sql
-UPDATE public.jobs
-SET approval_status = 'approved',
-    payment_status = 'paid',
-    listing_expires_at = now() + interval '90 days'
-WHERE source_kind = 'linkedin_import'
-  AND approval_status = 'pending';
-```
-
-Admins can also approve `linkedin_import` jobs from **Admin → Moderation** even when payment is still `unpaid` (see app UI).
-
-## Fixing short descriptions
-
-Use **Admin → Moderation → Edit description** on each job to paste or format the full body (rich text), or run a one-off SQL / script update against `public.jobs.job_description` with the service role.
+Preserve conservative pacing and bounded retries. Use an approved data source if access or coverage requirements exceed this workflow.

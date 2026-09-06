@@ -1,7 +1,11 @@
 # Sync LinkedIn-import jobs from the latest scrape output into Supabase.
 # Secrets (same Supabase project as Vercel Production):
-# SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (= VITE_SUPABASE_URL value), optional INGEST_RECRUITER_ID
+# SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (= VITE_SUPABASE_URL value), INGEST_RECRUITER_ID
 name: Ingest jobs
+
+concurrency:
+  group: beonely-job-ingest
+  cancel-in-progress: false
 
 on:
   schedule:
@@ -15,12 +19,17 @@ on:
       - 'scripts/lib/scrape-linkedin-jobs.ts'
       - 'scripts/ingest-jobs.ts'
       - 'scripts/lib/ingest-linkedin-jobs.ts'
+      - 'scripts/sync-jobs-daily.ts'
+      - 'scripts/lib/check-linkedin-apply-urls.ts'
+      - 'scripts/lib/load-local-env.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/ingest-jobs.yml'
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -36,9 +45,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INGEST_RECRUITER_ID: ${{ secrets.INGEST_RECRUITER_ID }}
         run: |
-          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
-            echo "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY repository secret." >&2
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_ROLE_KEY" || -z "$INGEST_RECRUITER_ID" ]]; then
+            echo "Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or INGEST_RECRUITER_ID repository secret." >&2
             exit 1
           fi
       - run: pnpm install --frozen-lockfile
@@ -48,7 +58,11 @@ jobs:
           export SCRAPE_LINKEDIN_SUMMARY_FILE="$RUNNER_TEMP/scrape-summary.json"
           export INGEST_SUMMARY_FILE="$RUNNER_TEMP/ingest-summary.json"
           export JOBS_SYNC_SUMMARY_FILE="$RUNNER_TEMP/jobs-sync-summary.json"
+          # Preserve diagnostics even when the pipeline returns a failure.
+          set +e
           pnpm sync:jobs 2>&1 | tee jobs-sync.log
+          sync_exit=${PIPESTATUS[0]}
+          set -e
           node -e '
             const fs = require("node:fs");
             const summaryPath = process.env.JOBS_SYNC_SUMMARY_FILE;
@@ -76,6 +90,7 @@ jobs:
             const errorCount = Array.isArray(summary.errors) ? summary.errors.length : 0;
             fs.appendFileSync(envPath, `SYNC_ERROR_COUNT=${errorCount}\n`);
           '
+          exit "$sync_exit"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -96,7 +111,7 @@ jobs:
             echo "- Ingest failed: ${INGEST_FAILED:-0}"
             echo "- Missing imported jobs: ${STALE_CANDIDATES:-0}"
             echo "- Stale expired (removed from feed): ${STALE_EXPIRED:-0}"
-            echo "- Expired older than 1 month: ${STALE_AGED_OUT:-0}"
+            echo "- Expired older than 90 days: ${STALE_AGED_OUT:-0}"
             echo "- Expired dead/closed apply links: ${STALE_DEAD_LINKS:-0}"
             echo "- Stale cleanup skipped: ${STALE_SKIPPED:-0}"
             echo "- Stale update errors: ${STALE_UPDATE_ERRORS:-0}"
