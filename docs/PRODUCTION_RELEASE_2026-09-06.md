@@ -15,7 +15,13 @@ The signed-in Edge session resolved the deployment-account mismatch. The active 
 
 ## Release status
 
-The frontend release is being verified before publication. Git is configured as the user's `Zsw0rd` identity; Edge is signed into the user's `nextgrid-digital` account. No Codex co-author attribution is added.
+Release PR [#3](https://github.com/nextgrid-digital/beonely/pull/3) was pushed under the user's `Zsw0rd` Git identity and created through the user's signed-in `nextgrid-digital` Edge session. No Codex co-author attribution is added. GitHub Quality and Vercel Preview passed for the September 6 commit. Supabase Preview failed in an unchanged May migration because `job_seeker_profiles` does not yet exist; it is not a successful staging bootstrap. No check or protection was disabled to conceal that failure.
+
+Work resumed on September 13. Production remained healthy with the September 6 repair recorded, zero legacy job/apply/admin-profile policies, no anonymous base-job SELECT privilege and no public contact leaks. A new application-data and Storage-metadata backup was saved in ignored `backups.local/2026-09-13/` before the new import. Unlike the earlier temporary snapshot, this directory is outside all test output.
+
+The September 13 scrape inspected 292 unique detail pages and retained 175 current listings, with 117 filtered out and no failed requests. Import: **126 inserted, 49 refreshed, 0 skipped, 0 failed**. Post-import verification checked all **788 pre-existing jobs** for preserved ownership, moderation/payment/listing/featured fields and posting dates that never move forward. The public board now has **466 active jobs**: **58 within 7 days, 269 within 30 days, 466 within 90 days** at 07:38 UTC. Newest source listing: September 13. Counts naturally change as rolling windows advance.
+
+The refreshed dependency audit found newly published [Tiptap Markdown parsing](https://github.com/advisories/GHSA-j95f-988m-3j2f) and [Sharp/libheif](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c) advisories. Updated Tiptap and its menu peers to 3.30.5 and Sharp to 0.35.4. The production audit is clean again; the updated build, app/API type checks, 435 unit tests, 20 database checks and 28 responsive checks passed (2 viewport-specific skips). Lint has 0 errors and 23 existing warnings; formatting and Knip passed.
 
 Daily ingestion remains disabled until approval to store the existing service-role key in this repository's encrypted GitHub Actions secrets and enable the workflow. No credential values are included in source or reports.
 

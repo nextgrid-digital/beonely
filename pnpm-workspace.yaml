@@ -1,7 +1,7 @@
 overrides:
   # Keep optional Tiptap UI peers aligned with the patched editor release.
-  '@tiptap/extension-bubble-menu': 3.30.4
-  '@tiptap/extension-floating-menu': 3.30.4
+  '@tiptap/extension-bubble-menu': 3.30.5
+  '@tiptap/extension-floating-menu': 3.30.5
   # A single model/view graph avoids incompatible schema and DOM types.
   prosemirror-model: 1.25.11
   prosemirror-view: 1.42.3
@@ -9,7 +9,7 @@ overrides:
   form-data: ^4.0.6
   nanoid@<3.3.18: ^3.3.18
   seroval@<=1.5.2: ^1.5.3
-  sharp@<0.35.0: ^0.35.0
+  sharp@<0.35.4: ^0.35.4
 
 allowBuilds:
   esbuild: true
@@ -18,6 +18,6 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - dompurify@3.4.13
   - nanoid@3.3.18
-  - sharp@0.35.0
+  - sharp@0.35.4
   - postcss@8.5.18
   - seroval@1.5.3
