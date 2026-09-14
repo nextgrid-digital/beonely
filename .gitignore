@@ -33,6 +33,8 @@ dist-ssr
 **/__screenshots__/
 .vitest-attachments/
 /test-results/
+# Operational backups must live outside test-runner output directories.
+/backups.local/
 .vercel
 .env*.local
 

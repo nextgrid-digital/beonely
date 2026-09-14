@@ -5,7 +5,7 @@
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-
+import './lib/load-local-env'
 import {
   resolveLinkedInScrapeConfigFromEnv,
   scrapeLinkedInJobs,
@@ -29,7 +29,10 @@ async function main() {
   const summaryPath = resolveSummaryPath()
   const config = resolveLinkedInScrapeConfigFromEnv()
 
-  console.info('[linkedin-scrape] start', JSON.stringify({ outputPath, config }))
+  console.info(
+    '[linkedin-scrape] start',
+    JSON.stringify({ outputPath, config })
+  )
 
   const { jobs, summary } = await scrapeLinkedInJobs(config, {
     logger: console,
@@ -44,7 +47,10 @@ async function main() {
     await writeFile(summaryPath, `${JSON.stringify(summaryPayload)}\n`, 'utf8')
   }
 
-  console.info('[linkedin-scrape] wrote file', JSON.stringify({ outputPath, jobs: jobs.length }))
+  console.info(
+    '[linkedin-scrape] wrote file',
+    JSON.stringify({ outputPath, jobs: jobs.length })
+  )
   console.log('SCRAPE_SUMMARY', JSON.stringify(summaryPayload))
 }
 

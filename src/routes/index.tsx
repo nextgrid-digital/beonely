@@ -42,6 +42,7 @@ import {
 } from '@/features/jobs/public-site-layout'
 import {
   PublishedJobsActiveFilters,
+  PublishedJobsDateFilters,
   PublishedJobsFiltersButton,
 } from '@/features/jobs/published-jobs-filters'
 
@@ -270,6 +271,9 @@ function LandingPageContent() {
           </section>
 
           <div id='open-roles' className='min-w-0 scroll-mt-20'>
+            <div className='mb-3'>
+              <PublishedJobsDateFilters search={search} navigate={navigate} />
+            </div>
             {isError ? (
               <p className='px-4 py-12 text-center text-sm text-destructive'>
                 Could not load jobs. Configure Supabase or try again later.

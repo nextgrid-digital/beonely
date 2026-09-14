@@ -17,6 +17,53 @@ async function expectNoHorizontalOverflow(
 }
 
 test.describe('responsive smoke', () => {
+  test('detailed date dropdown can select the 90-day window', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Filters', exact: true }).click()
+    await page
+      .getByRole('combobox', { name: 'Date posted', exact: true })
+      .click()
+    await page
+      .getByRole('option', { name: 'Last 90 days', exact: true })
+      .click()
+    await expect(page).toHaveURL(/posted=90d/)
+    const closeButton = page.getByRole('button', { name: 'Close', exact: true })
+    if (await closeButton.isVisible()) await closeButton.click()
+    await expect(
+      page
+        .getByRole('group', { name: 'Date posted', exact: true })
+        .getByRole('button', { name: 'Last 90 days', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('date shortcuts persist in URLs, survive reload, and combine with search', async ({
+    page,
+  }) => {
+    await page.goto('/?q=ServiceNow')
+    const dates = page.getByRole('group', { name: 'Date posted', exact: true })
+    for (const [label, token] of [
+      ['Last 7 days', '7d'],
+      ['Last 30 days', '30d'],
+      ['Last 90 days', '90d'],
+    ]) {
+      const button = dates.getByRole('button', { name: label, exact: true })
+      await button.click()
+      await expect(page).toHaveURL(new RegExp(`posted=${token}`))
+      expect(new URL(page.url()).searchParams.get('q')).toBe('ServiceNow')
+      await expect(button).toHaveAttribute('aria-pressed', 'true')
+      await expectNoHorizontalOverflow(page)
+    }
+    await page.reload()
+    await expect(
+      dates.getByRole('button', { name: 'Last 90 days', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true')
+    await dates.getByRole('button', { name: 'Any time', exact: true }).click()
+    await expect(page).not.toHaveURL(/posted=/)
+    expect(new URL(page.url()).searchParams.get('q')).toBe('ServiceNow')
+  })
+
   for (const route of CORE_ROUTES) {
     test(`layout does not overflow on ${route}`, async ({ page }) => {
       await page.goto(route)

@@ -1,9 +1,81 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  applyPublishedJobFilters,
   experienceFilterValue,
   filterNonExpiredJobs,
+  postedSinceIso,
+  publishedJobsFilterSchema,
 } from '@/lib/jobs/published-jobs-query'
 import type { JobRow } from '@/lib/supabase/database.types'
+
+afterEach(() => vi.useRealTimers())
+
+describe('date posted filters', () => {
+  it.each([
+    ['24h', '2026-09-05T12:00:00.000Z'],
+    ['7d', '2026-08-30T12:00:00.000Z'],
+    ['30d', '2026-08-07T12:00:00.000Z'],
+    ['90d', '2026-06-08T12:00:00.000Z'],
+  ])('uses an exact rolling cutoff for %s', (token, cutoff) => {
+    expect(postedSinceIso(token, new Date('2026-09-06T12:00:00Z'))).toBe(cutoff)
+  })
+
+  it('accepts shareable 90-day URLs and ignores unknown date tokens', () => {
+    expect(publishedJobsFilterSchema.parse({ posted: '90d' }).posted).toBe(
+      '90d'
+    )
+    expect(
+      publishedJobsFilterSchema.parse({ posted: 'oops' }).posted
+    ).toBeUndefined()
+    expect(postedSinceIso(undefined)).toBeUndefined()
+  })
+})
+
+describe('public query filters', () => {
+  function querySpy() {
+    return {
+      or: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      ilike: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      contains: vi.fn().mockReturnThis(),
+    }
+  }
+
+  it('quotes punctuation as data instead of allowing extra OR conditions', () => {
+    const query = querySpy()
+    applyPublishedJobFilters(query, { q: 'Acme, Inc. ("Now")' })
+    expect(query.or).toHaveBeenCalledWith(
+      'job_title.ilike."%Acme, Inc. (\\"Now\\")%",company_name.ilike."%Acme, Inc. (\\"Now\\")%"'
+    )
+  })
+
+  it('escapes LIKE wildcards and backslashes for title and location', () => {
+    const query = querySpy()
+    applyPublishedJobFilters(query, { q: '100%_\\', location: '100%_' })
+    expect(query.or).toHaveBeenCalledWith(
+      String.raw`job_title.ilike."%100\\%\\_\\\\%",company_name.ilike."%100\\%\\_\\\\%"`
+    )
+    expect(query.ilike).toHaveBeenCalledWith('location', String.raw`%100\%\_%`)
+  })
+
+  it('combines date, role and work filters in the database query', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-06T12:00:00Z'))
+    const query = querySpy()
+    applyPublishedJobFilters(query, {
+      posted: '90d',
+      role: 'developer',
+      work: 'remote',
+    })
+    expect(query.gte).toHaveBeenCalledWith(
+      'created_at',
+      '2026-06-08T12:00:00.000Z'
+    )
+    expect(query.eq).toHaveBeenCalledWith('job_type', 'developer')
+    expect(query.eq).toHaveBeenCalledWith('work_mode', 'remote')
+  })
+})
 
 function minimalJob(overrides: Partial<JobRow>): JobRow {
   return {

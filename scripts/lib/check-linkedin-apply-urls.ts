@@ -1,6 +1,10 @@
+import { normalizeLinkedInApplyUrl } from './ingest-linkedin-jobs'
 import { isStillAcceptingApplications } from './scrape-linkedin-jobs'
 
-type FetchLike = (input: URL | RequestInfo, init?: RequestInit) => Promise<Response>
+type FetchLike = (
+  input: URL | RequestInfo,
+  init?: RequestInit
+) => Promise<Response>
 
 export type ApplyUrlLivenessReason =
   | 'ok'
@@ -8,6 +12,7 @@ export type ApplyUrlLivenessReason =
   | 'closed'
   | 'http_error'
   | 'request_failed'
+  | 'invalid_url'
 
 export type ApplyUrlLiveness = {
   url: string
@@ -36,6 +41,9 @@ export async function checkLinkedInApplyUrl(
     fetchImpl?: FetchLike
   } = {}
 ): Promise<ApplyUrlLiveness> {
+  const canonicalUrl = normalizeLinkedInApplyUrl(url)
+  if (!canonicalUrl)
+    return { url, live: true, status: null, reason: 'invalid_url' }
   const fetchImpl = options.fetchImpl ?? fetch
   const timeoutMs = options.timeoutMs ?? 20_000
   const userAgent = options.userAgent ?? DEFAULT_USER_AGENT
@@ -44,11 +52,15 @@ export async function checkLinkedInApplyUrl(
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const response = await fetchImpl(url, {
+    const response = await fetchImpl(canonicalUrl, {
       method: 'GET',
+      // A permitted LinkedIn URL must not redirect this trusted process to an
+      // arbitrary host. Redirects are inconclusive and leave the listing alone.
+      redirect: 'manual',
       headers: {
         'user-agent': userAgent,
-        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'accept-language': 'en-US,en;q=0.9',
       },
       signal: controller.signal,

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildIngestJobRow,
+  buildIngestJobUpdate,
   normalizeCompanyLogoUrl,
   normalizeCompanyWebsiteUrl,
   normalizeLinkedInApplyUrl,
@@ -16,11 +17,20 @@ const recruiter = {
 }
 
 describe('normalizeLinkedInApplyUrl', () => {
-  it('strips query and normalizes host', () => {
+  it('canonicalizes named paths and rejects non-job endpoints and ports', () => {
     expect(
       normalizeLinkedInApplyUrl(
-        'https://linkedin.com/jobs/view/123?utm=1'
+        'https://www.linkedin.com/jobs/view/servicenow-developer-123?ref=x'
       )
+    ).toBe('https://www.linkedin.com/jobs/view/123')
+    expect(normalizeLinkedInApplyUrl('https://www.linkedin.com/login')).toBe('')
+    expect(
+      normalizeLinkedInApplyUrl('https://www.linkedin.com:8443/jobs/view/123')
+    ).toBe('')
+  })
+  it('strips query and normalizes host', () => {
+    expect(
+      normalizeLinkedInApplyUrl('https://linkedin.com/jobs/view/123?utm=1')
     ).toBe('https://www.linkedin.com/jobs/view/123')
   })
 
@@ -34,7 +44,9 @@ describe('normalizeLinkedInApplyUrl', () => {
         'https://user:pass@www.linkedin.com/jobs/view/1'
       )
     ).toBe('')
-    expect(normalizeLinkedInApplyUrl('https://linkedin.example/jobs/view/1')).toBe('')
+    expect(
+      normalizeLinkedInApplyUrl('https://linkedin.example/jobs/view/1')
+    ).toBe('')
   })
 })
 
@@ -50,7 +62,9 @@ describe('company url normalization', () => {
     expect(
       normalizeCompanyWebsiteUrl('https://example.com/careers?ref=li#top')
     ).toBe('https://example.com/careers')
-    expect(normalizeCompanyWebsiteUrl('https://www.linkedin.com/company/acme')).toBeNull()
+    expect(
+      normalizeCompanyWebsiteUrl('https://www.linkedin.com/company/acme')
+    ).toBeNull()
   })
 })
 
@@ -69,6 +83,40 @@ describe('slugFromIngestJob', () => {
 })
 
 describe('buildIngestJobRow', () => {
+  const validJob = {
+    job_title: 'ServiceNow Developer',
+    company_name: 'Acme',
+    apply_url: 'https://www.linkedin.com/jobs/view/1',
+    job_description: 'Full posting',
+    posted_at: '2026-08-01T00:00:00Z',
+  }
+
+  it('expires relative to the original posted date, never the import date', () => {
+    const row = buildIngestJobRow(validJob, recruiter)
+    expect(row.listing_expires_at).toBe('2026-10-30T00:00:00.000Z')
+    expect(buildIngestJobUpdate(row)).not.toHaveProperty('approval_status')
+    expect(buildIngestJobUpdate(row)).not.toHaveProperty('payment_status')
+    expect(buildIngestJobUpdate(row)).not.toHaveProperty('source_kind')
+    expect(buildIngestJobUpdate(row)).not.toHaveProperty('recruiter_id')
+    expect(buildIngestJobUpdate(row)).not.toHaveProperty('featured')
+  })
+
+  it('does not move a known posted date forward during a later scrape', () => {
+    const row = buildIngestJobRow(validJob, recruiter)
+    expect(buildIngestJobUpdate(row, '2026-07-01T00:00:00Z')).toMatchObject({
+      created_at: '2026-07-01T00:00:00.000Z',
+      listing_expires_at: '2026-09-29T00:00:00.000Z',
+    })
+  })
+
+  it.each([undefined, 'invalid', '2099-01-01'])(
+    'rejects an unknown or future posting date: %s',
+    (posted_at) => {
+      expect(() =>
+        buildIngestJobRow({ ...validJob, posted_at }, recruiter)
+      ).toThrow(/posted_at/)
+    }
+  )
   it('auto-publishes linkedin imports', () => {
     const row = buildIngestJobRow(
       {
@@ -102,6 +150,7 @@ describe('buildIngestJobRow', () => {
         job_title: 'Role',
         company_name: 'Co',
         apply_url: 'https://www.linkedin.com/jobs/view/2',
+        posted_at: '2026-08-01',
         job_description: 'Body',
         employment_type: 'invalid',
         job_type: 'invalid',

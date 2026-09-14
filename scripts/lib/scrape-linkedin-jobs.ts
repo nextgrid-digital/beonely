@@ -83,7 +83,7 @@ const SKILL_TERMS = [...SERVICENOW_JOB_SKILLS]
 const MODULE_TERMS = SERVICENOW_MODULE_KEYWORDS
 
 const CERTIFICATION_PATTERNS = SERVICENOW_CERTIFICATION_PATTERNS
-const DEFAULT_POSTED_WITHIN_SECONDS = 31 * 24 * 60 * 60
+const DEFAULT_POSTED_WITHIN_SECONDS = 90 * 24 * 60 * 60
 const DEFAULT_MAX_APPLICANTS = 100
 
 export type LinkedInScrapeConfig = {
@@ -266,7 +266,7 @@ export function normalizeEmploymentType(text: string): IngestLinkedInJobInput['e
   if (value.includes('freelance')) return 'freelance'
   if (value.includes('contract')) return 'contract'
   if (value.includes('part-time') || value.includes('part time')) return 'part_time'
-  if (value.includes('intern')) return 'part_time'
+  if (/\b(intern|internship)\b/.test(value)) return 'part_time'
   return 'full_time'
 }
 

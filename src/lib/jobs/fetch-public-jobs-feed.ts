@@ -87,6 +87,7 @@ export async function fetchPublicJobsPage(
     .order('source_kind', { ascending: false })
     .order('featured', { ascending: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
   if (error) throw error
   return { rows: (data ?? []) as unknown as JobRow[], total: count ?? 0 }

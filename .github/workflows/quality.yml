@@ -43,5 +43,7 @@ jobs:
         run: pnpm test:browser:install
       - name: Test
         run: pnpm test
+      - name: Verify database policy boundaries
+        run: pnpm test:db
       - name: Responsive smoke tests
         run: pnpm test:responsive
